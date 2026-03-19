@@ -9,34 +9,28 @@ MODELO = "models/gemini-2.5-flash-lite"
 st.set_page_config(page_title="Fitness AI", page_icon="⚡", layout="wide", initial_sidebar_state="expanded")
 
 # --- CSS CUSTOMIZADO (Deixa o app com cara de software profissional) ---
+# --- CSS CUSTOMIZADO (Deixa o app com cara de software profissional) ---
 st.markdown("""
     <style>
-    /* Esconde a marca d'água e menu padrão do Streamlit (Hambúrguer) */
+    /* 1. Esconde o rodapé padrão do Streamlit (Marca d'água) */
+    footer {visibility: hidden;}
+    
+    /* 2. Esconde o botão de hambúrguer padrão no topo direito */
     #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
     
-    /* Esconde o rodapé padrão do Streamlit */
-    footer {visibility: hidden;}
-    
-    /* Esconde as opções superiores (Share, Deploy, GitHub, Menu) */
-    [data-testid="stToolbar"] {
+    /* 3. Esconde EXATAMENTE a barra de ferramentas do Cloud (Share, Deploy, GitHub) */
+    /* Isso não afeta o cabeçalho inteiro, apenas a zona direita */
+    .stApp > header > div:first-child {
         display: none !important;
     }
-
-    /* Esconde botões extras do Streamlit Cloud */
-    .stApp > header {
-        background-color: transparent !important;
-    }
-            
-    /* REMOVIDO: header {visibility: hidden;} para não sumir com o botão da barra lateral! */
     
-    /* Ajusta o espaçamento do topo */
+    /* 4. Ajusta o espaçamento do topo para NÃO CORTAR a caixa verde */
     .block-container {
-        padding-top: 2rem;
-        padding-bottom: 2rem;
+        padding-top: 4.5rem !important; 
+        padding-bottom: 2rem !important;
     }
     
-    /* Estiliza os cards de métricas */
+    /* 5. Estiliza os cards de métricas (mantido o seu design) */
     div[data-testid="metric-container"] {
         background-color: rgba(28, 131, 225, 0.1);
         border: 1px solid rgba(28, 131, 225, 0.1);
