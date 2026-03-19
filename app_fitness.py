@@ -10,6 +10,7 @@ st.set_page_config(page_title="Fitness AI", page_icon="⚡", layout="wide", init
 
 # --- CSS CUSTOMIZADO (Deixa o app com cara de software profissional) ---
 # --- CSS CUSTOMIZADO (Deixa o app com cara de software profissional) ---
+# --- CSS CUSTOMIZADO (Deixa o app com cara de software profissional) ---
 st.markdown("""
     <style>
     /* 1. Esconde o rodapé padrão do Streamlit (Marca d'água) */
