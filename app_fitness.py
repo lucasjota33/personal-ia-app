@@ -8,7 +8,7 @@ from fpdf import FPDF # 🟢 NOVO IMPORT: Biblioteca para gerar o PDF
 
 # Configurações iniciais
 CHAVE = st.secrets["GEMINI_API_KEY"]
-MODELO = "models/gemini-2.5-flash-lite"
+MODELO = "models/gemini-2.5-flash"
 ARQUIVO_BANCO = "banco_dados_saas.json"
 
 # --- FUNÇÕES DO BANCO DE DADOS E SEGURANÇA ---
