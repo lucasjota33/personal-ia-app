@@ -30,26 +30,92 @@ def gerar_token_sessao():
 
 # 🟢 NOVA FUNÇÃO: MOTOR DE GERAR PDF
 def gerar_pdf(texto_md, nome_atleta):
+    # Configuração inicial do PDF
     pdf = FPDF()
     pdf.add_page()
     pdf.set_auto_page_break(auto=True, margin=15)
     
-    # Cabeçalho do PDF
-    pdf.set_font("Arial", "B", 16)
-    pdf.cell(0, 10, f"Protocolo Elite - {nome_atleta}", ln=True, align="C")
-    pdf.ln(5)
+    # --- CABEÇALHO ---
+    pdf.set_font("Arial", "B", 18)
+    pdf.set_text_color(28, 131, 225)  # Azul Royal
+    pdf.cell(0, 15, f"PROTOCOLO ELITE - {nome_atleta.upper()}", ln=True, align="C")
     
-    pdf.set_font("Arial", size=11)
-    
-    # O FPDF tem limitações com UTF-8 e emojis. 
-    # O comando abaixo limpa símbolos complexos, mas preserva os acentos (latin-1)
-    texto_limpo = texto_md.encode("latin-1", "ignore").decode("latin-1")
-    
-    # Escreve o texto linha por linha
-    for linha in texto_limpo.split("\n"):
-        pdf.multi_cell(0, 7, txt=linha)
+    # Linha decorativa
+    pdf.set_draw_color(28, 131, 225)
+    pdf.set_line_width(1)
+    pdf.line(10, 25, 200, 25)
+    pdf.ln(10)
+
+    # --- PROCESSAMENTO DO CONTEÚDO ---
+    linhas = texto_md.split("\n")
+    buffer_tabela = []
+    em_tabela = False
+
+    for linha in linhas:
+        l_strip = linha.strip()
         
-    # Converte o PDF para um formato que o botão do Streamlit consiga baixar
+        # 1. Identifica e agrupa tabelas Markdown
+        if l_strip.startswith('|'):
+            em_tabela = True
+            buffer_tabela.append(l_strip)
+            continue
+        elif em_tabela:
+            # Se saiu da tabela, desenha o que foi acumulado
+            if buffer_tabela:
+                pdf.set_font("Arial", "B", 10)
+                # Processa cabeçalho
+                colunas = [c.strip() for c in buffer_tabela[0].split('|') if c.strip()]
+                if colunas:
+                    largura = 190 / len(colunas)
+                    # Cabeçalho da tabela (Azul com texto branco)
+                    pdf.set_fill_color(28, 131, 225)
+                    pdf.set_text_color(255, 255, 255)
+                    for col in colunas:
+                        pdf.cell(largura, 8, col.encode("latin-1", "ignore").decode("latin-1"), border=1, fill=True, align="C")
+                    pdf.ln()
+                    
+                    # Linhas da tabela (Zebrado)
+                    pdf.set_font("Arial", "", 9)
+                    pdf.set_text_color(40, 40, 40)
+                    zebra = False
+                    for l_tab in buffer_tabela[1:]:
+                        if '---' in l_tab: continue # Pula a linha separadora |---|
+                        dados = [d.strip() for d in l_tab.split('|') if d.strip()]
+                        if len(dados) == len(cabecalho):
+                            pdf.set_fill_color(245, 245, 245) if zebra else pdf.set_fill_color(255, 255, 255)
+                            for item in dados:
+                                pdf.cell(largura, 7, item.encode("latin-1", "ignore").decode("latin-1"), border=1, fill=True)
+                            pdf.ln()
+                            zebra = not zebra
+                pdf.ln(5)
+            buffer_tabela = []
+            em_tabela = False
+
+        if not l_strip: continue
+
+        # 2. Formata Títulos (Linhas que começam com #)
+        if l_strip.startswith('#'):
+            pdf.set_font("Arial", "B", 14)
+            pdf.set_text_color(28, 131, 225)
+            pdf.ln(2)
+            pdf.cell(0, 10, l_strip.replace('#', '').strip().encode("latin-1", "ignore").decode("latin-1"), ln=True)
+            pdf.set_text_color(40, 40, 40) # Volta para o cinza escuro
+        
+        # 3. Formata Texto Normal
+        else:
+            pdf.set_font("Arial", "", 11)
+            pdf.set_text_color(40, 40, 40)
+            # Remove os ** do markdown para o PDF ficar limpo
+            texto_formatado = l_strip.replace("**", "").encode("latin-1", "ignore").decode("latin-1")
+            pdf.multi_cell(0, 7, txt=texto_formatado)
+            pdf.ln(1)
+
+    # Rodapé automático (opcional, já incluído aqui)
+    pdf.set_y(-15)
+    pdf.set_font("Arial", "I", 8)
+    pdf.cell(0, 10, f"Gerado por Fitness AI - 2026", align="C")
+
+    # Retorno dos bytes
     resultado = pdf.output(dest="S")
     if isinstance(resultado, str):
         return resultado.encode("latin-1")
