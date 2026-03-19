@@ -23,6 +23,11 @@ st.markdown("""
         display: none !important;
     }
 
+    /* Esconde botões extras do Streamlit Cloud */
+    .stApp > header {
+        background-color: transparent !important;
+    }
+            
     /* REMOVIDO: header {visibility: hidden;} para não sumir com o botão da barra lateral! */
     
     /* Ajusta o espaçamento do topo */
