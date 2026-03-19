@@ -64,8 +64,7 @@ if st.session_state.etapa == 1:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.title("⚡ Treinador Digital")
-        st.write("Preencha seu perfil biométrico abaixo para gerar um protocolo de elite.")
-        st.image("https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1470&auto=format&fit=crop", use_container_width=True)
+        st.write("Preencha seus dados abaixo para gerar um protocolo de elite.")
         
         with st.form("perfil_usuario"):
             nome = st.text_input("Nome Completo", placeholder="Ex: Lucas")
