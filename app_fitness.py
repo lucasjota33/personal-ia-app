@@ -4,8 +4,7 @@ import json
 import os
 import hashlib
 import secrets
-import re # Para processar o texto do Markdown
-from fpdf import FPDF 
+from fpdf import FPDF # 🟢 NOVO IMPORT: Biblioteca para gerar o PDF
 
 # Configurações iniciais
 CHAVE = st.secrets["GEMINI_API_KEY"]
@@ -29,184 +28,35 @@ def criptografar_senha(senha):
 def gerar_token_sessao():
     return secrets.token_hex(16)
 
-# ==========================================================
-# 🟢 MOTOR DE PDF PREMIUM (Classe Customizada)
-# ==========================================================
-class PDF_Elite(FPDF):
-    def __init__(self, nome_atleta):
-        super().__init__()
-        self.nome_atleta = nome_atleta
-        # Define cores da marca (Azul Premium do app)
-        self.cor_primaria = (28, 131, 225) # #1C83E1
-        self.cor_texto = (40, 40, 40)
-        self.cor_subtitulo = (60, 60, 60)
-
-    def header(self):
-        # Logo placeholder ou Nome da Empresa
-        self.set_font("Arial", "B", 12)
-        self.set_text_color(*self.cor_primaria)
-        self.cell(0, 10, "⚡ FITNESS AI - CONSULTORIA ELITE", ln=True, align="L")
-        
-        # Linha decorativa azul
-        self.set_draw_color(*self.cor_primaria)
-        self.set_line_width(0.5)
-        self.line(10, 18, 200, 18)
-        self.ln(10)
-
-    def footer(self):
-        # Posição a 1.5 cm do fim
-        self.set_y(-15)
-        self.set_font("Arial", "I", 8)
-        self.set_text_color(120, 120, 120)
-        # Número da página
-        self.cell(0, 10, f"Página {self.page_no()}/{{nb}} | Protocolo Exclusivo: {self.nome_atleta}", align="C")
-
-    def subtitulo(self, texto):
-        self.set_font("Arial", "B", 14)
-        self.set_text_color(*self.cor_primaria)
-        self.ln(6)
-        # Limpa acentos para o FPDF padrão
-        texto_limpo = texto.encode("latin-1", "ignore").decode("latin-1")
-        self.cell(0, 10, texto_limpo, ln=True, align="L")
-        self.ln(2)
-        # Restaura cor padrão
-        self.set_text_color(*self.cor_texto)
-
-    def paragrafo(self, texto):
-        self.set_font("Arial", "", 11)
-        self.set_text_color(*self.cor_texto)
-        
-        # Processamento básico de negrito dentro do parágrafo (**texto**)
-        partes = re.split(r'(\*\*.*?\*\*)', texto)
-        
-        for parte in partes:
-            if parte.startswith('**') and parte.endswith('**'):
-                # É negrito
-                trecho = parte[2:-2].encode("latin-1", "ignore").decode("latin-1")
-                self.set_font("Arial", "B", 11)
-                self.write(7, trecho)
-            else:
-                # É texto normal
-                trecho = parte.encode("latin-1", "ignore").decode("latin-1")
-                self.set_font("Arial", "", 11)
-                self.write(7, trecho)
-        self.ln(8)
-
-    def desenhar_tabela(self, linhas_tabela):
-        if not lines_tabela: return
-
-        self.set_font("Arial", "B", 10)
-        
-        # Processa cabeçalho (primeira linha)
-        cabecalho = [c.strip() for c in lines_tabela[0].split('|') if c.strip()]
-        num_cols = len(cabecalho)
-        if num_cols == 0: return
-        
-        largura_col = 190 / num_cols
-
-        # Desenha Cabeçalho (Fundo Azul, Texto Branco)
-        self.set_fill_color(*self.cor_primaria)
-        self.set_text_color(255, 255, 255)
-        self.set_draw_color(200, 200, 200) # Cor da linha
-        
-        for col in cabecalho:
-            txt = col.encode("latin-1", "ignore").decode("latin-1")
-            self.cell(largura_col, 10, txt, border=1, align="C", fill=True)
-        self.ln()
-
-        # Desenha Dados (Zebrado)
-        self.set_font("Arial", "", 9)
-        self.set_text_color(*self.cor_texto)
-        
-        fill = False # Alternador de fundo
-        for i, linha in enumerate(lines_tabela[1:]):
-            # Pula linhas separadoras de markdown (|---|---|)
-            if '---' in linha: continue
-            
-            dados = [d.strip() for d in linha.split('|') if d.strip()]
-            
-            # Garante que temos dados e o número correto de colunas
-            if not dados or len(dados) != num_cols: continue
-
-            # Define cor de fundo zebrada (cinza muito claro)
-            if fill: self.set_fill_color(245, 245, 245)
-            else: self.set_fill_color(255, 255, 255)
-
-            for dado in dados:
-                txt = dado.encode("latin-1", "ignore").decode("latin-1")
-                # multi_cell não funciona bem com fill em tabelas simples, 
-                # cell resolve mas corta texto longo. Ajustado para cell por simplicidade.
-                self.cell(largura_col, 8, txt, border=1, align="L", fill=fill)
-            self.ln()
-            fill = not fill # Alterna o fundo
-        
-        self.ln(5)
-
-# Função principal que orquestra a criação do PDF
-def gerar_pdf_premium(texto_md, nome_atleta):
-    pdf = PDF_Elite(nome_atleta)
-    pdf.alias_nb_pages() # Para o total de páginas no rodapé
+# 🟢 NOVA FUNÇÃO: MOTOR DE GERAR PDF
+def gerar_pdf(texto_md, nome_atleta):
+    pdf = FPDF()
     pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
     
-    # Capa / Título Principal
-    pdf.set_font("Arial", "B", 22)
-    pdf.set_text_color(40, 40, 40)
-    pdf.cell(0, 20, "PLANEJAMENTO", ln=True, align="C")
-    pdf.set_text_color(*pdf.cor_primaria)
-    pdf.cell(0, 10, "ESTRATÉGICO DE ELITE", ln=True, align="C")
+    # Cabeçalho do PDF
+    pdf.set_font("Arial", "B", 16)
+    pdf.cell(0, 10, f"Protocolo Elite - {nome_atleta}", ln=True, align="C")
+    pdf.ln(5)
     
-    pdf.ln(15)
+    pdf.set_font("Arial", size=11)
     
-    # Parseamento básico do Markdown enviado pela IA
-    linhas = texto_md.split("\n")
-    buffer_tabela = []
-    em_tabela = False
-
-    for linha in linhas:
-        linha_strip = linha.strip()
+    # O FPDF tem limitações com UTF-8 e emojis. 
+    # O comando abaixo limpa símbolos complexos, mas preserva os acentos (latin-1)
+    texto_limpo = texto_md.encode("latin-1", "ignore").decode("latin-1")
+    
+    # Escreve o texto linha por linha
+    for linha in texto_limpo.split("\n"):
+        pdf.multi_cell(0, 7, txt=linha)
         
-        # Detecta início/fim de tabela
-        if linha_strip.startswith('|'):
-            em_tabela = True
-            buffer_tabela.append(linha)
-            continue
-        else:
-            if em_tabela:
-                # Acabou a tabela, desenha o que está no buffer
-                pdf.desenhar_tabela(buffer_tabela)
-                buffer_tabela = []
-                em_tabela = False
-        
-        # Ignora linhas vazias fora de tabela
-        if not linha_strip: continue
-
-        # Detecta Títulos (Markdown ## ou #)
-        match_titulo = re.match(r'^(#{1,3})\s+(.*)', linha_strip)
-        if match_titulo:
-            pdf.subtitulo(match_titulo.group(2))
-        
-        # Detecta Listas (- ou *)
-        elif linha_strip.startswith('- ') or linha_strip.startswith('* '):
-            pdf.paragrafo("  • " + linha_strip[2:])
-            
-        # Parágrafo normal (com processamento interno de negrito)
-        else:
-            pdf.paragrafo(linha_strip)
-            
-    # Caso o texto acabe e ainda tenha tabela no buffer
-    if em_tabela:
-        pdf.desenhar_tabela(buffer_tabela)
-
-    # Geração dos bytes
+    # Converte o PDF para um formato que o botão do Streamlit consiga baixar
     resultado = pdf.output(dest="S")
     if isinstance(resultado, str):
         return resultado.encode("latin-1")
     return bytes(resultado)
 
 
-# ==========================================================
-# CONFIGURAÇÃO DA PÁGINA STREAMLIT
-# ==========================================================
+# Configuração da Página
 st.set_page_config(page_title="Fitness AI", page_icon="⚡", layout="wide")
 
 # --- CSS CUSTOMIZADO ---
@@ -224,7 +74,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- GERENCIADOR DE ESTADO ---
+# --- GERENCIADOR DE ESTADO (MEMÓRIA DO APP) ---
 if "etapa" not in st.session_state:
     st.session_state.etapa = 0 
 if "mensagens" not in st.session_state:
@@ -236,7 +86,7 @@ if "banco" not in st.session_state:
 if "usuario_logado" not in st.session_state:
     st.session_state.usuario_logado = None
 
-# --- AUTO-LOGIN ---
+# 🟢 AUTO-LOGIN
 if st.session_state.usuario_logado is None:
     token_url = st.query_params.get("session")
     if token_url:
@@ -462,18 +312,17 @@ elif st.session_state.etapa == 2:
             with st.chat_message("user"):
                 st.markdown(msg["content"])
             
-    # 🟢 NOVO: BOTÃO DE DOWNLOAD DO PDF PREMIUM
+    # 🟢 NOVO: BOTÃO DE DOWNLOAD DO PDF
     st.divider()
     plano_principal = st.session_state.mensagens[0]["content"]
     
-    # Gera o PDF Premium em segundo plano (agora usando a função atualizada)
-    with st.spinner("🖼️ Estilizando PDF profissional..."):
-        pdf_bytes = gerar_pdf_premium(plano_principal, nome)
+    # Gera o PDF em segundo plano
+    pdf_bytes = gerar_pdf(plano_principal, nome)
     
     st.download_button(
-        label="📥 Baixar Protocolo Profissional (PDF)",
+        label="📥 Baixar Protocolo Completo em PDF",
         data=pdf_bytes,
-        file_name=f"Protocolo_Elite_{nome.replace(' ', '_')}.pdf",
+        file_name=f"Protocolo_{nome.replace(' ', '_')}.pdf",
         mime="application/pdf",
         type="primary",
         use_container_width=True
