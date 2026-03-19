@@ -12,31 +12,36 @@ st.set_page_config(page_title="Fitness AI", page_icon="⚡", layout="wide", init
 # --- CSS CUSTOMIZADO (Deixa o app com cara de software profissional) ---
 # --- CSS CUSTOMIZADO (Deixa o app com cara de software profissional) ---
 # --- CSS CUSTOMIZADO (Design de Software Proprietário) ---
+# --- CSS CUSTOMIZADO (Deixa o app com cara de software profissional) ---
 st.markdown("""
     <style>
-    /* 1. Esconde o menu hambúrguer e o rodapé "Made with Streamlit" */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
+    /* 1. Oculta TODOS os botões do canto superior direito (Share, Star, GitHub, Deploy) */
+    [data-testid="stToolbar"], 
+    [data-testid="stToolbarActions"], 
+    .stDeployButton {
+        display: none !important;
+        visibility: hidden !important;
+    }
 
-    /* 2. Esconde apenas os botões da DIREITA (Share, Deploy, GitHub) */
-    /* Usamos o data-testid da toolbar que contém esses botões específicos */
-    [data-testid="stToolbar"] {
+    /* 2. Deixa o fundo do cabeçalho invisível para não criar uma faixa no topo,
+       mas MANTÉM ele lá para o botão da barra lateral (>>) continuar funcionando */
+    header {
+        background-color: transparent !important;
+        box-shadow: none !important;
+    }
+
+    /* 3. Oculta o rodapé e menu padrão */
+    #MainMenu, footer {
         display: none !important;
     }
 
-    /* 3. Garante que o Header (onde o botão lateral mora) seja transparente e não bloqueie nada */
-    header {
-        background-color: transparent !important;
+    /* 4. A CORREÇÃO DO CORTE: Força a página principal a começar mais para baixo */
+    .block-container {
+        padding-top: 4rem !important; 
+        margin-top: 2rem !important;
     }
 
-    /* 4. O AJUSTE MESTRE: Dá o espaço no topo para NÃO CORTAR o conteúdo verde */
-    /* Ajustamos para 4rem para ser o equilíbrio perfeito entre espaço e estética */
-    .main .block-container {
-        padding-top: 4rem !important;
-        padding-bottom: 2rem !important;
-    }
-
-    /* 5. Estilização das métricas (seu design original) */
+    /* 5. Estiliza os cards de métricas (seu design original) */
     div[data-testid="metric-container"] {
         background-color: rgba(28, 131, 225, 0.1);
         border: 1px solid rgba(28, 131, 225, 0.1);
