@@ -6,7 +6,7 @@ CHAVE = st.secrets["GEMINI_API_KEY"]
 MODELO = "models/gemini-2.5-flash-lite"
 
 # Configuração da Página (DEVE ser o primeiro comando)
-st.set_page_config(page_title="Consultoria Elite IA", page_icon="⚡", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Fitness AI", page_icon="⚡", layout="wide", initial_sidebar_state="expanded")
 
 # --- CSS CUSTOMIZADO (Deixa o app com cara de software profissional) ---
 st.markdown("""
