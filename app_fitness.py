@@ -9,27 +9,31 @@ MODELO = "models/gemini-2.5-flash-lite"
 st.set_page_config(page_title="Fitness AI", page_icon="⚡", layout="wide", initial_sidebar_state="expanded")
 
 # --- CSS CUSTOMIZADO (Deixa o app com cara de software profissional) ---
-# --- CSS CUSTOMIZADO (Deixa o app com cara de software profissional) ---
 st.markdown("""
     <style>
-    /* Esconde o menu padrão e o rodapé da marca d'água */
+    /* Esconde a marca d'água e menu padrão do Streamlit (Hambúrguer) */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     
-    /* Esconde APENAS os botões do canto superior direito (Share, Deploy, GitHub) */
+    /* Esconde o rodapé padrão do Streamlit */
+    footer {visibility: hidden;}
+    
+    /* Esconde as opções superiores (Share, Deploy, GitHub, Menu) */
     [data-testid="stToolbar"] {
         display: none !important;
     }
 
-    /* Deixa o fundo do cabeçalho invisível, mas MANTÉM o botão da barra lateral (esquerda) vivo */
+    /* Esconde botões extras do Streamlit Cloud */
     .stApp > header {
         background-color: transparent !important;
     }
             
-    /* 👇 CORREÇÃO DO CORTE: Aumentamos o padding-top de 2rem para 5rem para descer a página */
+    /* REMOVIDO: header {visibility: hidden;} para não sumir com o botão da barra lateral! */
+    
+    /* Ajusta o espaçamento do topo */
     .block-container {
-        padding-top: 5rem !important;
-        padding-bottom: 2rem !important;
+        padding-top: 2rem;
+        padding-bottom: 2rem;
     }
     
     /* Estiliza os cards de métricas */
