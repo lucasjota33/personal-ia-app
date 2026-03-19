@@ -3,6 +3,7 @@ import requests
 import json
 import os
 import hashlib
+import secrets # 🟢 NOVO IMPORT: Para gerar nossos códigos de segurança
 
 # Configurações iniciais
 CHAVE = st.secrets["GEMINI_API_KEY"]
@@ -11,7 +12,7 @@ ARQUIVO_BANCO = "banco_dados_saas.json"
 
 # --- FUNÇÕES DO BANCO DE DADOS E SEGURANÇA ---
 def carregar_banco():
-    """Lê o arquivo JSON. Estrutura: {"usuario": {"email": "...", "senha": "hash", "perfis": {...}}}"""
+    """Lê o arquivo JSON. Estrutura: {"usuario": {"email": "...", "senha": "hash", "token": "...", "perfis": {...}}}"""
     if os.path.exists(ARQUIVO_BANCO):
         with open(ARQUIVO_BANCO, "r", encoding="utf-8") as f:
             return json.load(f)
@@ -24,6 +25,10 @@ def salvar_banco(dados):
 def criptografar_senha(senha):
     """Gera um hash da senha para não salvarmos em texto puro."""
     return hashlib.sha256(senha.encode()).hexdigest()
+
+def gerar_token_sessao():
+    """Gera um 'crachá' temporário seguro para manter o usuário logado."""
+    return secrets.token_hex(16)
 
 # Configuração da Página
 st.set_page_config(page_title="Fitness AI", page_icon="⚡", layout="wide")
@@ -55,6 +60,16 @@ if "banco" not in st.session_state:
 if "usuario_logado" not in st.session_state:
     st.session_state.usuario_logado = None
 
+# 🟢 AUTO-LOGIN: O truque do F5! Verifica se há um token válido na URL antes de carregar a tela
+if st.session_state.usuario_logado is None:
+    token_url = st.query_params.get("session")
+    if token_url:
+        for user_key, user_data in st.session_state.banco.items():
+            if user_data.get("token") == token_url:
+                st.session_state.usuario_logado = user_key
+                st.session_state.etapa = 1
+                break
+
 # ==========================================================
 # ETAPA 0: TELA DE LOGIN E CADASTRO
 # ==========================================================
@@ -71,6 +86,10 @@ if st.session_state.etapa == 0:
             with st.form("form_login"):
                 usuario_login = st.text_input("Usuário ou E-mail")
                 senha_login = st.text_input("Senha", type="password")
+                
+                # 🟢 O NOVO CHECKBOX
+                manter_conectado = st.checkbox("Mantenha-me conectado") 
+                
                 btn_login = st.form_submit_button("Entrar", type="primary", use_container_width=True)
                 
                 if btn_login:
@@ -78,10 +97,8 @@ if st.session_state.etapa == 0:
                     senha_hash = criptografar_senha(senha_login)
                     usuario_encontrado = None
                     
-                    # 1. Tenta achar pelo Nome de Usuário exato
                     if usuario_login in banco and banco[usuario_login]["senha"] == senha_hash:
                         usuario_encontrado = usuario_login
-                    # 2. Se não achar, procura se o texto digitado é um E-mail válido no banco
                     else:
                         for user_key, user_data in banco.items():
                             if user_data.get("email") == usuario_login and user_data.get("senha") == senha_hash:
@@ -91,6 +108,15 @@ if st.session_state.etapa == 0:
                     if usuario_encontrado:
                         st.session_state.usuario_logado = usuario_encontrado
                         st.session_state.etapa = 1
+                        
+                        # 🟢 SE ELE MARCOU A CAIXA, GERAMOS O CRACHÁ
+                        if manter_conectado:
+                            novo_token = gerar_token_sessao()
+                            st.session_state.banco[usuario_encontrado]["token"] = novo_token
+                            salvar_banco(st.session_state.banco)
+                            # Coloca o crachá na URL invisível do Streamlit
+                            st.query_params["session"] = novo_token
+                            
                         st.rerun()
                     else:
                         st.error("Credenciais incorretas. Verifique seu usuário/e-mail e senha.")
@@ -105,7 +131,6 @@ if st.session_state.etapa == 0:
                 btn_cadastro = st.form_submit_button("Criar Conta", use_container_width=True)
                 
                 if btn_cadastro:
-                    # Verifica se o e-mail já existe no banco
                     email_em_uso = any(dados.get("email") == novo_email for dados in st.session_state.banco.values())
                     
                     if not novo_usuario or not novo_email or not nova_senha or not confirma_senha:
@@ -117,10 +142,10 @@ if st.session_state.etapa == 0:
                     elif email_em_uso:
                         st.error("Este e-mail já está cadastrado no sistema!")
                     else:
-                        # Cria a "pasta" do usuário com e-mail e senha
                         st.session_state.banco[novo_usuario] = {
                             "email": novo_email,
                             "senha": criptografar_senha(nova_senha),
+                            "token": "", # Nasce sem token
                             "perfis": {}
                         }
                         salvar_banco(st.session_state.banco)
@@ -137,6 +162,12 @@ elif st.session_state.etapa == 1:
     col_logout1, col_logout2 = st.columns([8, 2])
     with col_logout2:
         if st.button("Sair da Conta"):
+            # 🟢 LOGOUT: Apaga o token do banco de dados para segurança
+            if "token" in st.session_state.banco[usuario]:
+                st.session_state.banco[usuario]["token"] = ""
+                salvar_banco(st.session_state.banco)
+            # Limpa a URL e desconecta
+            st.query_params.clear()
             st.session_state.usuario_logado = None
             st.session_state.etapa = 0
             st.rerun()
