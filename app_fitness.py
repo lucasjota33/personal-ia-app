@@ -1,9 +1,25 @@
 import streamlit as st
 import requests
+import json
+import os
 
 # Configurações iniciais
 CHAVE = st.secrets["GEMINI_API_KEY"]
 MODELO = "models/gemini-2.5-flash-lite"
+ARQUIVO_BANCO = "banco_dados.json" # Nome do nosso arquivo de banco de dados
+
+# --- FUNÇÕES DO BANCO DE DADOS ---
+def carregar_banco():
+    """Lê o arquivo JSON e carrega os dados salvos."""
+    if os.path.exists(ARQUIVO_BANCO):
+        with open(ARQUIVO_BANCO, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {}
+
+def salvar_banco(dados):
+    """Salva os dados no arquivo JSON."""
+    with open(ARQUIVO_BANCO, "w", encoding="utf-8") as f:
+        json.dump(dados, f, ensure_ascii=False, indent=4)
 
 # Configuração da Página
 st.set_page_config(page_title="Fitness AI", page_icon="⚡", layout="wide")
@@ -50,7 +66,7 @@ if "mensagens" not in st.session_state:
 if "dados_usuario" not in st.session_state:
     st.session_state.dados_usuario = {}
 if "historico" not in st.session_state:
-    st.session_state.historico = {} # Aqui guardamos os perfis salvos!
+    st.session_state.historico = carregar_banco() # 🟢 CARREGA DO ARQUIVO AO ABRIR O SITE
 
 # ==========================================================
 # ETAPA 1: PÁGINA INICIAL (PERFIS SALVOS + NOVO FORMULÁRIO)
@@ -63,7 +79,7 @@ if st.session_state.etapa == 1:
         
         # --- MÓDULO DE PERFIS SALVOS (Estilo Netflix) ---
         if st.session_state.historico:
-            st.markdown("### 📋 Continuar com Atleta:")
+            st.markdown("### 📋 Continuar com Perfil:")
             perfis = list(st.session_state.historico.keys())
             
             # Cria botões lado a lado para os perfis salvos
@@ -78,7 +94,7 @@ if st.session_state.etapa == 1:
                         st.rerun()
             
             st.divider()
-            st.markdown("### ➕ Ou cadastre um Novo Atleta:")
+            st.markdown("### ➕ Ou cadastre um Novo Perfil:")
         else:
             st.write("Preencha seus dados abaixo para gerar um protocolo de elite.")
         
@@ -155,11 +171,13 @@ if st.session_state.etapa == 1:
                             texto_ia = resposta.json()['candidates'][0]['content']['parts'][0]['text']
                             st.session_state.mensagens = [{"role": "assistant", "content": texto_ia}]
                             
-                            # SALVA NO HISTÓRICO!
+                            # SALVA NO ESTADO
                             st.session_state.historico[nome] = {
                                 "dados": st.session_state.dados_usuario,
                                 "mensagens": st.session_state.mensagens
                             }
+                            # 🟢 SALVA NO ARQUIVO FÍSICO!
+                            salvar_banco(st.session_state.historico)
                             
                             st.session_state.etapa = 2
                             st.rerun()
@@ -227,8 +245,10 @@ elif st.session_state.etapa == 2:
                         st.markdown(texto_ia_duvida)
                         st.session_state.mensagens.append({"role": "assistant", "content": texto_ia_duvida})
                         
-                        # ATUALIZA O HISTÓRICO COM A NOVA MENSAGEM DO CHAT!
+                        # ATUALIZA O ESTADO
                         st.session_state.historico[nome]["mensagens"] = st.session_state.mensagens
+                        # 🟢 SALVA NO ARQUIVO FÍSICO AS NOVAS MENSAGENS!
+                        salvar_banco(st.session_state.historico)
                     else:
                         st.warning("Servidor ocupado. Tente perguntar em alguns instantes.")
                 except:
