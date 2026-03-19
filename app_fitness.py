@@ -7,11 +7,11 @@ import hashlib
 # Configurações iniciais
 CHAVE = st.secrets["GEMINI_API_KEY"]
 MODELO = "models/gemini-2.5-flash-lite"
-ARQUIVO_BANCO = "banco_dados_saas.json" # Nome novo para evitar conflito com o antigo
+ARQUIVO_BANCO = "banco_dados_saas.json"
 
 # --- FUNÇÕES DO BANCO DE DADOS E SEGURANÇA ---
 def carregar_banco():
-    """Lê o arquivo JSON. Estrutura: {"usuario": {"senha": "hash", "perfis": {...}}}"""
+    """Lê o arquivo JSON. Estrutura: {"usuario": {"email": "...", "senha": "hash", "perfis": {...}}}"""
     if os.path.exists(ARQUIVO_BANCO):
         with open(ARQUIVO_BANCO, "r", encoding="utf-8") as f:
             return json.load(f)
@@ -22,7 +22,7 @@ def salvar_banco(dados):
         json.dump(dados, f, ensure_ascii=False, indent=4)
 
 def criptografar_senha(senha):
-    """Gera um hash da senha para não salvarmos em texto puro (Segurança básica)"""
+    """Gera um hash da senha para não salvarmos em texto puro."""
     return hashlib.sha256(senha.encode()).hexdigest()
 
 # Configuração da Página
@@ -45,7 +45,7 @@ st.markdown("""
 
 # --- GERENCIADOR DE ESTADO (MEMÓRIA DO APP) ---
 if "etapa" not in st.session_state:
-    st.session_state.etapa = 0 # AGORA COMEÇA NO 0 (LOGIN)
+    st.session_state.etapa = 0 
 if "mensagens" not in st.session_state:
     st.session_state.mensagens = []
 if "dados_usuario" not in st.session_state:
@@ -66,43 +66,65 @@ if st.session_state.etapa == 0:
         
         tab1, tab2 = st.tabs(["Entrar", "Criar Conta Nova"])
         
-        # ABA DE LOGIN
+        # --- ABA DE LOGIN ---
         with tab1:
             with st.form("form_login"):
-                usuario_login = st.text_input("Usuário")
+                usuario_login = st.text_input("Usuário ou E-mail")
                 senha_login = st.text_input("Senha", type="password")
                 btn_login = st.form_submit_button("Entrar", type="primary", use_container_width=True)
                 
                 if btn_login:
                     banco = st.session_state.banco
                     senha_hash = criptografar_senha(senha_login)
+                    usuario_encontrado = None
+                    
+                    # 1. Tenta achar pelo Nome de Usuário exato
                     if usuario_login in banco and banco[usuario_login]["senha"] == senha_hash:
-                        st.session_state.usuario_logado = usuario_login
+                        usuario_encontrado = usuario_login
+                    # 2. Se não achar, procura se o texto digitado é um E-mail válido no banco
+                    else:
+                        for user_key, user_data in banco.items():
+                            if user_data.get("email") == usuario_login and user_data.get("senha") == senha_hash:
+                                usuario_encontrado = user_key
+                                break
+                    
+                    if usuario_encontrado:
+                        st.session_state.usuario_logado = usuario_encontrado
                         st.session_state.etapa = 1
                         st.rerun()
                     else:
-                        st.error("Usuário ou senha incorretos.")
+                        st.error("Credenciais incorretas. Verifique seu usuário/e-mail e senha.")
                         
-        # ABA DE CADASTRO
+        # --- ABA DE CADASTRO ---
         with tab2:
             with st.form("form_cadastro"):
                 novo_usuario = st.text_input("Escolha um Nome de Usuário")
+                novo_email = st.text_input("Digite seu E-mail")
                 nova_senha = st.text_input("Crie uma Senha", type="password")
+                confirma_senha = st.text_input("Confirme a Senha", type="password")
                 btn_cadastro = st.form_submit_button("Criar Conta", use_container_width=True)
                 
                 if btn_cadastro:
-                    if not novo_usuario or not nova_senha:
+                    # Verifica se o e-mail já existe no banco
+                    email_em_uso = any(dados.get("email") == novo_email for dados in st.session_state.banco.values())
+                    
+                    if not novo_usuario or not novo_email or not nova_senha or not confirma_senha:
                         st.error("Preencha todos os campos!")
+                    elif nova_senha != confirma_senha:
+                        st.error("As senhas não coincidem. Tente novamente.")
                     elif novo_usuario in st.session_state.banco:
-                        st.error("Esse usuário já existe! Escolha outro.")
+                        st.error("Este nome de usuário já está em uso! Escolha outro.")
+                    elif email_em_uso:
+                        st.error("Este e-mail já está cadastrado no sistema!")
                     else:
-                        # Cria a "pasta" do usuário no banco de dados
+                        # Cria a "pasta" do usuário com e-mail e senha
                         st.session_state.banco[novo_usuario] = {
+                            "email": novo_email,
                             "senha": criptografar_senha(nova_senha),
                             "perfis": {}
                         }
                         salvar_banco(st.session_state.banco)
-                        st.success("Conta criada! Vá para a aba 'Entrar' para acessar.")
+                        st.success("Conta criada com sucesso! Vá para a aba 'Entrar' para acessar.")
 
 # ==========================================================
 # ETAPA 1: PAINEL DO USUÁRIO (PERFIS + NOVO)
@@ -114,7 +136,7 @@ elif st.session_state.etapa == 1:
     
     col_logout1, col_logout2 = st.columns([8, 2])
     with col_logout2:
-        if st.button("Sair da Conta (Logout)"):
+        if st.button("Sair da Conta"):
             st.session_state.usuario_logado = None
             st.session_state.etapa = 0
             st.rerun()
@@ -135,7 +157,6 @@ elif st.session_state.etapa == 1:
                         st.session_state.etapa = 2
                         st.rerun()
                 with c_del:
-                    # Botão para DELETAR o perfil
                     if st.button("❌", key=f"del_{nome_salvo}"):
                         del st.session_state.banco[usuario]["perfis"][nome_salvo]
                         salvar_banco(st.session_state.banco)
@@ -197,7 +218,6 @@ elif st.session_state.etapa == 1:
                             texto_ia = resposta.json()['candidates'][0]['content']['parts'][0]['text']
                             st.session_state.mensagens = [{"role": "assistant", "content": texto_ia}]
                             
-                            # SALVA NO PERFIL ESPECÍFICO DO USUÁRIO LOGADO
                             st.session_state.banco[usuario]["perfis"][nome] = {
                                 "dados": st.session_state.dados_usuario,
                                 "mensagens": st.session_state.mensagens
@@ -269,7 +289,6 @@ elif st.session_state.etapa == 2:
                         st.markdown(texto_ia_duvida)
                         st.session_state.mensagens.append({"role": "assistant", "content": texto_ia_duvida})
                         
-                        # SALVA A NOVA DÚVIDA NA PASTA DO USUÁRIO LOGADO!
                         st.session_state.banco[usuario]["perfis"][nome]["mensagens"] = st.session_state.mensagens
                         salvar_banco(st.session_state.banco)
                     else:
