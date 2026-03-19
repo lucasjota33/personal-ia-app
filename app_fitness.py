@@ -12,22 +12,23 @@ st.set_page_config(page_title="Fitness AI", page_icon="⚡", layout="wide", init
 # --- CSS CUSTOMIZADO (Deixa o app com cara de software profissional) ---
 st.markdown("""
     <style>
-    /* Esconde o rodapé padrão do Streamlit */
+    /* Esconde o menu padrão e o rodapé da marca d'água */
+    #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     
-    /* Esconde as opções superiores (Share, Deploy, GitHub) */
+    /* Esconde APENAS os botões do canto superior direito (Share, Deploy, GitHub) */
     [data-testid="stToolbar"] {
         display: none !important;
     }
-    
-    /* Deixa o cabeçalho invisível mas mantém a estrutura para não quebrar o layout */
-    header {
-        background: transparent !important;
+
+    /* Deixa o fundo do cabeçalho invisível, mas MANTÉM o botão da barra lateral (esquerda) vivo */
+    .stApp > header {
+        background-color: transparent !important;
     }
-    
-    /* 👇 CORREÇÃO DO CORTE SUPERIOR: Aumentamos o padding-top de 2rem para 5rem */
+            
+    /* 👇 CORREÇÃO DO CORTE: Aumentamos o padding-top de 2rem para 5rem para descer a página */
     .block-container {
-        padding-top: 5rem !important; 
+        padding-top: 5rem !important;
         padding-bottom: 2rem !important;
     }
     
