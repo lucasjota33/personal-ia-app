@@ -249,6 +249,9 @@ elif st.session_state.etapa == 1:
                     | Refeição | Alimento Principal | Macronutrientes | Substituição |
                     
                     ## 3. 🏋️‍♂️ PLANILHA DE TREINAMENTO
+                    Defina uma divisão semanal inteligente (ex:ABCDE, ABC, AB, Fullbody) com base no objetivo.
+                    Para CADA DIA de treino, crie uma tabela em Markdown seguindo EXATAMENTE as colunas abaixo:
+
                     | Exercício | Séries | Repetições | Descanso |
 
                     ## 4. 💊 SUPLEMENTAÇÃO
