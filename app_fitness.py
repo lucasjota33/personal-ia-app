@@ -11,27 +11,26 @@ st.set_page_config(page_title="Fitness AI", page_icon="⚡", layout="wide", init
 # --- CSS CUSTOMIZADO (Deixa o app com cara de software profissional) ---
 # --- CSS CUSTOMIZADO (Deixa o app com cara de software profissional) ---
 # --- CSS CUSTOMIZADO (Deixa o app com cara de software profissional) ---
+# --- CSS CUSTOMIZADO (Design de Software Proprietário) ---
 st.markdown("""
     <style>
-    /* 1. Esconde o rodapé padrão do Streamlit (Marca d'água) */
+    /* 1. Remove a marca d'água e o menu hambúrguer */
+    #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     
-    /* 2. Esconde o botão de hambúrguer padrão no topo direito */
-    #MainMenu {visibility: hidden;}
-    
-    /* 3. Esconde EXATAMENTE a barra de ferramentas do Cloud (Share, Deploy, GitHub) */
-    /* Isso não afeta o cabeçalho inteiro, apenas a zona direita */
+    /* 2. Remove apenas os botões da direita (Share, Deploy, GitHub) 
+       sem apagar o header todo, preservando o botão da barra lateral */
     .stApp > header > div:first-child {
         display: none !important;
     }
-    
-    /* 4. Ajusta o espaçamento do topo para NÃO CORTAR a caixa verde */
+
+    /* 3. Resolve o corte superior: empurra o conteúdo para baixo */
     .block-container {
-        padding-top: 4.5rem !important; 
+        padding-top: 5rem !important; 
         padding-bottom: 2rem !important;
     }
     
-    /* 5. Estiliza os cards de métricas (mantido o seu design) */
+    /* 4. Estilização das métricas (seu design original) */
     div[data-testid="metric-container"] {
         background-color: rgba(28, 131, 225, 0.1);
         border: 1px solid rgba(28, 131, 225, 0.1);
