@@ -15,6 +15,14 @@ st.markdown("""
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     
+    /* Esconde o rodapé padrão do Streamlit */
+    footer {visibility: hidden;}
+    
+    /* Esconde as opções superiores (Share, Deploy, GitHub, Menu) */
+    [data-testid="stToolbar"] {
+        display: none !important;
+    }
+
     /* REMOVIDO: header {visibility: hidden;} para não sumir com o botão da barra lateral! */
     
     /* Ajusta o espaçamento do topo */
