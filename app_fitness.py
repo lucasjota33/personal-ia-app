@@ -4,8 +4,7 @@ import json
 import os
 import hashlib
 import secrets
-import re # 🟢 ADICIONE ESTA LINHA
-from fpdf import FPDF
+from fpdf import FPDF # 🟢 NOVO IMPORT: Biblioteca para gerar o PDF
 
 # Configurações iniciais
 CHAVE = st.secrets["GEMINI_API_KEY"]
@@ -41,20 +40,17 @@ def limpar_para_pdf(texto):
         texto = texto.replace(char, sub)
     return texto.encode("latin-1", "ignore").decode("latin-1")
 
-# 🟢 VERSÃO PROFISSIONAL - SEM "NONE" E COM DESIGN
-@st.cache_data(show_spinner=False)
+# 🟢 NOVA FUNÇÃO: MOTOR DE GERAR PDF
 def gerar_pdf(texto_md, nome_atleta):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_auto_page_break(auto=True, margin=15)
     
-    # Cabeçalho Estilizado
+    # Cabeçalho do PDF
     pdf.set_font("Arial", "B", 16)
     pdf.set_text_color(28, 131, 225) # Azul Royal
-    pdf.cell(0, 10, limpar_para_pdf(f"PROTOCOLO ELITE - {nome_atleta.upper()}"), ln=True, align="C")
-    pdf.set_draw_color(28, 131, 225)
-    pdf.line(10, 22, 200, 22)
-    pdf.ln(10)
+    pdf.cell(0, 10, limpar_para_pdf(f"Protocolo Elite - {nome_atleta}"), ln=True, align="C")
+    pdf.ln(5)
     
     linhas = texto_md.split("\n")
     buffer_tabela = []
@@ -63,24 +59,25 @@ def gerar_pdf(texto_md, nome_atleta):
     for linha in linhas:
         l_strip = linha.strip()
         
+        # Identifica tabelas Markdown
         if l_strip.startswith('|'):
             em_tabela = True
             buffer_tabela.append(l_strip)
             continue
         elif em_tabela:
             if buffer_tabela:
-                # --- DESENHO DA TABELA ---
+                # Desenha a tabela formatada
                 cols = [c.strip() for c in buffer_tabela[0].split('|') if c.strip()]
                 if cols:
                     largura = 190 / len(cols)
-                    pdf.set_font("Arial", "B", 9)
-                    pdf.set_fill_color(28, 131, 225) # Cabeçalho Azul
+                    pdf.set_font("Arial", "B", 10)
+                    pdf.set_fill_color(28, 131, 225)
                     pdf.set_text_color(255, 255, 255)
                     for col in cols:
                         pdf.cell(largura, 8, limpar_para_pdf(col), border=1, fill=True, align="C")
                     pdf.ln()
                     
-                    pdf.set_font("Arial", "", 8)
+                    pdf.set_font("Arial", "", 9)
                     pdf.set_text_color(40, 40, 40)
                     zebra = False
                     for l_tab in buffer_tabela[1:]:
@@ -98,21 +95,23 @@ def gerar_pdf(texto_md, nome_atleta):
 
         if not l_strip: continue
 
-        # Títulos (#)
+        # Formata Títulos
         if l_strip.startswith('#'):
-            pdf.set_font("Arial", "B", 12)
+            pdf.set_font("Arial", "B", 13)
             pdf.set_text_color(28, 131, 225)
             pdf.ln(2)
             pdf.cell(0, 10, limpar_para_pdf(l_strip.replace('#', '').strip()), ln=True)
-            pdf.set_text_color(40, 40, 40)
-        # Texto normal
         else:
-            pdf.set_font("Arial", "", 10)
-            txt_limpo = l_strip.replace("**", "")
-            pdf.multi_cell(0, 6, txt=limpar_para_pdf(txt_limpo))
+            pdf.set_font("Arial", "", 11)
+            pdf.set_text_color(40, 40, 40)
+            txt = l_strip.replace("**", "")
+            pdf.multi_cell(0, 7, txt=limpar_para_pdf(txt))
             pdf.ln(1)
 
-    return pdf.output(dest="S").encode("latin-1", "ignore")
+    resultado = pdf.output(dest="S")
+    if isinstance(resultado, str):
+        return resultado.encode("latin-1")
+    return bytes(resultado)
 
 
 # Configuração da Página
@@ -375,16 +374,15 @@ elif st.session_state.etapa == 2:
             with st.chat_message("user"):
                 st.markdown(msg["content"])
             
-    # 🟢 SUBSTITUA O BLOCO DO BOTÃO POR ESTE:
+    # 🟢 NOVO: BOTÃO DE DOWNLOAD DO PDF
     st.divider()
     plano_principal = st.session_state.mensagens[0]["content"]
     
-    # O segredo para não dar "None" é gerar os bytes ANTES do download_button
-    with st.spinner("Preparando documento oficial..."):
-        pdf_bytes = gerar_pdf(plano_principal, nome)
+    # Gera o PDF em segundo plano
+    pdf_bytes = gerar_pdf(plano_principal, nome)
     
     st.download_button(
-        label="📥 Baixar Protocolo Completo (PDF Profissional)",
+        label="📥 Baixar Protocolo Completo em PDF",
         data=pdf_bytes,
         file_name=f"Protocolo_{nome.replace(' ', '_')}.pdf",
         mime="application/pdf",
