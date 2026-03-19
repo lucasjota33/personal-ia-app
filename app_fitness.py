@@ -28,101 +28,32 @@ def criptografar_senha(senha):
 def gerar_token_sessao():
     return secrets.token_hex(16)
 
-# 🟢 MOTOR DE PDF PREMIUM (Classe Customizada com Design)
-class PDF_Elite(FPDF):
-    def __init__(self, nome_atleta):
-        super().__init__()
-        self.nome_atleta = nome_atleta
-        self.cor_primaria = (28, 131, 225) # Azul do seu App
-
-    def header(self):
-        self.set_font("Arial", "B", 12)
-        self.set_text_color(*self.cor_primaria)
-        self.cell(0, 10, "⚡ FITNESS AI - CONSULTORIA ELITE", ln=True, align="L")
-        self.set_draw_color(*self.cor_primaria)
-        self.set_line_width(0.5)
-        self.line(10, 18, 200, 18)
-        self.ln(10)
-
-    def footer(self):
-        self.set_y(-15)
-        self.set_font("Arial", "I", 8)
-        self.set_text_color(150, 150, 150)
-        self.cell(0, 10, f"Página {self.page_no()}/{{nb}} | Atleta: {self.nome_atleta}", align="C")
-
-    def desenhar_tabela(self, linhas_tabela):
-        if not linhas_tabela: return
-        self.set_font("Arial", "B", 10)
-        cabecalho = [c.strip() for c in linhas_tabela[0].split('|') if c.strip()]
-        if not cabecalho: return
-        largura_col = 190 / len(cabecalho)
-
-        # Cabeçalho Azul
-        self.set_fill_color(*self.cor_primaria)
-        self.set_text_color(255, 255, 255)
-        for col in cabecalho:
-            txt = col.encode("latin-1", "ignore").decode("latin-1")
-            self.cell(largura_col, 10, txt, border=1, align="C", fill=True)
-        self.ln()
-
-        # Linhas Zebradas
-        self.set_font("Arial", "", 9)
-        self.set_text_color(50, 50, 50)
-        fill = False
-        for linha in linhas_tabela[1:]:
-            if '---' in linha: continue
-            dados = [d.strip() for d in linha.split('|') if d.strip()]
-            if len(dados) != len(cabecalho): continue
-            self.set_fill_color(245, 245, 245) if fill else self.set_fill_color(255, 255, 255)
-            for item in dados:
-                txt = item.encode("latin-1", "ignore").decode("latin-1")
-                self.cell(largura_col, 8, txt, border=1, fill=True)
-            self.ln()
-            fill = not fill
-        self.ln(5)
-
-def gerar_pdf_premium(texto_md, nome_atleta):
-    pdf = PDF_Elite(nome_atleta)
-    pdf.alias_nb_pages()
+# 🟢 NOVA FUNÇÃO: MOTOR DE GERAR PDF
+def gerar_pdf(texto_md, nome_atleta):
+    pdf = FPDF()
     pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
     
-    # Título Principal
-    pdf.set_font("Arial", "B", 20)
-    pdf.set_text_color(40, 40, 40)
-    pdf.cell(0, 15, "PROTOCOLO ESTRATÉGICO", ln=True, align="C")
+    # Cabeçalho do PDF
+    pdf.set_font("Arial", "B", 16)
+    pdf.cell(0, 10, f"Protocolo Elite - {nome_atleta}", ln=True, align="C")
     pdf.ln(5)
-
-    linhas = texto_md.split("\n")
-    buffer_tabela = []
-    em_tabela = False
-
-    for linha in linhas:
-        l = linha.strip()
-        if l.startswith('|'):
-            em_tabela = True
-            buffer_tabela.append(l)
-        else:
-            if em_tabela:
-                pdf.desenhar_tabela(buffer_tabela)
-                buffer_tabela = []; em_tabela = False
-            if not l: continue
-            
-            # Formata Títulos (Markdown #)
-            if l.startswith('#'):
-                pdf.set_font("Arial", "B", 13)
-                pdf.set_text_color(28, 131, 225)
-                pdf.ln(2)
-                txt = l.replace('#', '').strip().encode("latin-1", "ignore").decode("latin-1")
-                pdf.cell(0, 10, txt, ln=True)
-            # Texto normal
-            else:
-                pdf.set_font("Arial", "", 10)
-                pdf.set_text_color(60, 60, 60)
-                txt = l.replace('**', '').encode("latin-1", "ignore").decode("latin-1")
-                pdf.multi_cell(0, 6, txt=txt)
-                pdf.ln(2)
-
-    return pdf.output(dest="S").encode("latin-1", "ignore")
+    
+    pdf.set_font("Arial", size=11)
+    
+    # O FPDF tem limitações com UTF-8 e emojis. 
+    # O comando abaixo limpa símbolos complexos, mas preserva os acentos (latin-1)
+    texto_limpo = texto_md.encode("latin-1", "ignore").decode("latin-1")
+    
+    # Escreve o texto linha por linha
+    for linha in texto_limpo.split("\n"):
+        pdf.multi_cell(0, 7, txt=linha)
+        
+    # Converte o PDF para um formato que o botão do Streamlit consiga baixar
+    resultado = pdf.output(dest="S")
+    if isinstance(resultado, str):
+        return resultado.encode("latin-1")
+    return bytes(resultado)
 
 
 # Configuração da Página
@@ -390,7 +321,7 @@ elif st.session_state.etapa == 2:
     plano_principal = st.session_state.mensagens[0]["content"]
     
     # Gera o PDF em segundo plano
-    pdf_bytes = gerar_pdf_premium(plano_principal, nome)
+    pdf_bytes = gerar_pdf(plano_principal, nome)
     
     st.download_button(
         label="📥 Baixar Protocolo Completo em PDF",
