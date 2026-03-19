@@ -8,7 +8,7 @@ MODELO = "models/gemini-2.5-flash-lite"
 # Configuração da Página
 st.set_page_config(page_title="Fitness AI", page_icon="⚡", layout="wide")
 
-# --- CSS CUSTOMIZADO ---
+# --- CSS CUSTOMIZADO (Design Premium Sem Sidebar) ---
 st.markdown("""
     <style>
     /* Oculta botões superiores (Share, Deploy) */
@@ -22,13 +22,16 @@ st.markdown("""
     }
     #MainMenu, footer { display: none !important; }
     
+    /* 🔥 NOVO: Oculta o botão de abrir a barra lateral (>) para forçar o layout centralizado */
+    [data-testid="collapsedControl"] { display: none !important; }
+    
     /* Previne o corte no topo */
     .block-container {
         padding-top: 4rem !important; 
         margin-top: 2rem !important;
     }
     
-    /* Estiliza os cards */
+    /* Estiliza os cards de métricas */
     div[data-testid="metric-container"] {
         background-color: rgba(28, 131, 225, 0.1);
         border: 1px solid rgba(28, 131, 225, 0.1);
@@ -49,41 +52,37 @@ if "dados_usuario" not in st.session_state:
 if "historico" not in st.session_state:
     st.session_state.historico = {} # Aqui guardamos os perfis salvos!
 
-# --- BARRA LATERAL (HISTÓRICO DE ALUNOS) ---
-with st.sidebar:
-    st.title("📋 Meus Alunos")
-    st.markdown("Perfis gerados recentemente:")
-    
-    if not st.session_state.historico:
-        st.info("Nenhum histórico salvo ainda.")
-    else:
-        for nome_salvo in st.session_state.historico.keys():
-            # Cria um botão para cada aluno salvo
-            if st.button(f"👤 {nome_salvo}", use_container_width=True):
-                # Se clicar, carrega os dados e vai para a Etapa 2
-                st.session_state.dados_usuario = st.session_state.historico[nome_salvo]["dados"]
-                st.session_state.mensagens = st.session_state.historico[nome_salvo]["mensagens"]
-                st.session_state.etapa = 2
-                st.rerun()
-                
-    st.divider()
-    if st.button("➕ Novo Atleta", type="primary", use_container_width=True):
-        st.session_state.etapa = 1
-        st.session_state.dados_usuario = {}
-        st.session_state.mensagens = []
-        st.rerun()
-
-
 # ==========================================================
-# ETAPA 1: PÁGINA DE COLETA DE DADOS (FORMULÁRIO)
+# ETAPA 1: PÁGINA INICIAL (PERFIS SALVOS + NOVO FORMULÁRIO)
 # ==========================================================
 if st.session_state.etapa == 1:
     
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.title("⚡ Treinador Digital")
-        st.write("Preencha seus dados abaixo para gerar um protocolo de elite.")
         
+        # --- MÓDULO DE PERFIS SALVOS (Estilo Netflix) ---
+        if st.session_state.historico:
+            st.markdown("### 📋 Continuar com Atleta:")
+            perfis = list(st.session_state.historico.keys())
+            
+            # Cria botões lado a lado para os perfis salvos
+            cols_perfis = st.columns(len(perfis) if len(perfis) < 4 else 4)
+            for i, nome_salvo in enumerate(perfis):
+                with cols_perfis[i % 4]:
+                    if st.button(f"👤 {nome_salvo}", key=f"btn_{nome_salvo}", use_container_width=True):
+                        # Carrega os dados e vai direto para a Etapa 2
+                        st.session_state.dados_usuario = st.session_state.historico[nome_salvo]["dados"]
+                        st.session_state.mensagens = st.session_state.historico[nome_salvo]["mensagens"]
+                        st.session_state.etapa = 2
+                        st.rerun()
+            
+            st.divider()
+            st.markdown("### ➕ Ou cadastre um Novo Atleta:")
+        else:
+            st.write("Preencha seus dados abaixo para gerar um protocolo de elite.")
+        
+        # --- FORMULÁRIO DE NOVO CADASTRO ---
         with st.form("perfil_usuario"):
             nome = st.text_input("Nome Completo", placeholder="Ex: Lucas")
             
@@ -115,9 +114,8 @@ if st.session_state.etapa == 1:
         if submit_button:
             if not nome:
                 st.error("⚠️ Identificação necessária. Por favor, preencha seu nome.")
-            # Verifica se o nome já existe para não sobrescrever sem querer (opcional)
             elif nome in st.session_state.historico:
-                st.warning(f"O atleta '{nome}' já existe no histórico! Acesse pela barra lateral ou use outro nome.")
+                st.warning(f"⚠️ O atleta '{nome}' já existe! Clique no botão dele acima para acessar.")
             else:
                 st.session_state.dados_usuario = {
                     "nome": nome, "peso": peso, "altura": altura, 
@@ -181,6 +179,12 @@ elif st.session_state.etapa == 2:
     altura = dados["altura"]
     objetivo_curto = dados["objetivo"].split("(")[0].strip()
     imc = peso / ((altura / 100) ** 2)
+
+    # Botão de voltar limpo
+    if st.button("⬅️ Voltar ao Painel Inicial"):
+        st.session_state.etapa = 1
+        st.session_state.mensagens = []
+        st.rerun()
 
     st.success(f"**Análise concluída, {nome}!** Confira seu protocolo abaixo.")
     
