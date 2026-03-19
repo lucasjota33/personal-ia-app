@@ -3,7 +3,8 @@ import requests
 import json
 import os
 import hashlib
-import secrets # 🟢 NOVO IMPORT: Para gerar nossos códigos de segurança
+import secrets
+from fpdf import FPDF # 🟢 NOVO IMPORT: Biblioteca para gerar o PDF
 
 # Configurações iniciais
 CHAVE = st.secrets["GEMINI_API_KEY"]
@@ -12,7 +13,6 @@ ARQUIVO_BANCO = "banco_dados_saas.json"
 
 # --- FUNÇÕES DO BANCO DE DADOS E SEGURANÇA ---
 def carregar_banco():
-    """Lê o arquivo JSON. Estrutura: {"usuario": {"email": "...", "senha": "hash", "token": "...", "perfis": {...}}}"""
     if os.path.exists(ARQUIVO_BANCO):
         with open(ARQUIVO_BANCO, "r", encoding="utf-8") as f:
             return json.load(f)
@@ -23,12 +23,38 @@ def salvar_banco(dados):
         json.dump(dados, f, ensure_ascii=False, indent=4)
 
 def criptografar_senha(senha):
-    """Gera um hash da senha para não salvarmos em texto puro."""
     return hashlib.sha256(senha.encode()).hexdigest()
 
 def gerar_token_sessao():
-    """Gera um 'crachá' temporário seguro para manter o usuário logado."""
     return secrets.token_hex(16)
+
+# 🟢 NOVA FUNÇÃO: MOTOR DE GERAR PDF
+def gerar_pdf(texto_md, nome_atleta):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    
+    # Cabeçalho do PDF
+    pdf.set_font("Arial", "B", 16)
+    pdf.cell(0, 10, f"Protocolo Elite - {nome_atleta}", ln=True, align="C")
+    pdf.ln(5)
+    
+    pdf.set_font("Arial", size=11)
+    
+    # O FPDF tem limitações com UTF-8 e emojis. 
+    # O comando abaixo limpa símbolos complexos, mas preserva os acentos (latin-1)
+    texto_limpo = texto_md.encode("latin-1", "ignore").decode("latin-1")
+    
+    # Escreve o texto linha por linha
+    for linha in texto_limpo.split("\n"):
+        pdf.multi_cell(0, 7, txt=linha)
+        
+    # Converte o PDF para um formato que o botão do Streamlit consiga baixar
+    resultado = pdf.output(dest="S")
+    if isinstance(resultado, str):
+        return resultado.encode("latin-1")
+    return bytes(resultado)
+
 
 # Configuração da Página
 st.set_page_config(page_title="Fitness AI", page_icon="⚡", layout="wide")
@@ -60,7 +86,7 @@ if "banco" not in st.session_state:
 if "usuario_logado" not in st.session_state:
     st.session_state.usuario_logado = None
 
-# 🟢 AUTO-LOGIN: O truque do F5! Verifica se há um token válido na URL antes de carregar a tela
+# 🟢 AUTO-LOGIN
 if st.session_state.usuario_logado is None:
     token_url = st.query_params.get("session")
     if token_url:
@@ -81,15 +107,11 @@ if st.session_state.etapa == 0:
         
         tab1, tab2 = st.tabs(["Entrar", "Criar Conta Nova"])
         
-        # --- ABA DE LOGIN ---
         with tab1:
             with st.form("form_login"):
                 usuario_login = st.text_input("Usuário ou E-mail")
                 senha_login = st.text_input("Senha", type="password")
-                
-                # 🟢 O NOVO CHECKBOX
                 manter_conectado = st.checkbox("Mantenha-me conectado") 
-                
                 btn_login = st.form_submit_button("Entrar", type="primary", use_container_width=True)
                 
                 if btn_login:
@@ -109,19 +131,16 @@ if st.session_state.etapa == 0:
                         st.session_state.usuario_logado = usuario_encontrado
                         st.session_state.etapa = 1
                         
-                        # 🟢 SE ELE MARCOU A CAIXA, GERAMOS O CRACHÁ
                         if manter_conectado:
                             novo_token = gerar_token_sessao()
                             st.session_state.banco[usuario_encontrado]["token"] = novo_token
                             salvar_banco(st.session_state.banco)
-                            # Coloca o crachá na URL invisível do Streamlit
                             st.query_params["session"] = novo_token
                             
                         st.rerun()
                     else:
                         st.error("Credenciais incorretas. Verifique seu usuário/e-mail e senha.")
                         
-        # --- ABA DE CADASTRO ---
         with tab2:
             with st.form("form_cadastro"):
                 novo_usuario = st.text_input("Escolha um Nome de Usuário")
@@ -145,7 +164,7 @@ if st.session_state.etapa == 0:
                         st.session_state.banco[novo_usuario] = {
                             "email": novo_email,
                             "senha": criptografar_senha(nova_senha),
-                            "token": "", # Nasce sem token
+                            "token": "", 
                             "perfis": {}
                         }
                         salvar_banco(st.session_state.banco)
@@ -162,11 +181,9 @@ elif st.session_state.etapa == 1:
     col_logout1, col_logout2 = st.columns([8, 2])
     with col_logout2:
         if st.button("Sair da Conta"):
-            # 🟢 LOGOUT: Apaga o token do banco de dados para segurança
             if "token" in st.session_state.banco[usuario]:
                 st.session_state.banco[usuario]["token"] = ""
                 salvar_banco(st.session_state.banco)
-            # Limpa a URL e desconecta
             st.query_params.clear()
             st.session_state.usuario_logado = None
             st.session_state.etapa = 0
@@ -176,7 +193,6 @@ elif st.session_state.etapa == 1:
     with col2:
         st.title(f"Olá, {usuario}! 👋")
         
-        # --- PERFIS SALVOS ---
         if perfis_do_usuario:
             st.markdown("### 📋 Seus Atletas:")
             for nome_salvo in list(perfis_do_usuario.keys()):
@@ -198,7 +214,6 @@ elif st.session_state.etapa == 1:
         else:
             st.write("Você ainda não tem perfis salvos. Crie o primeiro abaixo!")
         
-        # --- FORMULÁRIO DE NOVO CADASTRO ---
         with st.form("perfil_usuario"):
             nome = st.text_input("Nome Completo do Atleta", placeholder="Ex: Lucas")
             c_peso, c_altura = st.columns(2)
@@ -296,6 +311,22 @@ elif st.session_state.etapa == 2:
         else:
             with st.chat_message("user"):
                 st.markdown(msg["content"])
+            
+    # 🟢 NOVO: BOTÃO DE DOWNLOAD DO PDF
+    st.divider()
+    plano_principal = st.session_state.mensagens[0]["content"]
+    
+    # Gera o PDF em segundo plano
+    pdf_bytes = gerar_pdf(plano_principal, nome)
+    
+    st.download_button(
+        label="📥 Baixar Protocolo Completo em PDF",
+        data=pdf_bytes,
+        file_name=f"Protocolo_{nome.replace(' ', '_')}.pdf",
+        mime="application/pdf",
+        type="primary",
+        use_container_width=True
+    )
             
     st.divider()
     st.subheader("💬 Central de Dúvidas")
