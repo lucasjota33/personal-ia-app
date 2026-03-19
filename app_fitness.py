@@ -28,7 +28,7 @@ def criptografar_senha(senha):
 def gerar_token_sessao():
     return secrets.token_hex(16)
 
-# 🟢 FUNÇÃO DO PDF CORRIGIDA (Substitua a sua gerar_pdf por esta)
+# 🟢 NOVA FUNÇÃO: MOTOR DE GERAR PDF
 def gerar_pdf(texto_md, nome_atleta):
     pdf = FPDF()
     pdf.add_page()
@@ -36,80 +36,24 @@ def gerar_pdf(texto_md, nome_atleta):
     
     # Cabeçalho do PDF
     pdf.set_font("Arial", "B", 16)
-    pdf.set_text_color(28, 131, 225) # Azul
-    pdf.cell(0, 10, limpar_para_pdf(f"Protocolo Elite - {nome_atleta}"), ln=True, align="C")
+    pdf.cell(0, 10, f"Protocolo Elite - {nome_atleta}", ln=True, align="C")
     pdf.ln(5)
     
-    linhas = texto_md.split("\n")
-    buffer_tabela = []
-    em_tabela = False
-
-    for linha in linhas:
-        l_strip = linha.strip()
+    pdf.set_font("Arial", size=11)
+    
+    # O FPDF tem limitações com UTF-8 e emojis. 
+    # O comando abaixo limpa símbolos complexos, mas preserva os acentos (latin-1)
+    texto_limpo = texto_md.encode("latin-1", "ignore").decode("latin-1")
+    
+    # Escreve o texto linha por linha
+    for linha in texto_limpo.split("\n"):
+        pdf.multi_cell(0, 7, txt=linha)
         
-        # Identifica tabelas
-        if l_strip.startswith('|'):
-            em_tabela = True
-            buffer_tabela.append(l_strip)
-            continue
-        elif em_tabela:
-            if buffer_tabela:
-                # --- INÍCIO DO DESENHO DA TABELA ---
-                # Extrai os nomes das colunas da primeira linha do buffer
-                colunas = [c.strip() for c in buffer_tabela[0].split('|') if c.strip()]
-                if colunas:
-                    largura = 190 / len(colunas)
-                    # Estilo do Cabeçalho
-                    pdf.set_font("Arial", "B", 10)
-                    pdf.set_fill_color(28, 131, 225)
-                    pdf.set_text_color(255, 255, 255)
-                    for col in colunas:
-                        pdf.cell(largura, 8, limpar_para_pdf(col), border=1, fill=True, align="C")
-                    pdf.ln()
-                    
-                    # Conteúdo da Tabela
-                    pdf.set_font("Arial", "", 9)
-                    pdf.set_text_color(40, 40, 40)
-                    zebra = False
-                    for l_tab in buffer_tabela[1:]:
-                        if '---' in l_tab: continue
-                        dados = [d.strip() for d in l_tab.split('|') if d.strip()]
-                        # CORREÇÃO AQUI: Usando 'colunas' em vez de 'cabecalho'
-                        if len(dados) == len(colunas):
-                            pdf.set_fill_color(245, 245, 245) if zebra else pdf.set_fill_color(255, 255, 255)
-                            for item in dados:
-                                pdf.cell(largura, 7, limpar_para_pdf(item), border=1, fill=True)
-                            pdf.ln()
-                            zebra = not zebra
-                pdf.ln(5)
-                # --- FIM DO DESENHO DA TABELA ---
-            buffer_tabela = []
-            em_tabela = False
-
-        if not l_strip: continue
-
-        # Formata Títulos
-        if l_strip.startswith('#'):
-            pdf.set_font("Arial", "B", 13)
-            pdf.set_text_color(28, 131, 225)
-            pdf.ln(2)
-            pdf.cell(0, 10, limpar_para_pdf(l_strip.replace('#', '').strip()), ln=True)
-        else:
-            pdf.set_font("Arial", "", 11)
-            pdf.set_text_color(40, 40, 40)
-            # Remove as estrelas de negrito do markdown para o PDF
-            txt = l_strip.replace("**", "")
-            pdf.multi_cell(0, 7, txt=limpar_para_pdf(txt))
-            pdf.ln(1)
-
-    # Converte para bytes
-    try:
-        resultado = pdf.output(dest="S")
-        if isinstance(resultado, str):
-            return resultado.encode("latin-1")
-        return bytes(resultado)
-    except:
-        return b"Erro ao gerar PDF"
+    # Converte o PDF para um formato que o botão do Streamlit consiga baixar
+    resultado = pdf.output(dest="S")
+    if isinstance(resultado, str):
+        return resultado.encode("latin-1")
+    return bytes(resultado)
 
 
 # Configuração da Página
