@@ -385,16 +385,15 @@ elif st.session_state.etapa == 2:
             with st.chat_message("user"):
                 st.markdown(msg["content"])
             
-    # 🟢 ALTERE ESSA PARTE NO FINAL DA ETAPA 2:
+    # 🟢 NOVO: BOTÃO DE DOWNLOAD DO PDF
     st.divider()
     plano_principal = st.session_state.mensagens[0]["content"]
     
-    with st.spinner("🖼️ Formatando PDF Profissional..."):
-        # Chamando a nova função premium
-        pdf_bytes = gerar_pdf_premium(plano_principal, nome)
+    # Gera o PDF em segundo plano
+    pdf_bytes = gerar_pdf_premium(plano_principal, nome)
     
     st.download_button(
-        label="📥 Baixar Protocolo Profissional (PDF)",
+        label="📥 Baixar Protocolo Completo em PDF",
         data=pdf_bytes,
         file_name=f"Protocolo_{nome.replace(' ', '_')}.pdf",
         mime="application/pdf",
