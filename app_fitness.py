@@ -93,12 +93,12 @@ class PDF_Elite(FPDF):
         self.ln(8)
 
     def desenhar_tabela(self, linhas_tabela):
-        if not lines_tabela: return
+        if not linhas_tabela: return
 
         self.set_font("Arial", "B", 10)
         
         # Processa cabeçalho (primeira linha)
-        cabecalho = [c.strip() for c in lines_tabela[0].split('|') if c.strip()]
+        cabecalho = [c.strip() for c in linhas_tabela[0].split('|') if c.strip()]
         num_cols = len(cabecalho)
         if num_cols == 0: return
         
@@ -119,7 +119,7 @@ class PDF_Elite(FPDF):
         self.set_text_color(*self.cor_texto)
         
         fill = False # Alternador de fundo
-        for i, linha in enumerate(lines_tabela[1:]):
+        for i, linha in enumerate(linhas_tabela[1:]):
             # Pula linhas separadoras de markdown (|---|---|)
             if '---' in linha: continue
             
@@ -134,8 +134,6 @@ class PDF_Elite(FPDF):
 
             for dado in dados:
                 txt = dado.encode("latin-1", "ignore").decode("latin-1")
-                # multi_cell não funciona bem com fill em tabelas simples, 
-                # cell resolve mas corta texto longo. Ajustado para cell por simplicidade.
                 self.cell(largura_col, 8, txt, border=1, align="L", fill=fill)
             self.ln()
             fill = not fill # Alterna o fundo
