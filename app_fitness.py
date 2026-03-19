@@ -36,11 +36,30 @@ st.set_page_config(page_title="Fitness AI", page_icon="⚡", layout="wide")
 # --- CSS CUSTOMIZADO ---
 st.markdown("""
     <style>
-    [data-testid="stToolbar"], [data-testid="stToolbarActions"], .stDeployButton { display: none !important; visibility: hidden !important; }
+    /* 1. Oculta botões superiores (Share, Deploy) */
+    [data-testid="stToolbar"], [data-testid="stToolbarActions"], .stDeployButton { 
+        display: none !important; 
+        visibility: hidden !important; 
+    }
+    
+    /* 2. Oculta o cabeçalho e menu padrão */
     header { background-color: transparent !important; box-shadow: none !important; }
     #MainMenu, footer { display: none !important; }
     [data-testid="collapsedControl"] { display: none !important; }
+    
+    /* 🔥 3. NOVO: Oculta o selo do Streamlit e a foto do GitHub no canto inferior direito! */
+    .viewerBadge_container, 
+    .viewerBadge_link, 
+    #viewerBadge, 
+    [class*="viewerBadge"] { 
+        display: none !important; 
+        visibility: hidden !important;
+    }
+    
+    /* 4. Previne o corte no topo */
     .block-container { padding-top: 4rem !important; margin-top: 2rem !important; }
+    
+    /* 5. Estiliza os cards de métricas */
     div[data-testid="metric-container"] {
         background-color: rgba(28, 131, 225, 0.1); border: 1px solid rgba(28, 131, 225, 0.1);
         padding: 5% 10% 5% 10%; border-radius: 10px; box-shadow: 2px 2px 10px rgba(0,0,0,0.05);
@@ -114,7 +133,6 @@ if st.session_state.etapa == 0:
                             novo_token = gerar_token_sessao()
                             st.session_state.banco[usuario_encontrado]["token"] = novo_token
                             salvar_banco(st.session_state.banco)
-                            # Coloca o crachá na URL invisível do Streamlit
                             st.query_params["session"] = novo_token
                             
                         st.rerun()
@@ -145,7 +163,7 @@ if st.session_state.etapa == 0:
                         st.session_state.banco[novo_usuario] = {
                             "email": novo_email,
                             "senha": criptografar_senha(nova_senha),
-                            "token": "", # Nasce sem token
+                            "token": "", 
                             "perfis": {}
                         }
                         salvar_banco(st.session_state.banco)
@@ -166,7 +184,6 @@ elif st.session_state.etapa == 1:
             if "token" in st.session_state.banco[usuario]:
                 st.session_state.banco[usuario]["token"] = ""
                 salvar_banco(st.session_state.banco)
-            # Limpa a URL e desconecta
             st.query_params.clear()
             st.session_state.usuario_logado = None
             st.session_state.etapa = 0
