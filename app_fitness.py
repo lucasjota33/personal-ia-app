@@ -14,23 +14,29 @@ st.set_page_config(page_title="Fitness AI", page_icon="⚡", layout="wide", init
 # --- CSS CUSTOMIZADO (Design de Software Proprietário) ---
 st.markdown("""
     <style>
-    /* 1. Remove a marca d'água e o menu hambúrguer */
+    /* 1. Esconde o menu hambúrguer e o rodapé "Made with Streamlit" */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
-    
-    /* 2. Remove apenas os botões da direita (Share, Deploy, GitHub) 
-       sem apagar o header todo, preservando o botão da barra lateral */
-    .stApp > header > div:first-child {
+
+    /* 2. Esconde apenas os botões da DIREITA (Share, Deploy, GitHub) */
+    /* Usamos o data-testid da toolbar que contém esses botões específicos */
+    [data-testid="stToolbar"] {
         display: none !important;
     }
 
-    /* 3. Resolve o corte superior: empurra o conteúdo para baixo */
-    .block-container {
-        padding-top: 5rem !important; 
+    /* 3. Garante que o Header (onde o botão lateral mora) seja transparente e não bloqueie nada */
+    header {
+        background-color: transparent !important;
+    }
+
+    /* 4. O AJUSTE MESTRE: Dá o espaço no topo para NÃO CORTAR o conteúdo verde */
+    /* Ajustamos para 4rem para ser o equilíbrio perfeito entre espaço e estética */
+    .main .block-container {
+        padding-top: 4rem !important;
         padding-bottom: 2rem !important;
     }
-    
-    /* 4. Estilização das métricas (seu design original) */
+
+    /* 5. Estilização das métricas (seu design original) */
     div[data-testid="metric-container"] {
         background-color: rgba(28, 131, 225, 0.1);
         border: 1px solid rgba(28, 131, 225, 0.1);
