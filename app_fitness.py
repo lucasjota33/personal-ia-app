@@ -369,10 +369,10 @@ elif st.session_state.etapa == 2:
     
     for msg in st.session_state.mensagens:
         if msg["role"] == "assistant":
-            st.markdown(msg["content"])
+            st.markdown(msg["content"] or "")
         else:
             with st.chat_message("user"):
-                st.markdown(msg["content"])
+                st.markdown(msg["content"] or "")
             
     # 🟢 NOVO: BOTÃO DE DOWNLOAD DO PDF
     st.divider()
