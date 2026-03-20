@@ -376,7 +376,7 @@ elif st.session_state.etapa == 2:
             
     # 🟢 NOVO: BOTÃO DE DOWNLOAD DO PDF
     st.divider()
-    plano_principal = st.session_state.mensagens[0]["content"]
+    plano_principal = st.session_state.mensagens[0]["content"] or ""
     
     # Gera o PDF em segundo plano
     pdf_bytes = gerar_pdf(plano_principal, nome)
