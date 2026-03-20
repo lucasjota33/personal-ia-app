@@ -40,6 +40,16 @@ def limpar_para_pdf(texto):
         texto = texto.replace(char, sub)
     return texto.encode("latin-1", "ignore").decode("latin-1")
 
+# 🟢 NOVA FUNÇÃO: LIMPEZA GERAL PARA TEXTOS DA IA
+def limpar_none(texto):
+    if texto is None:
+        return ""
+    texto = str(texto)
+    # Remove ausências e textos literais nulos retornados pelo modelo
+    for token in ["None", "none", "null", "Nil"]:
+        texto = texto.replace(token, "")
+    return texto.strip()
+
 # 🟢 NOVA FUNÇÃO: MOTOR DE GERAR PDF
 @st.cache_data(show_spinner=False)
 def gerar_pdf(texto_md, nome_atleta):
@@ -322,9 +332,11 @@ elif st.session_state.etapa == 1:
                     payload = {"contents": [{"parts": [{"text": prompt_mestre}]}]}
                     
                     try:
-                        resposta = requests.post(url, json=payload, timeout=40) 
+                        resposta = requests.post(url, json=payload, timeout=40)
                         if resposta.status_code == 200:
-                            texto_ia = resposta.json()['candidates'][0]['content']['parts'][0]['text'].replace("None", "")
+                            resposta_data = resposta.json()
+                            texto_ia = resposta_data.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', '')
+                            texto_ia = limpar_none(texto_ia)
                             st.session_state.mensagens = [{"role": "assistant", "content": texto_ia}]
                             
                             st.session_state.banco[usuario]["perfis"][nome] = {
@@ -369,15 +381,16 @@ elif st.session_state.etapa == 2:
     st.divider()
     
     for msg in st.session_state.mensagens:
-        if msg["role"] == "assistant":
-            st.markdown(msg["content"] or "")
+        conteudo = limpar_none(msg.get("content"))
+        if msg.get("role") == "assistant":
+            st.markdown(conteudo)
         else:
             with st.chat_message("user"):
-                st.markdown(msg["content"] or "")
-            
+                st.markdown(conteudo)
+    
     # 🟢 NOVO: BOTÃO DE DOWNLOAD DO PDF
     st.divider()
-    plano_principal = st.session_state.mensagens[0]["content"] or ""
+    plano_principal = limpar_none(st.session_state.mensagens[0].get("content")) if st.session_state.mensagens else ""
     
     # Gera o PDF em segundo plano
     pdf_bytes = gerar_pdf(plano_principal, nome)
@@ -410,7 +423,9 @@ elif st.session_state.etapa == 2:
                 try:
                     resposta = requests.post(url, json=payload, timeout=20)
                     if resposta.status_code == 200:
-                        texto_ia_duvida = resposta.json()['candidates'][0]['content']['parts'][0]['text'].replace("None", "")
+                        resposta_data = resposta.json()
+                        texto_ia_duvida = resposta_data.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', '')
+                        texto_ia_duvida = limpar_none(texto_ia_duvida)
                         st.markdown(texto_ia_duvida)
                         st.session_state.mensagens.append({"role": "assistant", "content": texto_ia_duvida})
                         
