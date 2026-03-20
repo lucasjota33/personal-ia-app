@@ -368,11 +368,16 @@ elif st.session_state.etapa == 2:
     st.divider()
     
     for msg in st.session_state.mensagens:
-        if msg["role"] == "assistant":
-            st.markdown(msg["content"])
-        else:
-            with st.chat_message("user"):
-                st.markdown(msg["content"])
+    conteudo = msg.get("content")
+
+    if not conteudo:  # 🔥 ignora None ou vazio
+        continue
+
+    if msg["role"] == "assistant":
+        st.markdown(conteudo)
+    else:
+        with st.chat_message("user"):
+            st.markdown(conteudo)
             
     # 🟢 NOVO: BOTÃO DE DOWNLOAD DO PDF
     st.divider()
