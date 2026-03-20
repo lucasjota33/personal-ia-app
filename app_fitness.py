@@ -368,6 +368,8 @@ elif st.session_state.etapa == 2:
     st.divider()
     
     for msg in st.session_state.mensagens:
+        if not msg.get("content"):
+            continue
         if msg["role"] == "assistant":
             st.markdown(msg["content"] or "")
         else:
