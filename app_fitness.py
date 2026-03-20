@@ -323,7 +323,7 @@ elif st.session_state.etapa == 1:
                     try:
                         resposta = requests.post(url, json=payload, timeout=40) 
                         if resposta.status_code == 200:
-                            texto_ia = resposta.json()['candidates'][0]['content']['parts'][0]['text']
+                            texto_ia = resposta.json()['candidates'][0]['content']['parts'][0]['text'].replace("None", "")
                             st.session_state.mensagens = [{"role": "assistant", "content": texto_ia}]
                             
                             st.session_state.banco[usuario]["perfis"][nome] = {
@@ -409,7 +409,7 @@ elif st.session_state.etapa == 2:
                 try:
                     resposta = requests.post(url, json=payload, timeout=20)
                     if resposta.status_code == 200:
-                        texto_ia_duvida = resposta.json()['candidates'][0]['content']['parts'][0]['text']
+                        texto_ia_duvida = resposta.json()['candidates'][0]['content']['parts'][0]['text'].replace("None", "")
                         st.markdown(texto_ia_duvida)
                         st.session_state.mensagens.append({"role": "assistant", "content": texto_ia_duvida})
                         
