@@ -41,6 +41,7 @@ def limpar_para_pdf(texto):
     return texto.encode("latin-1", "ignore").decode("latin-1")
 
 # 🟢 NOVA FUNÇÃO: MOTOR DE GERAR PDF
+@st.cache_data(show_spinner=False)
 def gerar_pdf(texto_md, nome_atleta):
     pdf = FPDF()
     pdf.add_page()
