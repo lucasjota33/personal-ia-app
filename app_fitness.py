@@ -1,27 +1,82 @@
 import streamlit as st
 import requests
 import json
-import os
 import hashlib
 import secrets
-from fpdf import FPDF # 🟢 IMPORT: Biblioteca para gerar o PDF
+from fpdf import FPDF 
 
 # Configurações iniciais
 CHAVE = st.secrets["GEMINI_API_KEY"]
 MODELO = "models/gemini-2.5-flash"
-ARQUIVO_BANCO = "banco_dados_saas.json"
 
-# --- FUNÇÕES DO BANCO DE DADOS E SEGURANÇA ---
+# ==========================================================
+# 🟢 MOTOR DE BANCO DE DADOS EM NUVEM (FIREBASE FIRESTORE)
+# ==========================================================
+FIREBASE_PROJECT_ID = "treinadordigital-b8fe2"
+FIREBASE_API_KEY = "AIzaSyBXmbHcwmGBZSMRCJyv-P7YtbslVydIbro"
+# Rota secreta para a sua base de dados na nuvem
+URL_FIRESTORE = f"https://firestore.googleapis.com/v1/projects/{FIREBASE_PROJECT_ID}/databases/(default)/documents/sistema/banco_de_dados?key={FIREBASE_API_KEY}"
+
+def conversor_para_firestore(valor):
+    """Traduz os dados do Python para a linguagem que o Google Firebase entende"""
+    if isinstance(valor, dict):
+        return {"mapValue": {"fields": {str(k): conversor_para_firestore(v) for k, v in valor.items()}}}
+    elif isinstance(valor, list) or isinstance(valor, tuple):
+        return {"arrayValue": {"values": [conversor_para_firestore(v) for v in valor]}}
+    elif isinstance(valor, str):
+        return {"stringValue": valor}
+    elif isinstance(valor, bool):
+        return {"booleanValue": valor}
+    elif isinstance(valor, int):
+        return {"integerValue": str(valor)}
+    elif isinstance(valor, float):
+        return {"doubleValue": valor}
+    elif valor is None:
+        return {"nullValue": None}
+    else:
+        return {"stringValue": str(valor)}
+
+def conversor_para_python(valor):
+    """Pega os dados do Firebase e traduz de volta para o Python"""
+    if "mapValue" in valor:
+        return {k: conversor_para_python(v) for k, v in valor["mapValue"].get("fields", {}).items()}
+    elif "arrayValue" in valor:
+        return [conversor_para_python(v) for v in valor["arrayValue"].get("values", [])]
+    elif "stringValue" in valor:
+        return valor["stringValue"]
+    elif "integerValue" in valor:
+        return int(valor["integerValue"])
+    elif "doubleValue" in valor:
+        return float(valor["doubleValue"])
+    elif "booleanValue" in valor:
+        return valor["booleanValue"]
+    elif "nullValue" in valor:
+        return None
+    return None
+
 def carregar_banco():
-    if os.path.exists(ARQUIVO_BANCO):
-        with open(ARQUIVO_BANCO, "r", encoding="utf-8") as f:
-            return json.load(f)
+    """Puxa os dados da nuvem sempre que alguém abre o site"""
+    try:
+        resposta = requests.get(URL_FIRESTORE)
+        if resposta.status_code == 200:
+            dados = resposta.json()
+            if "fields" in dados:
+                return {k: conversor_para_python(v) for k, v in dados["fields"].items()}
+    except Exception:
+        pass
     return {}
 
 def salvar_banco(dados):
-    with open(ARQUIVO_BANCO, "w", encoding="utf-8") as f:
-        json.dump(dados, f, ensure_ascii=False, indent=4)
+    """Salva os dados na nuvem em tempo real"""
+    try:
+        campos = {str(k): conversor_para_firestore(v) for k, v in dados.items()}
+        payload = {"fields": campos}
+        # Envia a atualização para a nuvem
+        requests.patch(URL_FIRESTORE, json=payload)
+    except Exception:
+        pass
 
+# --- FUNÇÕES DE SEGURANÇA ---
 def criptografar_senha(senha):
     return hashlib.sha256(senha.encode()).hexdigest()
 
@@ -102,7 +157,6 @@ def gerar_pdf(texto_md, nome_atleta):
             continue
         elif em_tabela:
             if buffer_tabela:
-                # Função robusta para extrair células mesmo que estejam vazias
                 def extrair_celulas(linha_str):
                     s = linha_str.strip()
                     if s.startswith('|'): s = s[1:]
@@ -121,7 +175,6 @@ def gerar_pdf(texto_md, nome_atleta):
                             else:
                                 _ = pdf.set_font("Arial", "", 8)
                                 
-                            # 1. Calcula a altura necessária baseada no maior texto
                             max_l = 1
                             for txt in dados_linha:
                                 txt_limpo = limpar_para_pdf(txt)
@@ -132,14 +185,13 @@ def gerar_pdf(texto_md, nome_atleta):
                                 if linhas_txt > max_l: 
                                     max_l = linhas_txt
                                     
-                            alt_linha = (5 * max_l) + 4 # 5mm por linha de texto + 4mm de padding
+                            alt_linha = (5 * max_l) + 4 
                             
                             if pdf.get_y() + alt_linha > 275:
                                 _ = pdf.add_page()
                                 
                             y_ini = pdf.get_y()
                             
-                            # 2. Configura as cores
                             if eh_cabecalho:
                                 _ = pdf.set_fill_color(28, 131, 225)
                                 _ = pdf.set_text_color(255, 255, 255)
@@ -150,28 +202,24 @@ def gerar_pdf(texto_md, nome_atleta):
                                 else:
                                     _ = pdf.set_fill_color(255, 255, 255)
 
-                            # 3. Desenha os blocos com text wrap
                             for i, txt in enumerate(dados_linha):
                                 x_ini = 10 + (i * w_col)
                                 _ = pdf.set_xy(x_ini, y_ini)
                                 _ = pdf.cell(w_col, alt_linha, "", 1, 0, "", True)
                                 
-                                _ = pdf.set_xy(x_ini, y_ini + 2) # 2mm de margem superior interna
+                                _ = pdf.set_xy(x_ini, y_ini + 2) 
                                 txt_limpo = limpar_para_pdf(txt)
                                 _ = pdf.multi_cell(w_col, 5, txt_limpo, 0, "C")
                                 
                             _ = pdf.set_xy(10, y_ini + alt_linha)
 
-                        # Desenha cabeçalho
                         draw_row(cols, eh_cabecalho=True)
                         
-                        # Desenha resto
                         zebra = False
                         for l_tab in buffer_tabela[1:]:
                             if '---' in l_tab: continue
                             dados = extrair_celulas(l_tab)
                             
-                            # Força a linha ter as mesmas colunas do cabeçalho preenchendo vazios
                             if len(dados) < num_cols:
                                 dados.extend([''] * (num_cols - len(dados)))
                             elif len(dados) > num_cols:
@@ -186,7 +234,6 @@ def gerar_pdf(texto_md, nome_atleta):
 
         if not l_strip: continue
 
-        # PROCESSA TÍTULOS E TEXTO NORMAL (Limpando o negrito sujo)
         l_limpa = l_strip.replace("**", "").replace("* ", "- ")
 
         if l_strip.startswith('### '):
@@ -211,7 +258,6 @@ def gerar_pdf(texto_md, nome_atleta):
             _ = pdf.set_font("Arial", "", 10)
             _ = pdf.set_text_color(60, 60, 60)
             
-            # Reconhece "Bullet Points" e dá margem elegante
             if l_limpa.startswith('- '):
                 _ = pdf.set_x(15)
                 _ = pdf.multi_cell(0, 6, chr(149) + " " + limpar_para_pdf(l_limpa[2:]))
@@ -235,33 +281,28 @@ st.markdown("""
     #MainMenu, footer { display: none !important; }
     [data-testid="collapsedControl"] { display: none !important; }
     
-    /* Configuração Original (PC) */
     .block-container { padding-top: 4rem !important; margin-top: 2rem !important; }
     div[data-testid="metric-container"] {
         background-color: rgba(28, 131, 225, 0.1); border: 1px solid rgba(28, 131, 225, 0.1);
         padding: 5% 10% 5% 10%; border-radius: 10px; box-shadow: 2px 2px 10px rgba(0,0,0,0.05);
     }
     
-    /* BLOQUEIO DE SCROLL HORIZONTAL NA PÁGINA INTEIRA */
     .stApp { overflow-x: hidden; }
 
-    /* 🟢 COMPORTAMENTO DE TABELA ESTILO CHATGPT */
     .stMarkdown table {
         display: block !important;
         overflow-x: auto !important;
-        white-space: nowrap !important; /* Impede que a tabela fique amassada */
+        white-space: nowrap !important; 
         max-width: 100% !important;
-        -webkit-overflow-scrolling: touch; /* Scroll suave no celular */
+        -webkit-overflow-scrolling: touch; 
         border-radius: 8px; 
     }
     
-    /* Garante que os textos fora da tabela quebrem linha e não estiquem a página */
     .stMarkdown p, .stMarkdown li {
         word-wrap: break-word !important;
         overflow-wrap: break-word !important;
     }
 
-    /* 📱 OTIMIZAÇÕES EXCLUSIVAS PARA CELULAR */
     @media (max-width: 768px) {
         .block-container { 
             padding-top: 1.5rem !important; 
@@ -517,13 +558,11 @@ elif st.session_state.etapa == 2:
     
     st.divider()
     
-    # 🟢 NOVO: RENDERIZAÇÃO ESTILO CHATGPT (Sem st.chat_message)
     for msg in st.session_state.mensagens:
         conteudo = limpar_none(msg.get("content"))
         role = msg.get("role")
         
         if role == "user":
-            # Bolha de usuário alinhada à direita e com fundo cinza claro, estilo ChatGPT
             st.markdown(f"""
                 <div style='display: flex; justify-content: flex-end; margin-bottom: 25px;'>
                     <div style='background-color: #f4f4f4; color: #0d0d0d; padding: 12px 18px; border-radius: 18px 18px 0px 18px; max-width: 85%; font-family: sans-serif; box-shadow: 1px 1px 3px rgba(0,0,0,0.05);'>
@@ -532,7 +571,6 @@ elif st.session_state.etapa == 2:
                 </div>
             """, unsafe_allow_html=True)
         else:
-            # Resposta da IA colada à esquerda (sem quadradinhos limitadores)
             st.markdown(f"<div style='margin-bottom: 25px;'>", unsafe_allow_html=True)
             st.markdown(conteudo)
             st.markdown("</div>", unsafe_allow_html=True)
@@ -540,7 +578,6 @@ elif st.session_state.etapa == 2:
     st.divider()
     plano_principal = limpar_none(st.session_state.mensagens[0].get("content")) if st.session_state.mensagens else ""
     
-    # Gera o PDF guardando em variável
     pdf_final = gerar_pdf(plano_principal, nome)
     
     st.download_button(
@@ -556,10 +593,8 @@ elif st.session_state.etapa == 2:
     st.subheader("💬 Central de Dúvidas")
     if prompt_duvida := st.chat_input("Pergunte sobre exercícios ou substituições de alimentos..."):
         
-        # 1. Adiciona a dúvida do usuário na memória
         st.session_state.mensagens.append({"role": "user", "content": prompt_duvida})
         
-        # 2. Exibe imediatamente a bolha do usuário à direita
         st.markdown(f"""
             <div style='display: flex; justify-content: flex-end; margin-bottom: 25px;'>
                 <div style='background-color: #f4f4f4; color: #0d0d0d; padding: 12px 18px; border-radius: 18px 18px 0px 18px; max-width: 85%; font-family: sans-serif; box-shadow: 1px 1px 3px rgba(0,0,0,0.05);'>
@@ -568,7 +603,6 @@ elif st.session_state.etapa == 2:
             </div>
         """, unsafe_allow_html=True)
             
-        # 3. Faz a requisição sem o quadradinho da IA
         with st.spinner("Analisando protocolo..."):
             plano_contexto = st.session_state.mensagens[0]["content"]
             prompt_duvida_completo = f"Plano:\n{plano_contexto}\n\nDúvida: {prompt_duvida}"
@@ -583,7 +617,6 @@ elif st.session_state.etapa == 2:
                     texto_ia_duvida = resposta_data.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', '')
                     texto_ia_duvida = limpar_none(texto_ia_duvida)
                     
-                    # Exibe a resposta pura, colada à esquerda
                     st.markdown(f"<div style='margin-bottom: 25px;'>", unsafe_allow_html=True)
                     st.markdown(texto_ia_duvida)
                     st.markdown("</div>", unsafe_allow_html=True)
