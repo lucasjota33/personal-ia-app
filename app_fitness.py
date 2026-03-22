@@ -243,18 +243,16 @@ st.markdown("""
     }
     
     /* BLOQUEIO DE SCROLL HORIZONTAL NA PÁGINA INTEIRA */
-    .stApp {
-        overflow-x: hidden;
-    }
+    .stApp { overflow-x: hidden; }
 
-    /* 🟢 NOVO: COMPORTAMENTO DE TABELA ESTILO CHATGPT */
+    /* 🟢 COMPORTAMENTO DE TABELA ESTILO CHATGPT */
     .stMarkdown table {
         display: block !important;
         overflow-x: auto !important;
         white-space: nowrap !important; /* Impede que a tabela fique amassada */
         max-width: 100% !important;
         -webkit-overflow-scrolling: touch; /* Scroll suave no celular */
-        border-radius: 8px; /* Estética um pouco mais moderna */
+        border-radius: 8px; 
     }
     
     /* Garante que os textos fora da tabela quebrem linha e não estiquem a página */
@@ -275,9 +273,7 @@ st.markdown("""
         .stButton > button, [data-testid="stFormSubmitButton"] > button {
             min-height: 50px !important;
         }
-        div[data-testid="metric-container"] {
-            padding: 15px !important;
-        }
+        div[data-testid="metric-container"] { padding: 15px !important; }
     }
     </style>
 """, unsafe_allow_html=True)
@@ -367,7 +363,7 @@ if st.session_state.etapa == 0:
                     elif novo_usuario in st.session_state.banco:
                         st.error("Este nome de usuário já está em uso! Escolha outro.")
                     elif email_em_uso:
-                        st.error("Este e-mail já cadastrado no sistema!")
+                        st.error("Este e-mail já está cadastrado no sistema!")
                     else:
                         st.session_state.banco[novo_usuario] = {
                             "email": novo_email,
@@ -521,14 +517,25 @@ elif st.session_state.etapa == 2:
     
     st.divider()
     
-    # 🟢 NOVO: TEXTOS DA IA AGORA RENDERIZADOS COMO BOLHAS DE CHAT
+    # 🟢 NOVO: RENDERIZAÇÃO ESTILO CHATGPT (Sem st.chat_message)
     for msg in st.session_state.mensagens:
         conteudo = limpar_none(msg.get("content"))
         role = msg.get("role")
         
-        # O "with st.chat_message(role)" cria o design de avatar + contêiner
-        with st.chat_message(role):
+        if role == "user":
+            # Bolha de usuário alinhada à direita e com fundo cinza claro, estilo ChatGPT
+            st.markdown(f"""
+                <div style='display: flex; justify-content: flex-end; margin-bottom: 25px;'>
+                    <div style='background-color: #f4f4f4; color: #0d0d0d; padding: 12px 18px; border-radius: 18px 18px 0px 18px; max-width: 85%; font-family: sans-serif; box-shadow: 1px 1px 3px rgba(0,0,0,0.05);'>
+                        {conteudo}
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+        else:
+            # Resposta da IA colada à esquerda (sem quadradinhos limitadores)
+            st.markdown(f"<div style='margin-bottom: 25px;'>", unsafe_allow_html=True)
             st.markdown(conteudo)
+            st.markdown("</div>", unsafe_allow_html=True)
     
     st.divider()
     plano_principal = limpar_none(st.session_state.mensagens[0].get("content")) if st.session_state.mensagens else ""
@@ -549,30 +556,43 @@ elif st.session_state.etapa == 2:
     st.subheader("💬 Central de Dúvidas")
     if prompt_duvida := st.chat_input("Pergunte sobre exercícios ou substituições de alimentos..."):
         
+        # 1. Adiciona a dúvida do usuário na memória
         st.session_state.mensagens.append({"role": "user", "content": prompt_duvida})
-        with st.chat_message("user"):
-            st.markdown(prompt_duvida)
+        
+        # 2. Exibe imediatamente a bolha do usuário à direita
+        st.markdown(f"""
+            <div style='display: flex; justify-content: flex-end; margin-bottom: 25px;'>
+                <div style='background-color: #f4f4f4; color: #0d0d0d; padding: 12px 18px; border-radius: 18px 18px 0px 18px; max-width: 85%; font-family: sans-serif; box-shadow: 1px 1px 3px rgba(0,0,0,0.05);'>
+                    {prompt_duvida}
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
             
-        with st.chat_message("assistant"):
-            with st.spinner("Analisando protocolo..."):
-                plano_contexto = st.session_state.mensagens[0]["content"]
-                prompt_duvida_completo = f"Plano:\n{plano_contexto}\n\nDúvida: {prompt_duvida}"
-                
-                url = f"https://generativelanguage.googleapis.com/v1beta/{MODELO}:generateContent?key={CHAVE}"
-                payload = {"contents": [{"parts": [{"text": prompt_duvida_completo}]}]}
-                
-                try:
-                    resposta = requests.post(url, json=payload, timeout=20)
-                    if resposta.status_code == 200:
-                        resposta_data = resposta.json()
-                        texto_ia_duvida = resposta_data.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', '')
-                        texto_ia_duvida = limpar_none(texto_ia_duvida)
-                        st.markdown(texto_ia_duvida)
-                        st.session_state.mensagens.append({"role": "assistant", "content": texto_ia_duvida})
-                        
-                        st.session_state.banco[usuario]["perfis"][nome]["mensagens"] = st.session_state.mensagens
-                        salvar_banco(st.session_state.banco)
-                    else:
-                        st.warning("Servidor ocupado. Tente perguntar em alguns instantes.")
-                except:
-                    st.error("Erro ao conectar.")
+        # 3. Faz a requisição sem o quadradinho da IA
+        with st.spinner("Analisando protocolo..."):
+            plano_contexto = st.session_state.mensagens[0]["content"]
+            prompt_duvida_completo = f"Plano:\n{plano_contexto}\n\nDúvida: {prompt_duvida}"
+            
+            url = f"https://generativelanguage.googleapis.com/v1beta/{MODELO}:generateContent?key={CHAVE}"
+            payload = {"contents": [{"parts": [{"text": prompt_duvida_completo}]}]}
+            
+            try:
+                resposta = requests.post(url, json=payload, timeout=20)
+                if resposta.status_code == 200:
+                    resposta_data = resposta.json()
+                    texto_ia_duvida = resposta_data.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', '')
+                    texto_ia_duvida = limpar_none(texto_ia_duvida)
+                    
+                    # Exibe a resposta pura, colada à esquerda
+                    st.markdown(f"<div style='margin-bottom: 25px;'>", unsafe_allow_html=True)
+                    st.markdown(texto_ia_duvida)
+                    st.markdown("</div>", unsafe_allow_html=True)
+                    
+                    st.session_state.mensagens.append({"role": "assistant", "content": texto_ia_duvida})
+                    
+                    st.session_state.banco[usuario]["perfis"][nome]["mensagens"] = st.session_state.mensagens
+                    salvar_banco(st.session_state.banco)
+                else:
+                    st.warning("Servidor ocupado. Tente perguntar em alguns instantes.")
+            except:
+                st.error("Erro ao conectar.")
