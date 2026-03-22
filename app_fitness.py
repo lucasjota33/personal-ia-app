@@ -4,11 +4,9 @@ import json
 import os
 import hashlib
 import secrets
-from fpdf import FPDF 
+from fpdf import FPDF # 🟢 IMPORT: Biblioteca para gerar o PDF
 
-# Configurações iniciais da Página (DEVE SER A PRIMEIRA LINHA)
-st.set_page_config(page_title="Treinador IA Elite", page_icon="⚡", layout="wide", initial_sidebar_state="expanded")
-
+# Configurações iniciais
 CHAVE = st.secrets["GEMINI_API_KEY"]
 MODELO = "models/gemini-2.5-flash"
 ARQUIVO_BANCO = "banco_dados_saas.json"
@@ -30,7 +28,7 @@ def criptografar_senha(senha):
 def gerar_token_sessao():
     return secrets.token_hex(16)
 
-# --- FUNÇÕES E MOTOR DO PDF (MANTIDO O SEU PREFERIDO: GRADE CLÁSSICA) ---
+# 🟢 FUNÇÃO DE LIMPEZA: Evita erros de caracteres especiais no PDF
 def limpar_para_pdf(texto):
     if not texto: return ""
     substituicoes = {
@@ -42,19 +40,23 @@ def limpar_para_pdf(texto):
         texto = texto.replace(char, sub)
     return texto.encode("latin-1", "ignore").decode("latin-1")
 
+# 🟢 NOVA FUNÇÃO: LIMPEZA GERAL PARA TEXTOS DA IA
 def limpar_none(texto):
-    if texto is None: return ""
+    if texto is None:
+        return ""
     texto = str(texto)
     for token in ["None", "none", "null", "Nil"]:
         texto = texto.replace(token, "")
     return texto.strip()
 
+# 🟢 CLASSE DO PDF ELITE (Cabeçalhos, Rodapés e Design Premium)
 class PDF_Elite(FPDF):
     def __init__(self, nome_atleta):
         super().__init__()
         self.nome_atleta = nome_atleta
 
     def header(self):
+        # Linha no topo de toda página
         self.set_font("Arial", "B", 10)
         self.set_text_color(150, 150, 150)
         self.cell(0, 10, "PROTOCOLO DE ELITE", 0, 0, "L")
@@ -65,23 +67,27 @@ class PDF_Elite(FPDF):
         self.ln(5)
 
     def footer(self):
+        # Rodapé com numeração
         self.set_y(-15)
         self.set_font("Arial", "I", 8)
         self.set_text_color(150, 150, 150)
         self.cell(0, 10, f"Página {self.page_no()}", 0, 0, "C")
 
+# 🟢 MOTOR DE GERAR PDF (TABELAS INTELIGENTES NO FORMATO ORIGINAL)
 @st.cache_data(show_spinner=False)
 def gerar_pdf(texto_md, nome_atleta):
     pdf = PDF_Elite(nome_atleta)
     _ = pdf.add_page()
     _ = pdf.set_auto_page_break(True, margin=15) 
     
+    # Capa Principal
     _ = pdf.set_font("Arial", "B", 20)
     _ = pdf.set_text_color(28, 131, 225) 
     _ = pdf.ln(10)
     _ = pdf.multi_cell(0, 10, limpar_para_pdf(f"PLANEJAMENTO ESTRATÉGICO\n{nome_atleta.upper()}"), 0, "C")
     _ = pdf.ln(15)
     
+    # + [""] garante que uma tabela no fim do documento seja renderizada
     linhas = texto_md.split("\n") + [""] 
     buffer_tabela = []
     em_tabela = False
@@ -89,12 +95,14 @@ def gerar_pdf(texto_md, nome_atleta):
     for linha in linhas:
         l_strip = linha.strip()
 
+        # IDENTIFICA TABELAS E RENDERIZA A GRADE
         if l_strip.startswith('|'):
             em_tabela = True
             buffer_tabela.append(l_strip)
             continue
         elif em_tabela:
             if buffer_tabela:
+                # Função robusta para extrair células mesmo que estejam vazias
                 def extrair_celulas(linha_str):
                     s = linha_str.strip()
                     if s.startswith('|'): s = s[1:]
@@ -108,49 +116,67 @@ def gerar_pdf(texto_md, nome_atleta):
                         w_col = 190 / num_cols
                         
                         def draw_row(dados_linha, eh_cabecalho=False, zebra=False):
-                            if eh_cabecalho: _ = pdf.set_font("Arial", "B", 9)
-                            else: _ = pdf.set_font("Arial", "", 8)
+                            if eh_cabecalho:
+                                _ = pdf.set_font("Arial", "B", 9)
+                            else:
+                                _ = pdf.set_font("Arial", "", 8)
                                 
+                            # 1. Calcula a altura necessária baseada no maior texto
                             max_l = 1
                             for txt in dados_linha:
                                 txt_limpo = limpar_para_pdf(txt)
                                 cw = pdf.get_string_width(txt_limpo)
-                                w_seguro = w_col - 4 
+                                w_seguro = w_col - 4 # Desconta padding lateral
                                 if w_seguro <= 0: w_seguro = 1
                                 linhas_txt = int(cw / w_seguro) + 1 
-                                if linhas_txt > max_l: max_l = linhas_txt
+                                if linhas_txt > max_l: 
+                                    max_l = linhas_txt
                                     
-                            alt_linha = (5 * max_l) + 4 
+                            alt_linha = (5 * max_l) + 4 # 5mm por linha de texto + 4mm de padding
                             
-                            if pdf.get_y() + alt_linha > 275: _ = pdf.add_page()
+                            if pdf.get_y() + alt_linha > 275:
+                                _ = pdf.add_page()
+                                
                             y_ini = pdf.get_y()
                             
+                            # 2. Configura as cores
                             if eh_cabecalho:
                                 _ = pdf.set_fill_color(28, 131, 225)
                                 _ = pdf.set_text_color(255, 255, 255)
                             else:
                                 _ = pdf.set_text_color(40, 40, 40)
-                                if zebra: _ = pdf.set_fill_color(245, 245, 245)
-                                else: _ = pdf.set_fill_color(255, 255, 255)
+                                if zebra:
+                                    _ = pdf.set_fill_color(245, 245, 245)
+                                else:
+                                    _ = pdf.set_fill_color(255, 255, 255)
 
+                            # 3. Desenha os blocos com text wrap
                             for i, txt in enumerate(dados_linha):
                                 x_ini = 10 + (i * w_col)
                                 _ = pdf.set_xy(x_ini, y_ini)
                                 _ = pdf.cell(w_col, alt_linha, "", 1, 0, "", True)
                                 
-                                _ = pdf.set_xy(x_ini, y_ini + 2) 
+                                _ = pdf.set_xy(x_ini, y_ini + 2) # 2mm de margem superior interna
                                 txt_limpo = limpar_para_pdf(txt)
                                 _ = pdf.multi_cell(w_col, 5, txt_limpo, 0, "C")
                                 
                             _ = pdf.set_xy(10, y_ini + alt_linha)
 
+                        # Desenha cabeçalho
                         draw_row(cols, eh_cabecalho=True)
+                        
+                        # Desenha resto
                         zebra = False
                         for l_tab in buffer_tabela[1:]:
                             if '---' in l_tab: continue
                             dados = extrair_celulas(l_tab)
-                            if len(dados) < num_cols: dados.extend([''] * (num_cols - len(dados)))
-                            elif len(dados) > num_cols: dados = dados[:num_cols]
+                            
+                            # Força a linha ter as mesmas colunas do cabeçalho preenchendo vazios
+                            if len(dados) < num_cols:
+                                dados.extend([''] * (num_cols - len(dados)))
+                            elif len(dados) > num_cols:
+                                dados = dados[:num_cols]
+                                
                             draw_row(dados, eh_cabecalho=False, zebra=zebra)
                             zebra = not zebra
                         
@@ -160,6 +186,7 @@ def gerar_pdf(texto_md, nome_atleta):
 
         if not l_strip: continue
 
+        # PROCESSA TÍTULOS E TEXTO NORMAL (Limpando o negrito sujo)
         l_limpa = l_strip.replace("**", "").replace("* ", "- ")
 
         if l_strip.startswith('### '):
@@ -183,6 +210,8 @@ def gerar_pdf(texto_md, nome_atleta):
         else:
             _ = pdf.set_font("Arial", "", 10)
             _ = pdf.set_text_color(60, 60, 60)
+            
+            # Reconhece "Bullet Points" e dá margem elegante
             if l_limpa.startswith('- '):
                 _ = pdf.set_x(15)
                 _ = pdf.multi_cell(0, 6, chr(149) + " " + limpar_para_pdf(l_limpa[2:]))
@@ -191,123 +220,39 @@ def gerar_pdf(texto_md, nome_atleta):
             _ = pdf.ln(1)
 
     resultado = pdf.output(dest="S")
-    if isinstance(resultado, str): return resultado.encode("latin-1", "ignore")
+    if isinstance(resultado, str):
+        return resultado.encode("latin-1", "ignore")
     return bytes(resultado)
 
-# --- CSS CUSTOMIZADO (CLEAN & PREMIUM - INSPIRADO NA IMAGEM) ---
+# Configuração da Página
+st.set_page_config(page_title="Fitness AI", page_icon="⚡", layout="wide")
+
+# --- CSS CUSTOMIZADO ---
 st.markdown("""
     <style>
-    /* Ocultar elementos padrão do Streamlit */
-    [data-testid="stToolbar"], [data-testid="stToolbarActions"], .stDeployButton { display: none !important; }
+    [data-testid="stToolbar"], [data-testid="stToolbarActions"], .stDeployButton { display: none !important; visibility: hidden !important; }
     header { background-color: transparent !important; box-shadow: none !important; }
     #MainMenu, footer { display: none !important; }
-    
-    /* Fundo App - Cinza super claro/branco off-white */
-    .stApp {
-        background-color: #F8FAFC;
-        color: #1E293B;
-        font-family: 'Inter', sans-serif;
-    }
-    
-    /* Menu Lateral - Fundo Branco puro com borda sutil */
-    [data-testid="stSidebar"] {
-        background-color: #FFFFFF !important;
-        border-right: 1px solid #E2E8F0;
-    }
-    
-    /* Formulários e Containers (Efeito "Card" Branco) */
-    [data-testid="stForm"] {
-        background-color: #FFFFFF;
-        border: 1px solid #E2E8F0;
-        border-radius: 12px;
-        padding: 30px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-    }
-    
-    /* Botões Principais - Azul Moderno e Sólido */
-    div.stButton > button:first-child, [data-testid="stFormSubmitButton"] > button {
-        background-color: #2563EB;
-        color: #FFFFFF !important;
-        border: none;
-        border-radius: 8px;
-        font-weight: 600;
-        padding: 0.5rem 1rem;
-        transition: all 0.2s ease-in-out;
-        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    }
-    div.stButton > button:first-child:hover, [data-testid="stFormSubmitButton"] > button:hover {
-        background-color: #1D4ED8;
-        box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3);
-        transform: translateY(-1px);
-    }
-    
-    /* Inputs e Selects - Fundo Branco, Borda Cinza Clara */
-    .stTextInput>div>div>input, .stSelectbox>div>div>select, .stNumberInput>div>div>input {
-        background-color: #FFFFFF !important;
-        border: 1px solid #CBD5E1 !important;
-        border-radius: 8px !important;
-        color: #1E293B !important;
-        padding: 0.5rem 0.75rem;
-    }
-    .stTextInput>div>div>input:focus, .stSelectbox>div>div>select:focus {
-        border-color: #3B82F6 !important;
-        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
-    }
-    
-    /* Estilização dos Cards de Métrica (Dashboard) */
+    [data-testid="collapsedControl"] { display: none !important; }
+    .block-container { padding-top: 4rem !important; margin-top: 2rem !important; }
     div[data-testid="metric-container"] {
-        background-color: #FFFFFF;
-        border: 1px solid #E2E8F0;
-        padding: 20px;
-        border-radius: 12px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        background-color: rgba(28, 131, 225, 0.1); border: 1px solid rgba(28, 131, 225, 0.1);
+        padding: 5% 10% 5% 10%; border-radius: 10px; box-shadow: 2px 2px 10px rgba(0,0,0,0.05);
     }
-    div[data-testid="metric-container"] label {
-        color: #64748B !important;
-        font-weight: 500;
-        font-size: 0.9rem;
-    }
-    div[data-testid="metric-container"] div {
-        color: #0F172A !important;
-        font-size: 1.8rem !important;
-        font-weight: bold;
-    }
-    
-    /* Painel do Chat - Mensagens suaves */
-    .stChatMessage {
-        background-color: #FFFFFF !important;
-        border-radius: 12px;
-        border: 1px solid #E2E8F0;
-        padding: 15px;
-        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
-    }
-    
-    /* Abas (Tabs) Clean */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 20px;
-    }
-    .stTabs [data-baseweb="tab"] {
-        padding: 10px 0;
-        color: #64748B;
-        font-weight: 600;
-    }
-    .stTabs [aria-selected="true"] {
-        color: #2563EB !important;
-        border-bottom: 2px solid #2563EB;
-    }
-    
-    /* Títulos padronizados */
-    h1, h2, h3 { color: #0F172A; font-weight: 700; }
-    p { color: #475569; }
     </style>
 """, unsafe_allow_html=True)
 
 # --- GERENCIADOR DE ESTADO (MEMÓRIA DO APP) ---
-if "etapa" not in st.session_state: st.session_state.etapa = 0 
-if "mensagens" not in st.session_state: st.session_state.mensagens = []
-if "dados_usuario" not in st.session_state: st.session_state.dados_usuario = {}
-if "banco" not in st.session_state: st.session_state.banco = carregar_banco() 
-if "usuario_logado" not in st.session_state: st.session_state.usuario_logado = None
+if "etapa" not in st.session_state:
+    st.session_state.etapa = 0 
+if "mensagens" not in st.session_state:
+    st.session_state.mensagens = []
+if "dados_usuario" not in st.session_state:
+    st.session_state.dados_usuario = {}
+if "banco" not in st.session_state:
+    st.session_state.banco = carregar_banco() 
+if "usuario_logado" not in st.session_state:
+    st.session_state.usuario_logado = None
 
 # 🟢 AUTO-LOGIN
 if st.session_state.usuario_logado is None:
@@ -325,19 +270,17 @@ if st.session_state.usuario_logado is None:
 if st.session_state.etapa == 0:
     col1, col2, col3 = st.columns([1, 1.5, 1])
     with col2:
-        st.write("")
-        st.write("")
-        st.markdown("<h1 style='text-align: center; font-size: 2.5rem;'>Treinador AI</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; margin-bottom: 30px;'>Faça o login para gerenciar seus atletas.</p>", unsafe_allow_html=True)
+        st.title("⚡ Treinador Digital")
+        st.markdown("Bem-vindo à plataforma de elite. Faça login ou crie sua conta.")
         
-        tab1, tab2 = st.tabs(["Acesso Seguro", "Criar Conta"])
+        tab1, tab2 = st.tabs(["Entrar", "Criar Conta Nova"])
         
         with tab1:
             with st.form("form_login"):
                 usuario_login = st.text_input("Usuário ou E-mail")
                 senha_login = st.text_input("Senha", type="password")
                 manter_conectado = st.checkbox("Mantenha-me conectado") 
-                btn_login = st.form_submit_button("Entrar no Sistema", use_container_width=True)
+                btn_login = st.form_submit_button("Entrar", type="primary", use_container_width=True)
                 
                 if btn_login:
                     banco = st.session_state.banco
@@ -355,71 +298,57 @@ if st.session_state.etapa == 0:
                     if usuario_encontrado:
                         st.session_state.usuario_logado = usuario_encontrado
                         st.session_state.etapa = 1
+                        
                         if manter_conectado:
                             novo_token = gerar_token_sessao()
                             st.session_state.banco[usuario_encontrado]["token"] = novo_token
                             salvar_banco(st.session_state.banco)
                             st.query_params["session"] = novo_token
+                            
                         st.rerun()
                     else:
-                        st.error("Credenciais incorretas.")
+                        st.error("Credenciais incorretas. Verifique seu usuário/e-mail e senha.")
                         
         with tab2:
             with st.form("form_cadastro"):
-                novo_usuario = st.text_input("Nome de Usuário")
-                novo_email = st.text_input("E-mail")
-                nova_senha = st.text_input("Senha", type="password")
+                novo_usuario = st.text_input("Escolha um Nome de Usuário")
+                novo_email = st.text_input("Digite seu E-mail")
+                nova_senha = st.text_input("Crie uma Senha", type="password")
                 confirma_senha = st.text_input("Confirme a Senha", type="password")
-                btn_cadastro = st.form_submit_button("Registrar Conta", use_container_width=True)
+                btn_cadastro = st.form_submit_button("Criar Conta", use_container_width=True)
                 
                 if btn_cadastro:
                     email_em_uso = any(dados.get("email") == novo_email for dados in st.session_state.banco.values())
-                    if not novo_usuario or not novo_email or not nova_senha or not confirma_senha: st.error("Preencha todos os campos!")
-                    elif nova_senha != confirma_senha: st.error("As senhas não coincidem.")
-                    elif novo_usuario in st.session_state.banco: st.error("Usuário já existe.")
-                    elif email_em_uso: st.error("E-mail já cadastrado!")
+                    
+                    if not novo_usuario or not novo_email or not nova_senha or not confirma_senha:
+                        st.error("Preencha todos os campos!")
+                    elif nova_senha != confirma_senha:
+                        st.error("As senhas não coincidem. Tente novamente.")
+                    elif novo_usuario in st.session_state.banco:
+                        st.error("Este nome de usuário já está em uso! Escolha outro.")
+                    elif email_em_uso:
+                        st.error("Este e-mail já está cadastrado no sistema!")
                     else:
-                        st.session_state.banco[novo_usuario] = {"email": novo_email, "senha": criptografar_senha(nova_senha), "token": "", "perfis": {}}
+                        st.session_state.banco[novo_usuario] = {
+                            "email": novo_email,
+                            "senha": criptografar_senha(nova_senha),
+                            "token": "", 
+                            "perfis": {}
+                        }
                         salvar_banco(st.session_state.banco)
-                        st.success("Conta criada com sucesso! Acesse na aba ao lado.")
+                        st.success("Conta criada com sucesso! Vá para a aba 'Entrar' para acessar.")
 
 # ==========================================================
-# MENU LATERAL (SIDEBAR)
+# ETAPA 1: PAINEL DO USUÁRIO (PERFIS + NOVO)
 # ==========================================================
-if st.session_state.etapa in [1, 2]:
+elif st.session_state.etapa == 1:
+    
     usuario = st.session_state.usuario_logado
     perfis_do_usuario = st.session_state.banco[usuario]["perfis"]
     
-    with st.sidebar:
-        st.markdown(f"### Olá, {usuario}")
-        st.write("Gestão de Protocolos")
-        st.divider()
-        
-        st.markdown("<p style='font-size: 0.9rem; font-weight: 600; color: #64748B; margin-bottom: 10px;'>SEUS ATLETAS</p>", unsafe_allow_html=True)
-        if perfis_do_usuario:
-            for nome_salvo in list(perfis_do_usuario.keys()):
-                colA, colB = st.columns([8, 2])
-                with colA:
-                    if st.button(f"👤 {nome_salvo}", key=f"btn_{nome_salvo}", use_container_width=True):
-                        st.session_state.dados_usuario = perfis_do_usuario[nome_salvo]["dados"]
-                        st.session_state.mensagens = perfis_do_usuario[nome_salvo]["mensagens"]
-                        st.session_state.etapa = 2
-                        st.rerun()
-                with colB:
-                    if st.button("❌", key=f"del_{nome_salvo}"):
-                        del st.session_state.banco[usuario]["perfis"][nome_salvo]
-                        salvar_banco(st.session_state.banco)
-                        st.rerun()
-        else:
-            st.info("Nenhum atleta cadastrado.")
-            
-        st.divider()
-        if st.button("➕ Novo Atleta", use_container_width=True):
-            st.session_state.etapa = 1
-            st.rerun()
-            
-        st.write("")
-        if st.button("Sair da Conta", use_container_width=True):
+    col_logout1, col_logout2 = st.columns([8, 2])
+    with col_logout2:
+        if st.button("Sair da Conta"):
             if "token" in st.session_state.banco[usuario]:
                 st.session_state.banco[usuario]["token"] = ""
                 salvar_banco(st.session_state.banco)
@@ -427,18 +356,34 @@ if st.session_state.etapa in [1, 2]:
             st.session_state.usuario_logado = None
             st.session_state.etapa = 0
             st.rerun()
-
-# ==========================================================
-# ETAPA 1: CADASTRO DE NOVO ATLETA
-# ==========================================================
-if st.session_state.etapa == 1:
+            
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.markdown("<h2>Novo Planejamento</h2>", unsafe_allow_html=True)
-        st.markdown("<p>Insira os dados físicos do atleta para a estruturação da IA.</p>", unsafe_allow_html=True)
+        st.title(f"Olá, {usuario}! 👋")
+        
+        if perfis_do_usuario:
+            st.markdown("### 📋 Seus Atletas:")
+            for nome_salvo in list(perfis_do_usuario.keys()):
+                c_btn, c_del = st.columns([8, 2])
+                with c_btn:
+                    if st.button(f"👤 {nome_salvo}", key=f"btn_{nome_salvo}", use_container_width=True):
+                        st.session_state.dados_usuario = perfis_do_usuario[nome_salvo]["dados"]
+                        st.session_state.mensagens = perfis_do_usuario[nome_salvo]["mensagens"]
+                        st.session_state.etapa = 2
+                        st.rerun()
+                with c_del:
+                    if st.button("❌", key=f"del_{nome_salvo}"):
+                        del st.session_state.banco[usuario]["perfis"][nome_salvo]
+                        salvar_banco(st.session_state.banco)
+                        st.rerun()
+            
+            st.divider()
+            st.markdown("### ➕ Ou cadastre um Novo Atleta:")
+        else:
+            st.write("Você ainda não tem perfis salvos. Crie o primeiro abaixo!")
         
         with st.form("perfil_usuario"):
-            nome = st.text_input("Nome Completo", placeholder="Ex: Lucas Silva")
+            nome = st.text_input("Nome Completo do Atleta", placeholder="Ex: Lucas")
             c_peso, c_altura = st.columns(2)
             with c_peso: peso = st.number_input("Peso (kg)", min_value=30.0, max_value=250.0, value=75.0, step=0.1)
             with c_altura: altura = st.number_input("Altura (cm)", min_value=100, max_value=230, value=175, step=1)
@@ -446,15 +391,17 @@ if st.session_state.etapa == 1:
             objetivo = st.selectbox("Objetivo Principal", ["Ganhar Massa Muscular (Hipertrofia)", "Perder Peso (Déficit Calórico)", "Melhorar Performance (Força/Resistência)", "Definição Corporal", "Manutenção da Saúde"])
             nivel_atividade = st.selectbox("Nível de Atividade Diária", ["Sedentário", "Levemente Ativo", "Moderadamente Ativo", "Muito Ativo", "Extremamente Ativo"])
 
-            submit_button = st.form_submit_button(label="Gerar Protocolo Completo", use_container_width=True)
+            submit_button = st.form_submit_button(label="🚀 GERAR PROTOCOLO ELITE", type="primary", use_container_width=True)
 
         if submit_button:
-            if not nome: st.error("Identificação necessária.")
-            elif nome in perfis_do_usuario: st.warning(f"O atleta '{nome}' já existe. Exclua-o no menu lateral ou escolha outro nome.")
+            if not nome:
+                st.error("⚠️ Identificação necessária.")
+            elif nome in perfis_do_usuario:
+                st.warning(f"⚠️ O atleta '{nome}' já existe! Exclua-o ou escolha outro nome.")
             else:
                 st.session_state.dados_usuario = {"nome": nome, "peso": peso, "altura": altura, "objetivo": objetivo, "nivel": nivel_atividade}
                 
-                with st.spinner("Processando dados e gerando plano..."):
+                with st.spinner("⏳ Processando dados e estruturando planejamento..."):
                     prompt_mestre = f"""
                     Atue como um Nutricionista Esportivo Clínico e Personal Trainer de Atletas de Elite. 
                     Crie um planejamento irretocável para o(a) {nome}.
@@ -494,15 +441,20 @@ if st.session_state.etapa == 1:
                                 "mensagens": st.session_state.mensagens
                             }
                             salvar_banco(st.session_state.banco)
+                            
                             st.session_state.etapa = 2
                             st.rerun()
-                        else: st.error("Erro no Servidor. Tente novamente.")
-                    except: st.error("Erro de conexão.")
+                        else:
+                            st.error("Erro no Servidor. Tente novamente.")
+                    except Exception as e:
+                        st.error("Erro de conexão.")
 
 # ==========================================================
-# ETAPA 2: DASHBOARD DO PLANO GERADO E CHAT
+# ETAPA 2: PÁGINA DO PLANO GERADO E CHAT DA IA
 # ==========================================================
 elif st.session_state.etapa == 2:
+    
+    usuario = st.session_state.usuario_logado
     dados = st.session_state.dados_usuario
     nome = dados["nome"]
     peso = dados["peso"]
@@ -510,27 +462,18 @@ elif st.session_state.etapa == 2:
     objetivo_curto = dados["objetivo"].split("(")[0].strip()
     imc = peso / ((altura / 100) ** 2)
 
-    col_tit, col_btn = st.columns([7, 3])
-    with col_tit:
-        st.markdown(f"<h2>Painel do Atleta: {nome}</h2>", unsafe_allow_html=True)
-    with col_btn:
-        plano_principal = limpar_none(st.session_state.mensagens[0].get("content")) if st.session_state.mensagens else ""
-        pdf_final = gerar_pdf(plano_principal, nome)
-        st.write("") # Espaçamento
-        st.download_button(
-            label="📥 Exportar PDF",
-            data=pdf_final,
-            file_name=f"Protocolo_{nome.replace(' ', '_')}.pdf",
-            mime="application/pdf",
-            use_container_width=True
-        )
+    if st.button("⬅️ Voltar ao Painel Inicial"):
+        st.session_state.etapa = 1
+        st.session_state.mensagens = []
+        st.rerun()
+
+    st.success(f"**Análise concluída, {nome}!** Confira seu protocolo abaixo.")
     
-    # 🟢 CARDS "CLEAN" ESTILO DASHBOARD
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Status", "Ativo")
-    c2.metric("Foco", objetivo_curto)
-    c3.metric("Peso", f"{peso} kg")
-    c4.metric("IMC", f"{imc:.1f}")
+    c1.metric("Atleta", nome)
+    c2.metric("Objetivo", objetivo_curto)
+    c3.metric("Peso Atual", f"{peso} kg")
+    c4.metric("IMC Inicial", f"{imc:.1f}")
     
     st.divider()
     
@@ -542,17 +485,34 @@ elif st.session_state.etapa == 2:
             with st.chat_message("user"):
                 st.markdown(conteudo)
     
+    # 🟢 NOVO: BOTÃO DE DOWNLOAD DO PDF
     st.divider()
-    st.markdown("### Ajustes com Inteligência Artificial")
-    if prompt_duvida := st.chat_input("Ex: 'Substitua o frango por ovo' ou 'Mude o treino para 3 dias'"):
+    plano_principal = limpar_none(st.session_state.mensagens[0].get("content")) if st.session_state.mensagens else ""
+    
+    # Gera o PDF guardando em variável
+    pdf_final = gerar_pdf(plano_principal, nome)
+    
+    st.download_button(
+        label="📥 Baixar Protocolo Completo em PDF",
+        data=pdf_final,
+        file_name=f"Protocolo_{nome.replace(' ', '_')}.pdf",
+        mime="application/pdf",
+        type="primary",
+        use_container_width=True
+    )
+            
+    st.divider()
+    st.subheader("💬 Central de Dúvidas")
+    if prompt_duvida := st.chat_input("Pergunte sobre exercícios ou substituições de alimentos..."):
+        
         st.session_state.mensagens.append({"role": "user", "content": prompt_duvida})
         with st.chat_message("user"):
             st.markdown(prompt_duvida)
             
         with st.chat_message("assistant"):
-            with st.spinner("Analisando pedido..."):
+            with st.spinner("Analisando protocolo..."):
                 plano_contexto = st.session_state.mensagens[0]["content"]
-                prompt_duvida_completo = f"Plano atual:\n{plano_contexto}\n\nDúvida/Ajuste do usuário: {prompt_duvida}"
+                prompt_duvida_completo = f"Plano:\n{plano_contexto}\n\nDúvida: {prompt_duvida}"
                 
                 url = f"https://generativelanguage.googleapis.com/v1beta/{MODELO}:generateContent?key={CHAVE}"
                 payload = {"contents": [{"parts": [{"text": prompt_duvida_completo}]}]}
@@ -566,7 +526,9 @@ elif st.session_state.etapa == 2:
                         st.markdown(texto_ia_duvida)
                         st.session_state.mensagens.append({"role": "assistant", "content": texto_ia_duvida})
                         
-                        st.session_state.banco[st.session_state.usuario_logado]["perfis"][nome]["mensagens"] = st.session_state.mensagens
+                        st.session_state.banco[usuario]["perfis"][nome]["mensagens"] = st.session_state.mensagens
                         salvar_banco(st.session_state.banco)
-                    else: st.warning("Servidor ocupado.")
-                except: st.error("Erro ao conectar.")
+                    else:
+                        st.warning("Servidor ocupado. Tente perguntar em alguns instantes.")
+                except:
+                    st.error("Erro ao conectar.")
