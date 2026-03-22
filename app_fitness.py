@@ -364,9 +364,7 @@ elif st.session_state.etapa == 1:
                     # 🏆 PROTOCOLO DE ELITE: {nome.upper()}
                     ## 1. 📊 ANÁLISE METABÓLICA
                     Crie uma tabela em Markdown seguindo EXATAMENTE as colunas abaixo:
-                    - Taxa Metabólica Basal (Mifflin-St Jeor)
-                    - Gasto Energético Total
-                    - Meta Calórica Alvo
+                    Taxa Metabólica Basal (Mifflin-St Jeor)| Gasto Energético Total | Meta Calórica Alvo
 
                     ## 2. 🍎 PLANO ALIMENTAR
                     | Refeição | Alimento Principal | Macronutrientes | Substituição |
