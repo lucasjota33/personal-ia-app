@@ -413,7 +413,7 @@ elif st.session_state.etapa == 1:
                     Taxa Metabólica Basal (Mifflin-St Jeor)| Gasto Energético Total | Meta Calórica Alvo
 
                     ## 2. 🍎 PLANO ALIMENTAR
-                    | Refeição | Alimento Principal | Macronutrientes | Substituição |
+                    | Refeição(Almoço, janta, etc) | Alimento Principal | Macronutrientes | Substituição |
                     
                     ## 3. 🏋️‍♂️ PLANILHA DE TREINAMENTO
                     Defina uma divisão semanal inteligente (ex:ABCDE, ABC, AB, Fullbody) com base no objetivo.
