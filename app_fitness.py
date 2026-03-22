@@ -11,7 +11,7 @@ CHAVE = st.secrets["GEMINI_API_KEY"]
 MODELO = "models/gemini-2.5-flash"
 ARQUIVO_BANCO = "banco_dados_saas.json"
 
-# --- FUNÇÕES DO BANCO DE DADOS E SEGURANÇA ---
+# --- FUNÇÕES DO BANCO DE DADOS E SEGURANÇA --
 def carregar_banco():
     if os.path.exists(ARQUIVO_BANCO):
         with open(ARQUIVO_BANCO, "r", encoding="utf-8") as f:
