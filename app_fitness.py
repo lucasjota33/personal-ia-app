@@ -227,17 +227,57 @@ def gerar_pdf(texto_md, nome_atleta):
 # Configuração da Página
 st.set_page_config(page_title="Fitness AI", page_icon="⚡", layout="wide")
 
-# --- CSS CUSTOMIZADO ---
+# --- CSS CUSTOMIZADO (OTIMIZADO PARA CELULAR) ---
 st.markdown("""
     <style>
+    /* Ocultar elementos padrão do Streamlit */
     [data-testid="stToolbar"], [data-testid="stToolbarActions"], .stDeployButton { display: none !important; visibility: hidden !important; }
     header { background-color: transparent !important; box-shadow: none !important; }
     #MainMenu, footer { display: none !important; }
     [data-testid="collapsedControl"] { display: none !important; }
-    .block-container { padding-top: 4rem !important; margin-top: 2rem !important; }
+    
+    /* Configuração base Desktop */
+    .block-container { 
+        padding-top: 3rem !important; 
+        max-width: 1000px !important; /* Ajuda a não esticar demais em telas muito largas */
+    }
     div[data-testid="metric-container"] {
-        background-color: rgba(28, 131, 225, 0.1); border: 1px solid rgba(28, 131, 225, 0.1);
-        padding: 5% 10% 5% 10%; border-radius: 10px; box-shadow: 2px 2px 10px rgba(0,0,0,0.05);
+        background-color: rgba(28, 131, 225, 0.05); 
+        border: 1px solid rgba(28, 131, 225, 0.2);
+        padding: 15px; 
+        border-radius: 10px; 
+        box-shadow: 2px 2px 10px rgba(0,0,0,0.02);
+    }
+
+    /* 📱 OTIMIZAÇÕES ESPECÍFICAS PARA CELULAR */
+    @media (max-width: 768px) {
+        .block-container { 
+            padding-top: 1.5rem !important; /* Tira o buraco branco do topo */
+            padding-left: 1rem !important; /* Aproveita melhor as laterais da tela */
+            padding-right: 1rem !important;
+        }
+        
+        /* 1. Previne que o iOS (iPhone) dê zoom automático ao clicar nos campos */
+        input, select, textarea {
+            font-size: 16px !important;
+        }
+        
+        /* 2. Botões maiores e mais fáceis de tocar (Touch Target) */
+        .stButton > button, [data-testid="stFormSubmitButton"] > button {
+            min-height: 55px !important;
+            font-size: 16px !important;
+            width: 100% !important;
+        }
+        
+        /* 3. Ajuste de fontes para não quebrarem o layout no celular */
+        h1 { font-size: 1.8rem !important; }
+        h2 { font-size: 1.5rem !important; }
+        h3 { font-size: 1.2rem !important; }
+        
+        /* 4. Cards de métricas mais compactos no mobile */
+        div[data-testid="metric-container"] {
+            padding: 10px !important;
+        }
     }
     </style>
 """, unsafe_allow_html=True)
@@ -268,11 +308,15 @@ if st.session_state.usuario_logado is None:
 # ETAPA 0: TELA DE LOGIN E CADASTRO
 # ==========================================================
 if st.session_state.etapa == 0:
-    col1, col2, col3 = st.columns([1, 1.5, 1])
-    with col2:
-        st.title("⚡ Treinador Digital")
-        st.markdown("Bem-vindo à plataforma de elite. Faça login ou crie sua conta.")
-        
+    # Ajuste: No celular as colunas "desabam". Usar container melhora o visual.
+    st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
+    st.title("⚡ Treinador Digital")
+    st.markdown("Bem-vindo à plataforma de elite. Faça login ou crie sua conta.")
+    st.markdown("</div>", unsafe_allow_html=True)
+    st.write("")
+    
+    col_vazia1, col_form, col_vazia2 = st.columns([1, 4, 1])
+    with col_form:
         tab1, tab2 = st.tabs(["Entrar", "Criar Conta Nova"])
         
         with tab1:
@@ -346,9 +390,13 @@ elif st.session_state.etapa == 1:
     usuario = st.session_state.usuario_logado
     perfis_do_usuario = st.session_state.banco[usuario]["perfis"]
     
-    col_logout1, col_logout2 = st.columns([8, 2])
-    with col_logout2:
-        if st.button("Sair da Conta"):
+    # Header mobile-friendly
+    col_nome, col_logout = st.columns([7, 3])
+    with col_nome:
+        st.title(f"Olá, {usuario}! 👋")
+    with col_logout:
+        st.write("") # Espaçamento
+        if st.button("Sair da Conta", use_container_width=True):
             if "token" in st.session_state.banco[usuario]:
                 st.session_state.banco[usuario]["token"] = ""
                 salvar_banco(st.session_state.banco)
@@ -357,97 +405,93 @@ elif st.session_state.etapa == 1:
             st.session_state.etapa = 0
             st.rerun()
             
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        st.title(f"Olá, {usuario}! 👋")
+    if perfis_do_usuario:
+        st.markdown("### 📋 Seus Atletas:")
+        for nome_salvo in list(perfis_do_usuario.keys()):
+            c_btn, c_del = st.columns([8, 2])
+            with c_btn:
+                if st.button(f"👤 {nome_salvo}", key=f"btn_{nome_salvo}", use_container_width=True):
+                    st.session_state.dados_usuario = perfis_do_usuario[nome_salvo]["dados"]
+                    st.session_state.mensagens = perfis_do_usuario[nome_salvo]["mensagens"]
+                    st.session_state.etapa = 2
+                    st.rerun()
+            with c_del:
+                if st.button("❌", key=f"del_{nome_salvo}"):
+                    del st.session_state.banco[usuario]["perfis"][nome_salvo]
+                    salvar_banco(st.session_state.banco)
+                    st.rerun()
         
-        if perfis_do_usuario:
-            st.markdown("### 📋 Seus Atletas:")
-            for nome_salvo in list(perfis_do_usuario.keys()):
-                c_btn, c_del = st.columns([8, 2])
-                with c_btn:
-                    if st.button(f"👤 {nome_salvo}", key=f"btn_{nome_salvo}", use_container_width=True):
-                        st.session_state.dados_usuario = perfis_do_usuario[nome_salvo]["dados"]
-                        st.session_state.mensagens = perfis_do_usuario[nome_salvo]["mensagens"]
+        st.divider()
+        st.markdown("### ➕ Ou cadastre um Novo Atleta:")
+    else:
+        st.write("Você ainda não tem perfis salvos. Crie o primeiro abaixo!")
+    
+    with st.form("perfil_usuario"):
+        nome = st.text_input("Nome Completo do Atleta", placeholder="Ex: Lucas")
+        c_peso, c_altura = st.columns(2)
+        with c_peso: peso = st.number_input("Peso (kg)", min_value=30.0, max_value=250.0, value=75.0, step=0.1)
+        with c_altura: altura = st.number_input("Altura (cm)", min_value=100, max_value=230, value=175, step=1)
+            
+        objetivo = st.selectbox("Objetivo Principal", ["Ganhar Massa Muscular (Hipertrofia)", "Perder Peso (Déficit Calórico)", "Melhorar Performance (Força/Resistência)", "Definição Corporal", "Manutenção da Saúde"])
+        nivel_atividade = st.selectbox("Nível de Atividade Diária", ["Sedentário", "Levemente Ativo", "Moderadamente Ativo", "Muito Ativo", "Extremamente Ativo"])
+
+        submit_button = st.form_submit_button(label="🚀 GERAR PROTOCOLO ELITE", type="primary", use_container_width=True)
+
+    if submit_button:
+        if not nome:
+            st.error("⚠️ Identificação necessária.")
+        elif nome in perfis_do_usuario:
+            st.warning(f"⚠️ O atleta '{nome}' já existe! Exclua-o ou escolha outro nome.")
+        else:
+            st.session_state.dados_usuario = {"nome": nome, "peso": peso, "altura": altura, "objetivo": objetivo, "nivel": nivel_atividade}
+            
+            with st.spinner("⏳ Processando dados e estruturando planejamento..."):
+                prompt_mestre = f"""
+                Atue como um Nutricionista Esportivo Clínico e Personal Trainer de Atletas de Elite. 
+                Crie um planejamento irretocável para o(a) {nome}.
+                Peso: {peso}kg | Altura: {altura}cm | Nível: {nivel_atividade} | Objetivo: {objetivo}
+
+                # 🏆 PROTOCOLO DE ELITE: {nome.upper()}
+                ## 1. 📊 ANÁLISE METABÓLICA
+                Crie uma tabela em Markdown seguindo EXATAMENTE as colunas abaixo:
+                Taxa Metabólica Basal (Mifflin-St Jeor)| Gasto Energético Total | Meta Calórica Alvo
+
+                ## 2. 🍎 PLANO ALIMENTAR
+                | Refeição(Almoço, janta, etc) | Alimento Principal | Macronutrientes | Substituição |
+                
+                ## 3. 🏋️‍♂️ PLANILHA DE TREINAMENTO
+                Defina uma divisão semanal inteligente (ex:ABCDE, ABC, AB, Fullbody) com base no objetivo.
+                Para CADA DIA de treino, crie uma tabela em Markdown seguindo EXATAMENTE as colunas abaixo:
+
+                | Exercício | Séries | Repetições | Descanso |
+
+                ## 4. 💊 SUPLEMENTAÇÃO
+                | Suplemento | Dosagem Diária | Horário |
+                """
+
+                url = f"https://generativelanguage.googleapis.com/v1beta/{MODELO}:generateContent?key={CHAVE}"
+                payload = {"contents": [{"parts": [{"text": prompt_mestre}]}]}
+                
+                try:
+                    resposta = requests.post(url, json=payload, timeout=40)
+                    if resposta.status_code == 200:
+                        resposta_data = resposta.json()
+                        texto_ia = resposta_data.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', '')
+                        texto_ia = limpar_none(texto_ia)
+                        st.session_state.mensagens = [{"role": "assistant", "content": texto_ia}]
+                        
+                        st.session_state.banco[usuario]["perfis"][nome] = {
+                            "dados": st.session_state.dados_usuario,
+                            "mensagens": st.session_state.mensagens
+                        }
+                        salvar_banco(st.session_state.banco)
+                        
                         st.session_state.etapa = 2
                         st.rerun()
-                with c_del:
-                    if st.button("❌", key=f"del_{nome_salvo}"):
-                        del st.session_state.banco[usuario]["perfis"][nome_salvo]
-                        salvar_banco(st.session_state.banco)
-                        st.rerun()
-            
-            st.divider()
-            st.markdown("### ➕ Ou cadastre um Novo Atleta:")
-        else:
-            st.write("Você ainda não tem perfis salvos. Crie o primeiro abaixo!")
-        
-        with st.form("perfil_usuario"):
-            nome = st.text_input("Nome Completo do Atleta", placeholder="Ex: Lucas")
-            c_peso, c_altura = st.columns(2)
-            with c_peso: peso = st.number_input("Peso (kg)", min_value=30.0, max_value=250.0, value=75.0, step=0.1)
-            with c_altura: altura = st.number_input("Altura (cm)", min_value=100, max_value=230, value=175, step=1)
-                
-            objetivo = st.selectbox("Objetivo Principal", ["Ganhar Massa Muscular (Hipertrofia)", "Perder Peso (Déficit Calórico)", "Melhorar Performance (Força/Resistência)", "Definição Corporal", "Manutenção da Saúde"])
-            nivel_atividade = st.selectbox("Nível de Atividade Diária", ["Sedentário", "Levemente Ativo", "Moderadamente Ativo", "Muito Ativo", "Extremamente Ativo"])
-
-            submit_button = st.form_submit_button(label="🚀 GERAR PROTOCOLO ELITE", type="primary", use_container_width=True)
-
-        if submit_button:
-            if not nome:
-                st.error("⚠️ Identificação necessária.")
-            elif nome in perfis_do_usuario:
-                st.warning(f"⚠️ O atleta '{nome}' já existe! Exclua-o ou escolha outro nome.")
-            else:
-                st.session_state.dados_usuario = {"nome": nome, "peso": peso, "altura": altura, "objetivo": objetivo, "nivel": nivel_atividade}
-                
-                with st.spinner("⏳ Processando dados e estruturando planejamento..."):
-                    prompt_mestre = f"""
-                    Atue como um Nutricionista Esportivo Clínico e Personal Trainer de Atletas de Elite. 
-                    Crie um planejamento irretocável para o(a) {nome}.
-                    Peso: {peso}kg | Altura: {altura}cm | Nível: {nivel_atividade} | Objetivo: {objetivo}
-
-                    # 🏆 PROTOCOLO DE ELITE: {nome.upper()}
-                    ## 1. 📊 ANÁLISE METABÓLICA
-                    Crie uma tabela em Markdown seguindo EXATAMENTE as colunas abaixo:
-                    Taxa Metabólica Basal (Mifflin-St Jeor)| Gasto Energético Total | Meta Calórica Alvo
-
-                    ## 2. 🍎 PLANO ALIMENTAR
-                    | Refeição(Almoço, janta, etc) | Alimento Principal | Macronutrientes | Substituição |
-                    
-                    ## 3. 🏋️‍♂️ PLANILHA DE TREINAMENTO
-                    Defina uma divisão semanal inteligente (ex:ABCDE, ABC, AB, Fullbody) com base no objetivo.
-                    Para CADA DIA de treino, crie uma tabela em Markdown seguindo EXATAMENTE as colunas abaixo:
-
-                    | Exercício | Séries | Repetições | Descanso |
-
-                    ## 4. 💊 SUPLEMENTAÇÃO
-                    | Suplemento | Dosagem Diária | Horário |
-                    """
-
-                    url = f"https://generativelanguage.googleapis.com/v1beta/{MODELO}:generateContent?key={CHAVE}"
-                    payload = {"contents": [{"parts": [{"text": prompt_mestre}]}]}
-                    
-                    try:
-                        resposta = requests.post(url, json=payload, timeout=40)
-                        if resposta.status_code == 200:
-                            resposta_data = resposta.json()
-                            texto_ia = resposta_data.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', '')
-                            texto_ia = limpar_none(texto_ia)
-                            st.session_state.mensagens = [{"role": "assistant", "content": texto_ia}]
-                            
-                            st.session_state.banco[usuario]["perfis"][nome] = {
-                                "dados": st.session_state.dados_usuario,
-                                "mensagens": st.session_state.mensagens
-                            }
-                            salvar_banco(st.session_state.banco)
-                            
-                            st.session_state.etapa = 2
-                            st.rerun()
-                        else:
-                            st.error("Erro no Servidor. Tente novamente.")
-                    except Exception as e:
-                        st.error("Erro de conexão.")
+                    else:
+                        st.error("Erro no Servidor. Tente novamente.")
+                except Exception as e:
+                    st.error("Erro de conexão.")
 
 # ==========================================================
 # ETAPA 2: PÁGINA DO PLANO GERADO E CHAT DA IA
@@ -462,16 +506,21 @@ elif st.session_state.etapa == 2:
     objetivo_curto = dados["objetivo"].split("(")[0].strip()
     imc = peso / ((altura / 100) ** 2)
 
-    if st.button("⬅️ Voltar ao Painel Inicial"):
-        st.session_state.etapa = 1
-        st.session_state.mensagens = []
-        st.rerun()
+    col_voltar, col_vazia = st.columns([4, 6])
+    with col_voltar:
+        if st.button("⬅️ Voltar ao Painel"):
+            st.session_state.etapa = 1
+            st.session_state.mensagens = []
+            st.rerun()
 
     st.success(f"**Análise concluída, {nome}!** Confira seu protocolo abaixo.")
     
-    c1, c2, c3, c4 = st.columns(4)
+    # 📱 Ajuste Mobile: Agrupados 2 a 2 para não quebrar a tela no celular
+    c1, c2 = st.columns(2)
     c1.metric("Atleta", nome)
     c2.metric("Objetivo", objetivo_curto)
+    
+    c3, c4 = st.columns(2)
     c3.metric("Peso Atual", f"{peso} kg")
     c4.metric("IMC Inicial", f"{imc:.1f}")
     
@@ -485,7 +534,6 @@ elif st.session_state.etapa == 2:
             with st.chat_message("user"):
                 st.markdown(conteudo)
     
-    # 🟢 NOVO: BOTÃO DE DOWNLOAD DO PDF
     st.divider()
     plano_principal = limpar_none(st.session_state.mensagens[0].get("content")) if st.session_state.mensagens else ""
     
