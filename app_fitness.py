@@ -87,7 +87,8 @@ def gerar_pdf(texto_md, nome_atleta):
     _ = pdf.multi_cell(0, 10, limpar_para_pdf(f"PLANEJAMENTO ESTRATÉGICO\n{nome_atleta.upper()}"), 0, "C")
     _ = pdf.ln(15)
     
-    linhas = texto_md.split("\n")
+    # + [""] garante que uma tabela no fim do documento seja renderizada
+    linhas = texto_md.split("\n") + [""] 
     buffer_tabela = []
     em_tabela = False
 
@@ -101,76 +102,85 @@ def gerar_pdf(texto_md, nome_atleta):
             continue
         elif em_tabela:
             if buffer_tabela:
-                cols = [c.strip() for c in buffer_tabela[0].split('|') if c.strip()]
+                # Função robusta para extrair células mesmo que estejam vazias
+                def extrair_celulas(linha_str):
+                    s = linha_str.strip()
+                    if s.startswith('|'): s = s[1:]
+                    if s.endswith('|'): s = s[:-1]
+                    return [c.strip() for c in s.split('|')]
+
+                cols = extrair_celulas(buffer_tabela[0])
                 if cols:
                     num_cols = len(cols)
-                    w_col = 190 / num_cols
-                    
-                    # Função para desenhar a linha expandindo a altura automaticamente
-                    def draw_row(dados_linha, eh_cabecalho=False, zebra=False):
-                        # Configura fonte para calcular tamanho
-                        if eh_cabecalho:
-                            _ = pdf.set_font("Arial", "B", 9)
-                        else:
-                            _ = pdf.set_font("Arial", "", 8)
-                            
-                        # 1. Calcula a altura necessária para a linha
-                        max_l = 1
-                        for txt in dados_linha:
-                            txt_limpo = limpar_para_pdf(txt)
-                            cw = pdf.get_string_width(txt_limpo)
-                            # w_col - 5 garante margem interna de segurança
-                            linhas_txt = int(cw / (w_col - 5)) + 1 
-                            if linhas_txt > max_l: 
-                                max_l = linhas_txt
-                                
-                        alt_linha = 6 * max_l # 6 é a altura base por linha de texto
+                    if num_cols > 0:
+                        w_col = 190 / num_cols
                         
-                        # Quebra de página automática para tabelas longas
-                        if pdf.get_y() + alt_linha > 275:
-                            _ = pdf.add_page()
-                            
-                        y_ini = pdf.get_y()
-                        
-                        # 2. Configura as cores da linha
-                        if eh_cabecalho:
-                            _ = pdf.set_fill_color(28, 131, 225)
-                            _ = pdf.set_text_color(255, 255, 255)
-                        else:
-                            _ = pdf.set_text_color(40, 40, 40)
-                            if zebra:
-                                _ = pdf.set_fill_color(245, 245, 245)
+                        def draw_row(dados_linha, eh_cabecalho=False, zebra=False):
+                            if eh_cabecalho:
+                                _ = pdf.set_font("Arial", "B", 9)
                             else:
-                                _ = pdf.set_fill_color(255, 255, 255)
+                                _ = pdf.set_font("Arial", "", 8)
+                                
+                            # 1. Calcula a altura necessária baseada no maior texto
+                            max_l = 1
+                            for txt in dados_linha:
+                                txt_limpo = limpar_para_pdf(txt)
+                                cw = pdf.get_string_width(txt_limpo)
+                                w_seguro = w_col - 4 # Desconta padding lateral
+                                if w_seguro <= 0: w_seguro = 1
+                                linhas_txt = int(cw / w_seguro) + 1 
+                                if linhas_txt > max_l: 
+                                    max_l = linhas_txt
+                                    
+                            alt_linha = (5 * max_l) + 4 # 5mm por linha de texto + 4mm de padding
+                            
+                            if pdf.get_y() + alt_linha > 275:
+                                _ = pdf.add_page()
+                                
+                            y_ini = pdf.get_y()
+                            
+                            # 2. Configura as cores
+                            if eh_cabecalho:
+                                _ = pdf.set_fill_color(28, 131, 225)
+                                _ = pdf.set_text_color(255, 255, 255)
+                            else:
+                                _ = pdf.set_text_color(40, 40, 40)
+                                if zebra:
+                                    _ = pdf.set_fill_color(245, 245, 245)
+                                else:
+                                    _ = pdf.set_fill_color(255, 255, 255)
 
-                        # 3. Desenha Célula por Célula (Fundo + Borda + Texto por cima)
-                        for i, txt in enumerate(dados_linha):
-                            x_ini = 10 + (i * w_col)
-                            
-                            # Desenha o fundo preenchido e a borda
-                            _ = pdf.set_xy(x_ini, y_ini)
-                            _ = pdf.cell(w_col, alt_linha, "", 1, 0, "", True)
-                            
-                            # Imprime o texto quebrando linha automaticamente
-                            _ = pdf.set_xy(x_ini, y_ini)
-                            txt_limpo = limpar_para_pdf(txt)
-                            _ = pdf.multi_cell(w_col, 6, txt_limpo, 0, "C" if eh_cabecalho else "C")
-                            
-                        # Move o cursor principal para baixo da linha recém-criada
-                        _ = pdf.set_xy(10, y_ini + alt_linha)
+                            # 3. Desenha os blocos com text wrap
+                            for i, txt in enumerate(dados_linha):
+                                x_ini = 10 + (i * w_col)
+                                _ = pdf.set_xy(x_ini, y_ini)
+                                _ = pdf.cell(w_col, alt_linha, "", 1, 0, "", True)
+                                
+                                _ = pdf.set_xy(x_ini, y_ini + 2) # 2mm de margem superior interna
+                                txt_limpo = limpar_para_pdf(txt)
+                                _ = pdf.multi_cell(w_col, 5, txt_limpo, 0, "C")
+                                
+                            _ = pdf.set_xy(10, y_ini + alt_linha)
 
-                    # --- Execução da Tabela ---
-                    draw_row(cols, eh_cabecalho=True)
-                    
-                    zebra = False
-                    for l_tab in buffer_tabela[1:]:
-                        if '---' in l_tab: continue
-                        dados = [d.strip() for d in l_tab.split('|') if d.strip()]
-                        if len(dados) == num_cols:
+                        # Desenha cabeçalho
+                        draw_row(cols, eh_cabecalho=True)
+                        
+                        # Desenha resto
+                        zebra = False
+                        for l_tab in buffer_tabela[1:]:
+                            if '---' in l_tab: continue
+                            dados = extrair_celulas(l_tab)
+                            
+                            # Força a linha ter as mesmas colunas do cabeçalho preenchendo vazios
+                            if len(dados) < num_cols:
+                                dados.extend([''] * (num_cols - len(dados)))
+                            elif len(dados) > num_cols:
+                                dados = dados[:num_cols]
+                                
                             draw_row(dados, eh_cabecalho=False, zebra=zebra)
                             zebra = not zebra
-                    
-                _ = pdf.ln(5)
+                        
+            _ = pdf.ln(5)
             buffer_tabela = []
             em_tabela = False
 
