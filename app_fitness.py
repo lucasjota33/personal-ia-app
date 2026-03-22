@@ -50,17 +50,17 @@ def limpar_none(texto):
         texto = texto.replace(token, "")
     return texto.strip()
 
-# 🟢 NOVA FUNÇÃO: MOTOR DE GERAR PDF
+# 🟢 NOVA FUNÇÃO: MOTOR DE GERAR PDF (AJUSTADA PARA MATAR O "NONE")
 @st.cache_data(show_spinner=False)
 def gerar_pdf(texto_md, nome_atleta):
     pdf = FPDF()
     pdf.add_page()
-    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.set_auto_page_break(True, margin=15) # Removido argumento nomeado
     
     # Cabeçalho do PDF
     pdf.set_font("Arial", "B", 16)
     pdf.set_text_color(28, 131, 225) # Azul Royal
-    pdf.cell(0, 10, limpar_para_pdf(f"Protocolo Elite - {nome_atleta}"), ln=True, align="C")
+    pdf.cell(0, 10, limpar_para_pdf(f"Protocolo Elite - {nome_atleta}"), 1, 0, "C") # Removidos argumentos nomeados
     pdf.ln(5)
     
     linhas = texto_md.split("\n")
@@ -85,7 +85,7 @@ def gerar_pdf(texto_md, nome_atleta):
                     pdf.set_fill_color(28, 131, 225)
                     pdf.set_text_color(255, 255, 255)
                     for col in cols:
-                        pdf.cell(largura, 8, limpar_para_pdf(col), border=1, fill=True, align="C")
+                        pdf.cell(largura, 8, limpar_para_pdf(col), 1, 0, "C", True) # Removidos args nomeados
                     pdf.ln()
                     
                     pdf.set_font("Arial", "", 9)
@@ -97,7 +97,7 @@ def gerar_pdf(texto_md, nome_atleta):
                         if len(dados) == len(cols):
                             pdf.set_fill_color(245, 245, 245) if zebra else pdf.set_fill_color(255, 255, 255)
                             for item in dados:
-                                pdf.cell(largura, 7, limpar_para_pdf(item), border=1, fill=True)
+                                pdf.cell(largura, 7, limpar_para_pdf(item), 1, 0, "", True) # Removidos args nomeados
                             pdf.ln()
                             zebra = not zebra
                 pdf.ln(5)
@@ -111,12 +111,12 @@ def gerar_pdf(texto_md, nome_atleta):
             pdf.set_font("Arial", "B", 13)
             pdf.set_text_color(28, 131, 225)
             pdf.ln(2)
-            pdf.cell(0, 10, limpar_para_pdf(l_strip.replace('#', '').strip()), ln=True)
+            pdf.cell(0, 10, limpar_para_pdf(l_strip.replace('#', '').strip()), 1) # Removidos args nomeados
         else:
             pdf.set_font("Arial", "", 11)
             pdf.set_text_color(40, 40, 40)
             txt = l_strip.replace("**", "")
-            pdf.multi_cell(0, 7, txt=limpar_para_pdf(txt))
+            pdf.multi_cell(0, 7, limpar_para_pdf(txt)) # Removido argumento nomeado 'txt='
             pdf.ln(1)
 
     resultado = pdf.output(dest="S")
@@ -392,12 +392,12 @@ elif st.session_state.etapa == 2:
     st.divider()
     plano_principal = limpar_none(st.session_state.mensagens[0].get("content")) if st.session_state.mensagens else ""
     
-    # Gera o PDF em segundo plano
-    pdf_bytes = gerar_pdf(plano_principal, nome)
+    # Gera o PDF guardando em variável
+    pdf_final = gerar_pdf(plano_principal, nome)
     
     st.download_button(
         label="📥 Baixar Protocolo Completo em PDF",
-        data=pdf_bytes,
+        data=pdf_final,
         file_name=f"Protocolo_{nome.replace(' ', '_')}.pdf",
         mime="application/pdf",
         type="primary",
