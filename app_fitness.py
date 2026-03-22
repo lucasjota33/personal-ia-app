@@ -4,10 +4,9 @@ import json
 import os
 import hashlib
 import secrets
-import datetime
 from fpdf import FPDF 
 
-# Configurações iniciais da Página (DEVE SER A PRIMEIRA LINHA DO STREAMLIT)
+# Configurações iniciais da Página (DEVE SER A PRIMEIRA LINHA)
 st.set_page_config(page_title="Treinador IA Elite", page_icon="⚡", layout="wide", initial_sidebar_state="expanded")
 
 CHAVE = st.secrets["GEMINI_API_KEY"]
@@ -31,7 +30,7 @@ def criptografar_senha(senha):
 def gerar_token_sessao():
     return secrets.token_hex(16)
 
-# --- FUNÇÕES DO PDF (MANTIDAS EXATAMENTE COMO VOCÊ GOSTOU) ---
+# --- FUNÇÕES E MOTOR DO PDF (MANTIDO O SEU PREFERIDO: GRADE CLÁSSICA) ---
 def limpar_para_pdf(texto):
     if not texto: return ""
     substituicoes = {
@@ -56,59 +55,32 @@ class PDF_Elite(FPDF):
         self.nome_atleta = nome_atleta
 
     def header(self):
-        self.set_font("Arial", "B", 9)
-        self.set_text_color(180, 180, 180)
+        self.set_font("Arial", "B", 10)
+        self.set_text_color(150, 150, 150)
         self.cell(0, 10, "PROTOCOLO DE ELITE", 0, 0, "L")
         self.cell(0, 10, f"Atleta: {self.nome_atleta}", 0, 1, "R")
-        self.set_draw_color(220, 220, 220)
-        self.set_line_width(0.3)
+        self.set_draw_color(28, 131, 225)
+        self.set_line_width(0.5)
         self.line(10, 18, 200, 18)
         self.ln(5)
 
     def footer(self):
         self.set_y(-15)
         self.set_font("Arial", "I", 8)
-        self.set_text_color(180, 180, 180)
+        self.set_text_color(150, 150, 150)
         self.cell(0, 10, f"Página {self.page_no()}", 0, 0, "C")
 
 @st.cache_data(show_spinner=False)
-def gerar_pdf(texto_md, nome_atleta, objetivo_atleta):
+def gerar_pdf(texto_md, nome_atleta):
     pdf = PDF_Elite(nome_atleta)
     _ = pdf.add_page()
     _ = pdf.set_auto_page_break(True, margin=15) 
     
-    _ = pdf.set_draw_color(220, 220, 220)
-    _ = pdf.set_fill_color(255, 220, 0) 
-    _ = pdf.rect(10, 25, 12, 255, 'F')
-    
-    _ = pdf.set_xy(28, 30)
-    _ = pdf.set_font("Arial", "B", 10)
-    _ = pdf.set_text_color(40, 40, 40)
-    hoje = datetime.date.today().strftime("%d/%m/%Y")
-    _ = pdf.cell(80, 8, f"DATA: {hoje}", 1, 1, "C")
-    
-    _ = pdf.set_xy(30, 50)
-    _ = pdf.set_font("Arial", "B", 24)
-    _ = pdf.set_text_color(255, 220, 0) 
-    _ = pdf.multi_cell(0, 12, "PLANEJADOR DE PROTOCOLO", 0, "C")
-    
-    _ = pdf.set_draw_color(220, 220, 220)
-    
-    pdf.ln(10)
-    def draw_planner_block(label, data):
-        _ = pdf.set_x(30)
-        _ = pdf.set_font("Arial", "B", 9)
-        _ = pdf.set_text_color(28, 131, 225) 
-        _ = pdf.cell(0, 5, label.upper(), 0, 1, "L")
-        _ = pdf.set_x(30)
-        _ = pdf.set_font("Arial", "", 11)
-        _ = pdf.set_text_color(60, 60, 60)
-        _ = pdf.multi_cell(0, 7, data, 1, "C")
-        pdf.ln(3)
-
-    draw_planner_block("ATLETA", nome_atleta.upper())
-    draw_planner_block("OBJETIVO PRINCIPAL", objetivo_atleta)
-    _ = pdf.add_page()
+    _ = pdf.set_font("Arial", "B", 20)
+    _ = pdf.set_text_color(28, 131, 225) 
+    _ = pdf.ln(10)
+    _ = pdf.multi_cell(0, 10, limpar_para_pdf(f"PLANEJAMENTO ESTRATÉGICO\n{nome_atleta.upper()}"), 0, "C")
+    _ = pdf.ln(15)
     
     linhas = texto_md.split("\n") + [""] 
     buffer_tabela = []
@@ -136,38 +108,37 @@ def gerar_pdf(texto_md, nome_atleta, objetivo_atleta):
                         w_col = 190 / num_cols
                         
                         def draw_row(dados_linha, eh_cabecalho=False, zebra=False):
-                            _ = pdf.set_font("Arial", "", 8)
+                            if eh_cabecalho: _ = pdf.set_font("Arial", "B", 9)
+                            else: _ = pdf.set_font("Arial", "", 8)
+                                
                             max_l = 1
                             for txt in dados_linha:
                                 txt_limpo = limpar_para_pdf(txt)
                                 cw = pdf.get_string_width(txt_limpo)
-                                w_seguro = w_col - 5 
+                                w_seguro = w_col - 4 
                                 if w_seguro <= 0: w_seguro = 1
                                 linhas_txt = int(cw / w_seguro) + 1 
                                 if linhas_txt > max_l: max_l = linhas_txt
                                     
-                            alt_linha = (5 * max_l) + 4
+                            alt_linha = (5 * max_l) + 4 
+                            
                             if pdf.get_y() + alt_linha > 275: _ = pdf.add_page()
                             y_ini = pdf.get_y()
                             
-                            _ = pdf.set_draw_color(220, 220, 220) 
-
                             if eh_cabecalho:
-                                pdf.set_font("Arial", "B", 9)
-                                _ = pdf.set_fill_color(240, 240, 240) 
-                                _ = pdf.set_text_color(40, 40, 40)
+                                _ = pdf.set_fill_color(28, 131, 225)
+                                _ = pdf.set_text_color(255, 255, 255)
                             else:
-                                _ = pdf.set_text_color(60, 60, 60)
-                                if zebra:
-                                    _ = pdf.set_fill_color(250, 250, 250)
-                                else:
-                                    _ = pdf.set_fill_color(255, 255, 255)
+                                _ = pdf.set_text_color(40, 40, 40)
+                                if zebra: _ = pdf.set_fill_color(245, 245, 245)
+                                else: _ = pdf.set_fill_color(255, 255, 255)
 
                             for i, txt in enumerate(dados_linha):
                                 x_ini = 10 + (i * w_col)
                                 _ = pdf.set_xy(x_ini, y_ini)
                                 _ = pdf.cell(w_col, alt_linha, "", 1, 0, "", True)
-                                _ = pdf.set_xy(x_ini, y_ini + 2)
+                                
+                                _ = pdf.set_xy(x_ini, y_ini + 2) 
                                 txt_limpo = limpar_para_pdf(txt)
                                 _ = pdf.multi_cell(w_col, 5, txt_limpo, 0, "C")
                                 
@@ -188,6 +159,7 @@ def gerar_pdf(texto_md, nome_atleta, objetivo_atleta):
             em_tabela = False
 
         if not l_strip: continue
+
         l_limpa = l_strip.replace("**", "").replace("* ", "- ")
 
         if l_strip.startswith('### '):
@@ -198,14 +170,14 @@ def gerar_pdf(texto_md, nome_atleta, objetivo_atleta):
         elif l_strip.startswith('## '):
             _ = pdf.ln(4)
             _ = pdf.set_font("Arial", "B", 14)
-            _ = pdf.set_text_color(255, 220, 0) 
+            _ = pdf.set_text_color(28, 131, 225)
             _ = pdf.multi_cell(0, 8, limpar_para_pdf(l_limpa.replace('## ', '')))
         elif l_strip.startswith('# '):
             _ = pdf.ln(6)
             _ = pdf.set_font("Arial", "B", 18)
-            _ = pdf.set_text_color(255, 220, 0)
+            _ = pdf.set_text_color(28, 131, 225)
             _ = pdf.multi_cell(0, 10, limpar_para_pdf(l_limpa.replace('# ', '')))
-            _ = pdf.set_draw_color(255, 220, 0)
+            _ = pdf.set_draw_color(28, 131, 225)
             _ = pdf.line(10, pdf.get_y(), 200, pdf.get_y())
             _ = pdf.ln(2)
         else:
@@ -222,81 +194,111 @@ def gerar_pdf(texto_md, nome_atleta, objetivo_atleta):
     if isinstance(resultado, str): return resultado.encode("latin-1", "ignore")
     return bytes(resultado)
 
-# --- CSS CUSTOMIZADO (MODO TECH FITNESS) ---
-# Forçamos um design escuro com detalhes em neon (Laranja/Amarelo)
+# --- CSS CUSTOMIZADO (CLEAN & PREMIUM - INSPIRADO NA IMAGEM) ---
 st.markdown("""
     <style>
     /* Ocultar elementos padrão do Streamlit */
-    [data-testid="stToolbar"], [data-testid="stToolbarActions"], .stDeployButton { display: none !important; visibility: hidden !important; }
+    [data-testid="stToolbar"], [data-testid="stToolbarActions"], .stDeployButton { display: none !important; }
     header { background-color: transparent !important; box-shadow: none !important; }
     #MainMenu, footer { display: none !important; }
     
-    /* Fundo App */
+    /* Fundo App - Cinza super claro/branco off-white */
     .stApp {
-        background-color: #0E1117;
-        color: #FAFAFA;
+        background-color: #F8FAFC;
+        color: #1E293B;
+        font-family: 'Inter', sans-serif;
     }
     
-    /* Estilização dos Botões Principais */
-    div.stButton > button:first-child {
-        background: linear-gradient(90deg, #FF8C00 0%, #FFD700 100%);
-        color: #121212 !important;
+    /* Menu Lateral - Fundo Branco puro com borda sutil */
+    [data-testid="stSidebar"] {
+        background-color: #FFFFFF !important;
+        border-right: 1px solid #E2E8F0;
+    }
+    
+    /* Formulários e Containers (Efeito "Card" Branco) */
+    [data-testid="stForm"] {
+        background-color: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        padding: 30px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    }
+    
+    /* Botões Principais - Azul Moderno e Sólido */
+    div.stButton > button:first-child, [data-testid="stFormSubmitButton"] > button {
+        background-color: #2563EB;
+        color: #FFFFFF !important;
         border: none;
         border-radius: 8px;
-        font-weight: 800;
-        letter-spacing: 1px;
-        text-transform: uppercase;
-        transition: all 0.3s ease-in-out;
-        box-shadow: 0px 4px 15px rgba(255, 140, 0, 0.3);
+        font-weight: 600;
+        padding: 0.5rem 1rem;
+        transition: all 0.2s ease-in-out;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     }
-    div.stButton > button:first-child:hover {
-        transform: scale(1.02);
-        box-shadow: 0px 6px 20px rgba(255, 215, 0, 0.6);
+    div.stButton > button:first-child:hover, [data-testid="stFormSubmitButton"] > button:hover {
+        background-color: #1D4ED8;
+        box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3);
+        transform: translateY(-1px);
     }
     
-    /* Estilização dos Cards de Métrica (HUD Style) */
-    div[data-testid="metric-container"] {
-        background-color: #1A1C23;
-        border: 1px solid #2D303E;
-        border-left: 4px solid #FF8C00;
-        padding: 15px 20px;
-        border-radius: 8px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-        transition: transform 0.2s;
+    /* Inputs e Selects - Fundo Branco, Borda Cinza Clara */
+    .stTextInput>div>div>input, .stSelectbox>div>div>select, .stNumberInput>div>div>input {
+        background-color: #FFFFFF !important;
+        border: 1px solid #CBD5E1 !important;
+        border-radius: 8px !important;
+        color: #1E293B !important;
+        padding: 0.5rem 0.75rem;
     }
-    div[data-testid="metric-container"]:hover {
-        transform: translateY(-3px);
-        border-left: 4px solid #FFD700;
+    .stTextInput>div>div>input:focus, .stSelectbox>div>div>select:focus {
+        border-color: #3B82F6 !important;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+    }
+    
+    /* Estilização dos Cards de Métrica (Dashboard) */
+    div[data-testid="metric-container"] {
+        background-color: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     }
     div[data-testid="metric-container"] label {
-        color: #A0AEC0 !important;
-        font-weight: 600;
+        color: #64748B !important;
+        font-weight: 500;
+        font-size: 0.9rem;
     }
     div[data-testid="metric-container"] div {
-        color: #FFFFFF !important;
+        color: #0F172A !important;
         font-size: 1.8rem !important;
         font-weight: bold;
     }
     
-    /* Inputs e Selects Modernos */
-    .stTextInput>div>div>input, .stSelectbox>div>div>select, .stNumberInput>div>div>input {
-        background-color: #1A1C23 !important;
-        color: white !important;
-        border: 1px solid #2D303E !important;
-        border-radius: 6px !important;
-    }
-    .stTextInput>div>div>input:focus, .stSelectbox>div>div>select:focus {
-        border-color: #FF8C00 !important;
-        box-shadow: 0 0 5px rgba(255, 140, 0, 0.5) !important;
+    /* Painel do Chat - Mensagens suaves */
+    .stChatMessage {
+        background-color: #FFFFFF !important;
+        border-radius: 12px;
+        border: 1px solid #E2E8F0;
+        padding: 15px;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
     }
     
-    /* Painel do Chat */
-    .stChatMessage {
-        background-color: #1A1C23 !important;
-        border-radius: 8px;
-        border: 1px solid #2D303E;
-        padding: 10px;
+    /* Abas (Tabs) Clean */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 20px;
     }
+    .stTabs [data-baseweb="tab"] {
+        padding: 10px 0;
+        color: #64748B;
+        font-weight: 600;
+    }
+    .stTabs [aria-selected="true"] {
+        color: #2563EB !important;
+        border-bottom: 2px solid #2563EB;
+    }
+    
+    /* Títulos padronizados */
+    h1, h2, h3 { color: #0F172A; font-weight: 700; }
+    p { color: #475569; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -323,18 +325,19 @@ if st.session_state.usuario_logado is None:
 if st.session_state.etapa == 0:
     col1, col2, col3 = st.columns([1, 1.5, 1])
     with col2:
-        st.markdown("<h1 style='text-align: center; color: #FF8C00;'>⚡ TREINADOR IA ELITE</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; color: #A0AEC0;'>Performance extrema guiada por Inteligência Artificial.</p>", unsafe_allow_html=True)
         st.write("")
+        st.write("")
+        st.markdown("<h1 style='text-align: center; font-size: 2.5rem;'>Treinador AI</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; margin-bottom: 30px;'>Faça o login para gerenciar seus atletas.</p>", unsafe_allow_html=True)
         
-        tab1, tab2 = st.tabs(["Entrar", "Criar Conta Nova"])
+        tab1, tab2 = st.tabs(["Acesso Seguro", "Criar Conta"])
         
         with tab1:
             with st.form("form_login"):
                 usuario_login = st.text_input("Usuário ou E-mail")
                 senha_login = st.text_input("Senha", type="password")
                 manter_conectado = st.checkbox("Mantenha-me conectado") 
-                btn_login = st.form_submit_button("ACESSAR PORTAL", use_container_width=True)
+                btn_login = st.form_submit_button("Entrar no Sistema", use_container_width=True)
                 
                 if btn_login:
                     banco = st.session_state.banco
@@ -363,11 +366,11 @@ if st.session_state.etapa == 0:
                         
         with tab2:
             with st.form("form_cadastro"):
-                novo_usuario = st.text_input("Escolha um Nome de Usuário")
-                novo_email = st.text_input("Digite seu E-mail")
-                nova_senha = st.text_input("Crie uma Senha", type="password")
+                novo_usuario = st.text_input("Nome de Usuário")
+                novo_email = st.text_input("E-mail")
+                nova_senha = st.text_input("Senha", type="password")
                 confirma_senha = st.text_input("Confirme a Senha", type="password")
-                btn_cadastro = st.form_submit_button("CRIAR CONTA", use_container_width=True)
+                btn_cadastro = st.form_submit_button("Registrar Conta", use_container_width=True)
                 
                 if btn_cadastro:
                     email_em_uso = any(dados.get("email") == novo_email for dados in st.session_state.banco.values())
@@ -378,21 +381,21 @@ if st.session_state.etapa == 0:
                     else:
                         st.session_state.banco[novo_usuario] = {"email": novo_email, "senha": criptografar_senha(nova_senha), "token": "", "perfis": {}}
                         salvar_banco(st.session_state.banco)
-                        st.success("Conta criada! Vá em 'Entrar'.")
+                        st.success("Conta criada com sucesso! Acesse na aba ao lado.")
 
 # ==========================================================
-# MENU LATERAL (SIDEBAR) - ATIVO NAS ETAPAS 1 E 2
+# MENU LATERAL (SIDEBAR)
 # ==========================================================
 if st.session_state.etapa in [1, 2]:
     usuario = st.session_state.usuario_logado
     perfis_do_usuario = st.session_state.banco[usuario]["perfis"]
     
     with st.sidebar:
-        st.markdown(f"<h3 style='color: #FF8C00;'>Painel do Usuário</h3>", unsafe_allow_html=True)
-        st.write(f"Bem-vindo(a), **{usuario}**")
+        st.markdown(f"### Olá, {usuario}")
+        st.write("Gestão de Protocolos")
         st.divider()
         
-        st.markdown("#### 📋 Seus Atletas")
+        st.markdown("<p style='font-size: 0.9rem; font-weight: 600; color: #64748B; margin-bottom: 10px;'>SEUS ATLETAS</p>", unsafe_allow_html=True)
         if perfis_do_usuario:
             for nome_salvo in list(perfis_do_usuario.keys()):
                 colA, colB = st.columns([8, 2])
@@ -411,12 +414,12 @@ if st.session_state.etapa in [1, 2]:
             st.info("Nenhum atleta cadastrado.")
             
         st.divider()
-        if st.button("➕ NOVO ATLETA", use_container_width=True):
+        if st.button("➕ Novo Atleta", use_container_width=True):
             st.session_state.etapa = 1
             st.rerun()
             
         st.write("")
-        if st.button("Sair da Conta 🚪", use_container_width=True):
+        if st.button("Sair da Conta", use_container_width=True):
             if "token" in st.session_state.banco[usuario]:
                 st.session_state.banco[usuario]["token"] = ""
                 salvar_banco(st.session_state.banco)
@@ -431,11 +434,11 @@ if st.session_state.etapa in [1, 2]:
 if st.session_state.etapa == 1:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.markdown("<h2 style='color: white;'>Criar Novo Planejamento</h2>", unsafe_allow_html=True)
-        st.markdown("Preencha os dados fisiológicos do atleta para o cálculo da IA.")
+        st.markdown("<h2>Novo Planejamento</h2>", unsafe_allow_html=True)
+        st.markdown("<p>Insira os dados físicos do atleta para a estruturação da IA.</p>", unsafe_allow_html=True)
         
         with st.form("perfil_usuario"):
-            nome = st.text_input("Nome Completo do Atleta", placeholder="Ex: Lucas")
+            nome = st.text_input("Nome Completo", placeholder="Ex: Lucas Silva")
             c_peso, c_altura = st.columns(2)
             with c_peso: peso = st.number_input("Peso (kg)", min_value=30.0, max_value=250.0, value=75.0, step=0.1)
             with c_altura: altura = st.number_input("Altura (cm)", min_value=100, max_value=230, value=175, step=1)
@@ -443,15 +446,15 @@ if st.session_state.etapa == 1:
             objetivo = st.selectbox("Objetivo Principal", ["Ganhar Massa Muscular (Hipertrofia)", "Perder Peso (Déficit Calórico)", "Melhorar Performance (Força/Resistência)", "Definição Corporal", "Manutenção da Saúde"])
             nivel_atividade = st.selectbox("Nível de Atividade Diária", ["Sedentário", "Levemente Ativo", "Moderadamente Ativo", "Muito Ativo", "Extremamente Ativo"])
 
-            submit_button = st.form_submit_button(label="🚀 GERAR PROTOCOLO ELITE", use_container_width=True)
+            submit_button = st.form_submit_button(label="Gerar Protocolo Completo", use_container_width=True)
 
         if submit_button:
-            if not nome: st.error("⚠️ Identificação necessária.")
-            elif nome in perfis_do_usuario: st.warning(f"⚠️ O atleta '{nome}' já existe! Exclua-o no menu lateral ou escolha outro nome.")
+            if not nome: st.error("Identificação necessária.")
+            elif nome in perfis_do_usuario: st.warning(f"O atleta '{nome}' já existe. Exclua-o no menu lateral ou escolha outro nome.")
             else:
                 st.session_state.dados_usuario = {"nome": nome, "peso": peso, "altura": altura, "objetivo": objetivo, "nivel": nivel_atividade}
                 
-                with st.spinner("⏳ Processando dados e estruturando planejamento..."):
+                with st.spinner("Processando dados e gerando plano..."):
                     prompt_mestre = f"""
                     Atue como um Nutricionista Esportivo Clínico e Personal Trainer de Atletas de Elite. 
                     Crie um planejamento irretocável para o(a) {nome}.
@@ -497,41 +500,37 @@ if st.session_state.etapa == 1:
                     except: st.error("Erro de conexão.")
 
 # ==========================================================
-# ETAPA 2: DASHBOARD DO PLANO GERADO E CHAT DA IA
+# ETAPA 2: DASHBOARD DO PLANO GERADO E CHAT
 # ==========================================================
 elif st.session_state.etapa == 2:
     dados = st.session_state.dados_usuario
     nome = dados["nome"]
     peso = dados["peso"]
     altura = dados["altura"]
-    objetivo_atleta = dados["objetivo"] 
     objetivo_curto = dados["objetivo"].split("(")[0].strip()
     imc = peso / ((altura / 100) ** 2)
 
-    st.markdown(f"<h2 style='color: white;'>Análise de <span style='color: #FF8C00;'>{nome}</span> Concluída! 🚀</h2>", unsafe_allow_html=True)
-    
-    # 🟢 CARDS ESTILO DASHBOARD PREMIUM
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Status Atual", "Protocolo Ativo")
-    c2.metric("Objetivo", objetivo_curto)
-    c3.metric("Peso Base", f"{peso} kg")
-    c4.metric("IMC Calculado", f"{imc:.1f}")
-    
-    st.divider()
-    
-    # Download do PDF posicionado acima do chat para fácil acesso
-    plano_principal = limpar_none(st.session_state.mensagens[0].get("content")) if st.session_state.mensagens else ""
-    pdf_final = gerar_pdf(plano_principal, nome, objetivo_atleta)
-    
-    col_pdf, col_vazia = st.columns([1, 2])
-    with col_pdf:
+    col_tit, col_btn = st.columns([7, 3])
+    with col_tit:
+        st.markdown(f"<h2>Painel do Atleta: {nome}</h2>", unsafe_allow_html=True)
+    with col_btn:
+        plano_principal = limpar_none(st.session_state.mensagens[0].get("content")) if st.session_state.mensagens else ""
+        pdf_final = gerar_pdf(plano_principal, nome)
+        st.write("") # Espaçamento
         st.download_button(
-            label="📥 EXPORTAR PROTOCOLO (PDF)",
+            label="📥 Exportar PDF",
             data=pdf_final,
             file_name=f"Protocolo_{nome.replace(' ', '_')}.pdf",
             mime="application/pdf",
             use_container_width=True
         )
+    
+    # 🟢 CARDS "CLEAN" ESTILO DASHBOARD
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Status", "Ativo")
+    c2.metric("Foco", objetivo_curto)
+    c3.metric("Peso", f"{peso} kg")
+    c4.metric("IMC", f"{imc:.1f}")
     
     st.divider()
     
@@ -544,14 +543,14 @@ elif st.session_state.etapa == 2:
                 st.markdown(conteudo)
     
     st.divider()
-    st.subheader("💬 Central de Ajustes IA")
-    if prompt_duvida := st.chat_input("Ex: 'Substitua a aveia por pão' ou 'Me dê um treino mais curto'"):
+    st.markdown("### Ajustes com Inteligência Artificial")
+    if prompt_duvida := st.chat_input("Ex: 'Substitua o frango por ovo' ou 'Mude o treino para 3 dias'"):
         st.session_state.mensagens.append({"role": "user", "content": prompt_duvida})
         with st.chat_message("user"):
             st.markdown(prompt_duvida)
             
         with st.chat_message("assistant"):
-            with st.spinner("Recalculando variáveis..."):
+            with st.spinner("Analisando pedido..."):
                 plano_contexto = st.session_state.mensagens[0]["content"]
                 prompt_duvida_completo = f"Plano atual:\n{plano_contexto}\n\nDúvida/Ajuste do usuário: {prompt_duvida}"
                 
