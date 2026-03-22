@@ -45,7 +45,6 @@ def limpar_none(texto):
     if texto is None:
         return ""
     texto = str(texto)
-    # Remove ausências e textos literais nulos retornados pelo modelo
     for token in ["None", "none", "null", "Nil"]:
         texto = texto.replace(token, "")
     return texto.strip()
@@ -74,7 +73,7 @@ class PDF_Elite(FPDF):
         self.set_text_color(150, 150, 150)
         self.cell(0, 10, f"Página {self.page_no()}", 0, 0, "C")
 
-# 🟢 MOTOR DE GERAR PDF (AGORA COM CARDS INTELIGENTES)
+# 🟢 MOTOR DE GERAR PDF (TABELAS INTELIGENTES NO FORMATO ORIGINAL)
 @st.cache_data(show_spinner=False)
 def gerar_pdf(texto_md, nome_atleta):
     pdf = PDF_Elite(nome_atleta)
@@ -91,87 +90,124 @@ def gerar_pdf(texto_md, nome_atleta):
     linhas = texto_md.split("\n")
     buffer_tabela = []
     em_tabela = False
-    colunas = []
 
     for linha in linhas:
         l_strip = linha.strip()
-        
-        if not l_strip:
-            _ = pdf.ln(3)
-            continue
 
-        # LÓGICA DE TRANSFORMAR TABELAS QUEBRADAS EM "CARDS" PROFISSIONAIS
+        # IDENTIFICA TABELAS E RENDERIZA A GRADE
         if l_strip.startswith('|'):
-            if '---' in l_strip:
-                continue # Pula a linha tracejada
-            
-            dados = [d.strip() for d in l_strip.split('|') if d.strip()]
-            
-            if not em_tabela:
-                em_tabela = True
-                colunas = dados # Salva o cabeçalho para usar de título
-                _ = pdf.ln(5)
-            else:
-                if len(dados) == len(colunas):
-                    # Desenha o fundo do "Card"
-                    _ = pdf.set_fill_color(248, 248, 250)
-                    _ = pdf.cell(0, 2, "", 0, 1, "", True) # Margem superior
-                    
-                    for i in range(len(colunas)):
-                        _ = pdf.set_font("Arial", "B", 10)
-                        _ = pdf.set_text_color(28, 131, 225)
-                        
-                        titulo_col = limpar_para_pdf(colunas[i]) + ":"
-                        dado_col = limpar_para_pdf(dados[i])
-                        
-                        # Imprime Título (Ex: Refeição:)
-                        _ = pdf.set_x(15)
-                        _ = pdf.cell(50, 6, titulo_col, 0, 0, "L", True)
-                        
-                        # Imprime o Dado com multi_cell para envolver o texto longo sem cortar
-                        _ = pdf.set_font("Arial", "", 10)
-                        _ = pdf.set_text_color(40, 40, 40)
-                        _ = pdf.multi_cell(0, 6, dado_col, 0, "L", True)
-                        
-                    _ = pdf.cell(0, 2, "", 0, 1, "", True) # Margem inferior
-                    _ = pdf.set_draw_color(220, 220, 220)
-                    _ = pdf.line(15, pdf.get_y(), 195, pdf.get_y()) # Linha divisória
-                    _ = pdf.ln(3)
+            em_tabela = True
+            buffer_tabela.append(l_strip)
             continue
-        else:
+        elif em_tabela:
+            if buffer_tabela:
+                cols = [c.strip() for c in buffer_tabela[0].split('|') if c.strip()]
+                if cols:
+                    num_cols = len(cols)
+                    w_col = 190 / num_cols
+                    
+                    # Função para desenhar a linha expandindo a altura automaticamente
+                    def draw_row(dados_linha, eh_cabecalho=False, zebra=False):
+                        # Configura fonte para calcular tamanho
+                        if eh_cabecalho:
+                            _ = pdf.set_font("Arial", "B", 9)
+                        else:
+                            _ = pdf.set_font("Arial", "", 8)
+                            
+                        # 1. Calcula a altura necessária para a linha
+                        max_l = 1
+                        for txt in dados_linha:
+                            txt_limpo = limpar_para_pdf(txt)
+                            cw = pdf.get_string_width(txt_limpo)
+                            # w_col - 5 garante margem interna de segurança
+                            linhas_txt = int(cw / (w_col - 5)) + 1 
+                            if linhas_txt > max_l: 
+                                max_l = linhas_txt
+                                
+                        alt_linha = 6 * max_l # 6 é a altura base por linha de texto
+                        
+                        # Quebra de página automática para tabelas longas
+                        if pdf.get_y() + alt_linha > 275:
+                            _ = pdf.add_page()
+                            
+                        y_ini = pdf.get_y()
+                        
+                        # 2. Configura as cores da linha
+                        if eh_cabecalho:
+                            _ = pdf.set_fill_color(28, 131, 225)
+                            _ = pdf.set_text_color(255, 255, 255)
+                        else:
+                            _ = pdf.set_text_color(40, 40, 40)
+                            if zebra:
+                                _ = pdf.set_fill_color(245, 245, 245)
+                            else:
+                                _ = pdf.set_fill_color(255, 255, 255)
+
+                        # 3. Desenha Célula por Célula (Fundo + Borda + Texto por cima)
+                        for i, txt in enumerate(dados_linha):
+                            x_ini = 10 + (i * w_col)
+                            
+                            # Desenha o fundo preenchido e a borda
+                            _ = pdf.set_xy(x_ini, y_ini)
+                            _ = pdf.cell(w_col, alt_linha, "", 1, 0, "", True)
+                            
+                            # Imprime o texto quebrando linha automaticamente
+                            _ = pdf.set_xy(x_ini, y_ini)
+                            txt_limpo = limpar_para_pdf(txt)
+                            _ = pdf.multi_cell(w_col, 6, txt_limpo, 0, "C" if eh_cabecalho else "C")
+                            
+                        # Move o cursor principal para baixo da linha recém-criada
+                        _ = pdf.set_xy(10, y_ini + alt_linha)
+
+                    # --- Execução da Tabela ---
+                    draw_row(cols, eh_cabecalho=True)
+                    
+                    zebra = False
+                    for l_tab in buffer_tabela[1:]:
+                        if '---' in l_tab: continue
+                        dados = [d.strip() for d in l_tab.split('|') if d.strip()]
+                        if len(dados) == num_cols:
+                            draw_row(dados, eh_cabecalho=False, zebra=zebra)
+                            zebra = not zebra
+                    
+                _ = pdf.ln(5)
+            buffer_tabela = []
             em_tabela = False
+
+        if not l_strip: continue
 
         # PROCESSA TÍTULOS E TEXTO NORMAL (Limpando o negrito sujo)
         l_limpa = l_strip.replace("**", "").replace("* ", "- ")
 
         if l_strip.startswith('### '):
-            _ = pdf.ln(4)
+            _ = pdf.ln(2)
             _ = pdf.set_font("Arial", "B", 12)
             _ = pdf.set_text_color(40, 40, 40)
             _ = pdf.multi_cell(0, 7, limpar_para_pdf(l_limpa.replace('### ', '')))
         elif l_strip.startswith('## '):
-            _ = pdf.ln(6)
+            _ = pdf.ln(4)
             _ = pdf.set_font("Arial", "B", 14)
             _ = pdf.set_text_color(28, 131, 225)
             _ = pdf.multi_cell(0, 8, limpar_para_pdf(l_limpa.replace('## ', '')))
         elif l_strip.startswith('# '):
-            _ = pdf.ln(8)
+            _ = pdf.ln(6)
             _ = pdf.set_font("Arial", "B", 18)
             _ = pdf.set_text_color(28, 131, 225)
             _ = pdf.multi_cell(0, 10, limpar_para_pdf(l_limpa.replace('# ', '')))
             _ = pdf.set_draw_color(28, 131, 225)
             _ = pdf.line(10, pdf.get_y(), 200, pdf.get_y())
-            _ = pdf.ln(4)
+            _ = pdf.ln(2)
         else:
-            _ = pdf.set_font("Arial", "", 11)
+            _ = pdf.set_font("Arial", "", 10)
             _ = pdf.set_text_color(60, 60, 60)
             
-            # Reconhece "Bullet Points" e dá margem
+            # Reconhece "Bullet Points" e dá margem elegante
             if l_limpa.startswith('- '):
                 _ = pdf.set_x(15)
                 _ = pdf.multi_cell(0, 6, chr(149) + " " + limpar_para_pdf(l_limpa[2:]))
             else:
                 _ = pdf.multi_cell(0, 6, limpar_para_pdf(l_limpa))
+            _ = pdf.ln(1)
 
     resultado = pdf.output(dest="S")
     if isinstance(resultado, str):
