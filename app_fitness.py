@@ -50,80 +50,133 @@ def limpar_none(texto):
         texto = texto.replace(token, "")
     return texto.strip()
 
-# 🟢 MOTOR DE GERAR PDF (BLINDADO CONTRA O STREAMLIT MAGIC COM '_ =')
+# 🟢 CLASSE DO PDF ELITE (Cabeçalhos, Rodapés e Design Premium)
+class PDF_Elite(FPDF):
+    def __init__(self, nome_atleta):
+        super().__init__()
+        self.nome_atleta = nome_atleta
+
+    def header(self):
+        # Linha no topo de toda página
+        self.set_font("Arial", "B", 10)
+        self.set_text_color(150, 150, 150)
+        self.cell(0, 10, "PROTOCOLO DE ELITE", 0, 0, "L")
+        self.cell(0, 10, f"Atleta: {self.nome_atleta}", 0, 1, "R")
+        self.set_draw_color(28, 131, 225)
+        self.set_line_width(0.5)
+        self.line(10, 18, 200, 18)
+        self.ln(5)
+
+    def footer(self):
+        # Rodapé com numeração
+        self.set_y(-15)
+        self.set_font("Arial", "I", 8)
+        self.set_text_color(150, 150, 150)
+        self.cell(0, 10, f"Página {self.page_no()}", 0, 0, "C")
+
+# 🟢 MOTOR DE GERAR PDF (AGORA COM CARDS INTELIGENTES)
 @st.cache_data(show_spinner=False)
 def gerar_pdf(texto_md, nome_atleta):
-    pdf = FPDF()
+    pdf = PDF_Elite(nome_atleta)
     _ = pdf.add_page()
     _ = pdf.set_auto_page_break(True, margin=15) 
     
-    # Cabeçalho do PDF
-    _ = pdf.set_font("Arial", "B", 16)
+    # Capa Principal
+    _ = pdf.set_font("Arial", "B", 20)
     _ = pdf.set_text_color(28, 131, 225) 
-    _ = pdf.cell(0, 10, limpar_para_pdf(f"Protocolo Elite - {nome_atleta}"), 1, 0, "C") 
-    _ = pdf.ln(5)
+    _ = pdf.ln(10)
+    _ = pdf.multi_cell(0, 10, limpar_para_pdf(f"PLANEJAMENTO ESTRATÉGICO\n{nome_atleta.upper()}"), 0, "C")
+    _ = pdf.ln(15)
     
     linhas = texto_md.split("\n")
     buffer_tabela = []
     em_tabela = False
+    colunas = []
 
     for linha in linhas:
         l_strip = linha.strip()
         
-        # Identifica tabelas Markdown
-        if l_strip.startswith('|'):
-            em_tabela = True
-            buffer_tabela.append(l_strip)
+        if not l_strip:
+            _ = pdf.ln(3)
             continue
-        elif em_tabela:
-            if buffer_tabela:
-                # Desenha a tabela formatada
-                cols = [c.strip() for c in buffer_tabela[0].split('|') if c.strip()]
-                if cols:
-                    largura = 190 / len(cols)
-                    _ = pdf.set_font("Arial", "B", 10)
-                    _ = pdf.set_fill_color(28, 131, 225)
-                    _ = pdf.set_text_color(255, 255, 255)
-                    for col in cols:
-                        _ = pdf.cell(largura, 8, limpar_para_pdf(col), 1, 0, "C", True) 
-                    _ = pdf.ln()
-                    
-                    _ = pdf.set_font("Arial", "", 9)
-                    _ = pdf.set_text_color(40, 40, 40)
-                    zebra = False
-                    for l_tab in buffer_tabela[1:]:
-                        if '---' in l_tab: continue
-                        dados = [d.strip() for d in l_tab.split('|') if d.strip()]
-                        if len(dados) == len(cols):
-                            _ = pdf.set_fill_color(245, 245, 245) if zebra else pdf.set_fill_color(255, 255, 255)
-                            for item in dados:
-                                _ = pdf.cell(largura, 7, limpar_para_pdf(item), 1, 0, "", True) 
-                            _ = pdf.ln()
-                            zebra = not zebra
+
+        # LÓGICA DE TRANSFORMAR TABELAS QUEBRADAS EM "CARDS" PROFISSIONAIS
+        if l_strip.startswith('|'):
+            if '---' in l_strip:
+                continue # Pula a linha tracejada
+            
+            dados = [d.strip() for d in l_strip.split('|') if d.strip()]
+            
+            if not em_tabela:
+                em_tabela = True
+                colunas = dados # Salva o cabeçalho para usar de título
                 _ = pdf.ln(5)
-            buffer_tabela = []
+            else:
+                if len(dados) == len(colunas):
+                    # Desenha o fundo do "Card"
+                    _ = pdf.set_fill_color(248, 248, 250)
+                    _ = pdf.cell(0, 2, "", 0, 1, "", True) # Margem superior
+                    
+                    for i in range(len(colunas)):
+                        _ = pdf.set_font("Arial", "B", 10)
+                        _ = pdf.set_text_color(28, 131, 225)
+                        
+                        titulo_col = limpar_para_pdf(colunas[i]) + ":"
+                        dado_col = limpar_para_pdf(dados[i])
+                        
+                        # Imprime Título (Ex: Refeição:)
+                        _ = pdf.set_x(15)
+                        _ = pdf.cell(50, 6, titulo_col, 0, 0, "L", True)
+                        
+                        # Imprime o Dado com multi_cell para envolver o texto longo sem cortar
+                        _ = pdf.set_font("Arial", "", 10)
+                        _ = pdf.set_text_color(40, 40, 40)
+                        _ = pdf.multi_cell(0, 6, dado_col, 0, "L", True)
+                        
+                    _ = pdf.cell(0, 2, "", 0, 1, "", True) # Margem inferior
+                    _ = pdf.set_draw_color(220, 220, 220)
+                    _ = pdf.line(15, pdf.get_y(), 195, pdf.get_y()) # Linha divisória
+                    _ = pdf.ln(3)
+            continue
+        else:
             em_tabela = False
 
-        if not l_strip: continue
+        # PROCESSA TÍTULOS E TEXTO NORMAL (Limpando o negrito sujo)
+        l_limpa = l_strip.replace("**", "").replace("* ", "- ")
 
-        # Formata Títulos
-        if l_strip.startswith('#'):
-            _ = pdf.set_font("Arial", "B", 13)
+        if l_strip.startswith('### '):
+            _ = pdf.ln(4)
+            _ = pdf.set_font("Arial", "B", 12)
+            _ = pdf.set_text_color(40, 40, 40)
+            _ = pdf.multi_cell(0, 7, limpar_para_pdf(l_limpa.replace('### ', '')))
+        elif l_strip.startswith('## '):
+            _ = pdf.ln(6)
+            _ = pdf.set_font("Arial", "B", 14)
             _ = pdf.set_text_color(28, 131, 225)
-            _ = pdf.ln(2)
-            _ = pdf.cell(0, 10, limpar_para_pdf(l_strip.replace('#', '').strip()), 1) 
+            _ = pdf.multi_cell(0, 8, limpar_para_pdf(l_limpa.replace('## ', '')))
+        elif l_strip.startswith('# '):
+            _ = pdf.ln(8)
+            _ = pdf.set_font("Arial", "B", 18)
+            _ = pdf.set_text_color(28, 131, 225)
+            _ = pdf.multi_cell(0, 10, limpar_para_pdf(l_limpa.replace('# ', '')))
+            _ = pdf.set_draw_color(28, 131, 225)
+            _ = pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+            _ = pdf.ln(4)
         else:
             _ = pdf.set_font("Arial", "", 11)
-            _ = pdf.set_text_color(40, 40, 40)
-            txt = l_strip.replace("**", "")
-            _ = pdf.multi_cell(0, 7, limpar_para_pdf(txt)) 
-            _ = pdf.ln(1)
+            _ = pdf.set_text_color(60, 60, 60)
+            
+            # Reconhece "Bullet Points" e dá margem
+            if l_limpa.startswith('- '):
+                _ = pdf.set_x(15)
+                _ = pdf.multi_cell(0, 6, chr(149) + " " + limpar_para_pdf(l_limpa[2:]))
+            else:
+                _ = pdf.multi_cell(0, 6, limpar_para_pdf(l_limpa))
 
     resultado = pdf.output(dest="S")
     if isinstance(resultado, str):
-        return resultado.encode("latin-1")
+        return resultado.encode("latin-1", "ignore")
     return bytes(resultado)
-
 
 # Configuração da Página
 st.set_page_config(page_title="Fitness AI", page_icon="⚡", layout="wide")
