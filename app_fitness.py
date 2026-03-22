@@ -4,14 +4,14 @@ import json
 import os
 import hashlib
 import secrets
-from fpdf import FPDF # 🟢 NOVO IMPORT: Biblioteca para gerar o PDF
+from fpdf import FPDF # 🟢 IMPORT: Biblioteca para gerar o PDF
 
 # Configurações iniciais
 CHAVE = st.secrets["GEMINI_API_KEY"]
 MODELO = "models/gemini-2.5-flash"
 ARQUIVO_BANCO = "banco_dados_saas.json"
 
-# --- FUNÇÕES DO BANCO DE DADOS E SEGURANÇA --
+# --- FUNÇÕES DO BANCO DE DADOS E SEGURANÇA ---
 def carregar_banco():
     if os.path.exists(ARQUIVO_BANCO):
         with open(ARQUIVO_BANCO, "r", encoding="utf-8") as f:
@@ -50,18 +50,18 @@ def limpar_none(texto):
         texto = texto.replace(token, "")
     return texto.strip()
 
-# 🟢 NOVA FUNÇÃO: MOTOR DE GERAR PDF (AJUSTADA PARA MATAR O "NONE")
+# 🟢 MOTOR DE GERAR PDF (BLINDADO CONTRA O STREAMLIT MAGIC COM '_ =')
 @st.cache_data(show_spinner=False)
 def gerar_pdf(texto_md, nome_atleta):
     pdf = FPDF()
-    pdf.add_page()
-    pdf.set_auto_page_break(True, margin=15) # Removido argumento nomeado
+    _ = pdf.add_page()
+    _ = pdf.set_auto_page_break(True, margin=15) 
     
     # Cabeçalho do PDF
-    pdf.set_font("Arial", "B", 16)
-    pdf.set_text_color(28, 131, 225) # Azul Royal
-    pdf.cell(0, 10, limpar_para_pdf(f"Protocolo Elite - {nome_atleta}"), 1, 0, "C") # Removidos argumentos nomeados
-    pdf.ln(5)
+    _ = pdf.set_font("Arial", "B", 16)
+    _ = pdf.set_text_color(28, 131, 225) 
+    _ = pdf.cell(0, 10, limpar_para_pdf(f"Protocolo Elite - {nome_atleta}"), 1, 0, "C") 
+    _ = pdf.ln(5)
     
     linhas = texto_md.split("\n")
     buffer_tabela = []
@@ -81,26 +81,26 @@ def gerar_pdf(texto_md, nome_atleta):
                 cols = [c.strip() for c in buffer_tabela[0].split('|') if c.strip()]
                 if cols:
                     largura = 190 / len(cols)
-                    pdf.set_font("Arial", "B", 10)
-                    pdf.set_fill_color(28, 131, 225)
-                    pdf.set_text_color(255, 255, 255)
+                    _ = pdf.set_font("Arial", "B", 10)
+                    _ = pdf.set_fill_color(28, 131, 225)
+                    _ = pdf.set_text_color(255, 255, 255)
                     for col in cols:
-                        pdf.cell(largura, 8, limpar_para_pdf(col), 1, 0, "C", True) # Removidos args nomeados
-                    pdf.ln()
+                        _ = pdf.cell(largura, 8, limpar_para_pdf(col), 1, 0, "C", True) 
+                    _ = pdf.ln()
                     
-                    pdf.set_font("Arial", "", 9)
-                    pdf.set_text_color(40, 40, 40)
+                    _ = pdf.set_font("Arial", "", 9)
+                    _ = pdf.set_text_color(40, 40, 40)
                     zebra = False
                     for l_tab in buffer_tabela[1:]:
                         if '---' in l_tab: continue
                         dados = [d.strip() for d in l_tab.split('|') if d.strip()]
                         if len(dados) == len(cols):
-                            pdf.set_fill_color(245, 245, 245) if zebra else pdf.set_fill_color(255, 255, 255)
+                            _ = pdf.set_fill_color(245, 245, 245) if zebra else pdf.set_fill_color(255, 255, 255)
                             for item in dados:
-                                pdf.cell(largura, 7, limpar_para_pdf(item), 1, 0, "", True) # Removidos args nomeados
-                            pdf.ln()
+                                _ = pdf.cell(largura, 7, limpar_para_pdf(item), 1, 0, "", True) 
+                            _ = pdf.ln()
                             zebra = not zebra
-                pdf.ln(5)
+                _ = pdf.ln(5)
             buffer_tabela = []
             em_tabela = False
 
@@ -108,16 +108,16 @@ def gerar_pdf(texto_md, nome_atleta):
 
         # Formata Títulos
         if l_strip.startswith('#'):
-            pdf.set_font("Arial", "B", 13)
-            pdf.set_text_color(28, 131, 225)
-            pdf.ln(2)
-            pdf.cell(0, 10, limpar_para_pdf(l_strip.replace('#', '').strip()), 1) # Removidos args nomeados
+            _ = pdf.set_font("Arial", "B", 13)
+            _ = pdf.set_text_color(28, 131, 225)
+            _ = pdf.ln(2)
+            _ = pdf.cell(0, 10, limpar_para_pdf(l_strip.replace('#', '').strip()), 1) 
         else:
-            pdf.set_font("Arial", "", 11)
-            pdf.set_text_color(40, 40, 40)
+            _ = pdf.set_font("Arial", "", 11)
+            _ = pdf.set_text_color(40, 40, 40)
             txt = l_strip.replace("**", "")
-            pdf.multi_cell(0, 7, limpar_para_pdf(txt)) # Removido argumento nomeado 'txt='
-            pdf.ln(1)
+            _ = pdf.multi_cell(0, 7, limpar_para_pdf(txt)) 
+            _ = pdf.ln(1)
 
     resultado = pdf.output(dest="S")
     if isinstance(resultado, str):
