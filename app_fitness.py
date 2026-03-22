@@ -4,6 +4,7 @@ import json
 import os
 import hashlib
 import secrets
+import datetime
 from fpdf import FPDF # 🟢 IMPORT: Biblioteca para gerar o PDF
 
 # Configurações iniciais
@@ -49,45 +50,76 @@ def limpar_none(texto):
         texto = texto.replace(token, "")
     return texto.strip()
 
-# 🟢 CLASSE DO PDF ELITE (Cabeçalhos, Rodapés e Design Premium)
+# 🟢 CLASSE DO PDF ELITE (ESTILO PLANNER - BARRA AMARELA E CINZA)
 class PDF_Elite(FPDF):
     def __init__(self, nome_atleta):
         super().__init__()
         self.nome_atleta = nome_atleta
 
     def header(self):
-        # Linha no topo de toda página
-        self.set_font("Arial", "B", 10)
-        self.set_text_color(150, 150, 150)
+        # Linha no topo de toda página (Cinza Clara, Sem Azul)
+        self.set_font("Arial", "B", 9)
+        self.set_text_color(180, 180, 180)
         self.cell(0, 10, "PROTOCOLO DE ELITE", 0, 0, "L")
         self.cell(0, 10, f"Atleta: {self.nome_atleta}", 0, 1, "R")
-        self.set_draw_color(28, 131, 225)
-        self.set_line_width(0.5)
+        self.set_draw_color(220, 220, 220)
+        self.set_line_width(0.3)
         self.line(10, 18, 200, 18)
         self.ln(5)
 
     def footer(self):
-        # Rodapé com numeração
+        # Rodapé elegante
         self.set_y(-15)
         self.set_font("Arial", "I", 8)
-        self.set_text_color(150, 150, 150)
+        self.set_text_color(180, 180, 180)
         self.cell(0, 10, f"Página {self.page_no()}", 0, 0, "C")
 
-# 🟢 MOTOR DE GERAR PDF (TABELAS INTELIGENTES NO FORMATO ORIGINAL)
+# 🟢 MOTOR DE GERAR PDF (VISUAL PLANNER COM GRADE LEVE)
 @st.cache_data(show_spinner=False)
-def gerar_pdf(texto_md, nome_atleta):
+def gerar_pdf(texto_md, nome_atleta, objetivo_atleta):
     pdf = PDF_Elite(nome_atleta)
     _ = pdf.add_page()
     _ = pdf.set_auto_page_break(True, margin=15) 
     
-    # Capa Principal
-    _ = pdf.set_font("Arial", "B", 20)
-    _ = pdf.set_text_color(28, 131, 225) 
-    _ = pdf.ln(10)
-    _ = pdf.multi_cell(0, 10, limpar_para_pdf(f"PLANEJAMENTO ESTRATÉGICO\n{nome_atleta.upper()}"), 0, "C")
-    _ = pdf.ln(15)
+    # --- REDESENHO DA CAPA (ESTILO PLANNER) ---
+    _ = pdf.set_draw_color(220, 220, 220)
     
-    # + [""] garante que uma tabela no fim do documento seja renderizada
+    # Barra lateral amarela
+    _ = pdf.set_fill_color(255, 220, 0) # Amarelo Margarida
+    _ = pdf.rect(10, 25, 12, 255, 'F')
+    
+    # Caixa de Data e Dia
+    _ = pdf.set_xy(28, 30)
+    _ = pdf.set_font("Arial", "B", 10)
+    _ = pdf.set_text_color(40, 40, 40)
+    hoje = datetime.date.today().strftime("%d/%m/%Y")
+    _ = pdf.cell(80, 8, f"DATA: {hoje}", 1, 1, "C")
+    
+    # Título Principal (Amarelo)
+    _ = pdf.set_xy(30, 50)
+    _ = pdf.set_font("Arial", "B", 24)
+    _ = pdf.set_text_color(255, 220, 0) # Amarelo Margarida
+    _ = pdf.multi_cell(0, 12, "PLANEJADOR DE PROTOCOLO", 0, "C")
+    
+    _ = pdf.set_draw_color(220, 220, 220)
+    
+    # Card de Atleta e Objetivo (Igual ao planner)
+    pdf.ln(10)
+    def draw_planner_block(label, data):
+        _ = pdf.set_x(30)
+        _ = pdf.set_font("Arial", "B", 9)
+        _ = pdf.set_text_color(28, 131, 225) # Azul Royal para Labels
+        _ = pdf.cell(0, 5, label.upper(), 0, 1, "L")
+        _ = pdf.set_x(30)
+        _ = pdf.set_font("Arial", "", 11)
+        _ = pdf.set_text_color(60, 60, 60)
+        _ = pdf.multi_cell(0, 7, data, 1, "C")
+        pdf.ln(3)
+
+    draw_planner_block("ATLETA", nome_atleta.upper())
+    draw_planner_block("OBJETIVO PRINCIPAL", objetivo_atleta)
+    _ = pdf.add_page()
+    
     linhas = texto_md.split("\n") + [""] 
     buffer_tabela = []
     em_tabela = False
@@ -95,14 +127,13 @@ def gerar_pdf(texto_md, nome_atleta):
     for linha in linhas:
         l_strip = linha.strip()
 
-        # IDENTIFICA TABELAS E RENDERIZA A GRADE
+        #IDENTIFICA TABELAS E RENDERIZA A GRADE LEVE
         if l_strip.startswith('|'):
             em_tabela = True
             buffer_tabela.append(l_strip)
             continue
         elif em_tabela:
             if buffer_tabela:
-                # Função robusta para extrair células mesmo que estejam vazias
                 def extrair_celulas(linha_str):
                     s = linha_str.strip()
                     if s.startswith('|'): s = s[1:]
@@ -116,67 +147,53 @@ def gerar_pdf(texto_md, nome_atleta):
                         w_col = 190 / num_cols
                         
                         def draw_row(dados_linha, eh_cabecalho=False, zebra=False):
-                            if eh_cabecalho:
-                                _ = pdf.set_font("Arial", "B", 9)
-                            else:
-                                _ = pdf.set_font("Arial", "", 8)
-                                
-                            # 1. Calcula a altura necessária baseada no maior texto
+                            _ = pdf.set_font("Arial", "", 8)
+                            
                             max_l = 1
                             for txt in dados_linha:
                                 txt_limpo = limpar_para_pdf(txt)
                                 cw = pdf.get_string_width(txt_limpo)
-                                w_seguro = w_col - 4 # Desconta padding lateral
+                                w_seguro = w_col - 5 
                                 if w_seguro <= 0: w_seguro = 1
                                 linhas_txt = int(cw / w_seguro) + 1 
-                                if linhas_txt > max_l: 
-                                    max_l = linhas_txt
+                                if linhas_txt > max_l: max_l = linhas_txt
                                     
-                            alt_linha = (5 * max_l) + 4 # 5mm por linha de texto + 4mm de padding
-                            
-                            if pdf.get_y() + alt_linha > 275:
-                                _ = pdf.add_page()
-                                
+                            alt_linha = (5 * max_l) + 4
+                            if pdf.get_y() + alt_linha > 275: _ = pdf.add_page()
                             y_ini = pdf.get_y()
                             
-                            # 2. Configura as cores
+                            _ = pdf.set_draw_color(220, 220, 220) # Borda cinza clara
+
+                            # 2. Configura as cores (Planner Style)
                             if eh_cabecalho:
-                                _ = pdf.set_fill_color(28, 131, 225)
-                                _ = pdf.set_text_color(255, 255, 255)
-                            else:
+                                pdf.set_font("Arial", "B", 9)
+                                _ = pdf.set_fill_color(240, 240, 240) # Fundo Cinza Claro
                                 _ = pdf.set_text_color(40, 40, 40)
+                            else:
+                                _ = pdf.set_text_color(60, 60, 60)
                                 if zebra:
-                                    _ = pdf.set_fill_color(245, 245, 245)
+                                    _ = pdf.set_fill_color(250, 250, 250)
                                 else:
                                     _ = pdf.set_fill_color(255, 255, 255)
 
-                            # 3. Desenha os blocos com text wrap
                             for i, txt in enumerate(dados_linha):
                                 x_ini = 10 + (i * w_col)
                                 _ = pdf.set_xy(x_ini, y_ini)
                                 _ = pdf.cell(w_col, alt_linha, "", 1, 0, "", True)
                                 
-                                _ = pdf.set_xy(x_ini, y_ini + 2) # 2mm de margem superior interna
+                                _ = pdf.set_xy(x_ini, y_ini + 2)
                                 txt_limpo = limpar_para_pdf(txt)
                                 _ = pdf.multi_cell(w_col, 5, txt_limpo, 0, "C")
                                 
                             _ = pdf.set_xy(10, y_ini + alt_linha)
 
-                        # Desenha cabeçalho
                         draw_row(cols, eh_cabecalho=True)
-                        
-                        # Desenha resto
                         zebra = False
                         for l_tab in buffer_tabela[1:]:
                             if '---' in l_tab: continue
                             dados = extrair_celulas(l_tab)
-                            
-                            # Força a linha ter as mesmas colunas do cabeçalho preenchendo vazios
-                            if len(dados) < num_cols:
-                                dados.extend([''] * (num_cols - len(dados)))
-                            elif len(dados) > num_cols:
-                                dados = dados[:num_cols]
-                                
+                            if len(dados) < num_cols: dados.extend([''] * (num_cols - len(dados)))
+                            elif len(dados) > num_cols: dados = dados[:num_cols]
                             draw_row(dados, eh_cabecalho=False, zebra=zebra)
                             zebra = not zebra
                         
@@ -185,8 +202,6 @@ def gerar_pdf(texto_md, nome_atleta):
             em_tabela = False
 
         if not l_strip: continue
-
-        # PROCESSA TÍTULOS E TEXTO NORMAL (Limpando o negrito sujo)
         l_limpa = l_strip.replace("**", "").replace("* ", "- ")
 
         if l_strip.startswith('### '):
@@ -197,21 +212,19 @@ def gerar_pdf(texto_md, nome_atleta):
         elif l_strip.startswith('## '):
             _ = pdf.ln(4)
             _ = pdf.set_font("Arial", "B", 14)
-            _ = pdf.set_text_color(28, 131, 225)
+            _ = pdf.set_text_color(255, 220, 0) # Amarelo Margarida nos títulos
             _ = pdf.multi_cell(0, 8, limpar_para_pdf(l_limpa.replace('## ', '')))
         elif l_strip.startswith('# '):
             _ = pdf.ln(6)
             _ = pdf.set_font("Arial", "B", 18)
-            _ = pdf.set_text_color(28, 131, 225)
+            _ = pdf.set_text_color(255, 220, 0)
             _ = pdf.multi_cell(0, 10, limpar_para_pdf(l_limpa.replace('# ', '')))
-            _ = pdf.set_draw_color(28, 131, 225)
+            _ = pdf.set_draw_color(255, 220, 0)
             _ = pdf.line(10, pdf.get_y(), 200, pdf.get_y())
             _ = pdf.ln(2)
         else:
             _ = pdf.set_font("Arial", "", 10)
             _ = pdf.set_text_color(60, 60, 60)
-            
-            # Reconhece "Bullet Points" e dá margem elegante
             if l_limpa.startswith('- '):
                 _ = pdf.set_x(15)
                 _ = pdf.multi_cell(0, 6, chr(149) + " " + limpar_para_pdf(l_limpa[2:]))
@@ -220,8 +233,7 @@ def gerar_pdf(texto_md, nome_atleta):
             _ = pdf.ln(1)
 
     resultado = pdf.output(dest="S")
-    if isinstance(resultado, str):
-        return resultado.encode("latin-1", "ignore")
+    if isinstance(resultado, str): return resultado.encode("latin-1", "ignore")
     return bytes(resultado)
 
 # Configuração da Página
@@ -264,7 +276,7 @@ if st.session_state.usuario_logado is None:
                 st.session_state.etapa = 1
                 break
 
-# ==========================================================
+# ================= =========================================
 # ETAPA 0: TELA DE LOGIN E CADASTRO
 # ==========================================================
 if st.session_state.etapa == 0:
@@ -338,7 +350,7 @@ if st.session_state.etapa == 0:
                         salvar_banco(st.session_state.banco)
                         st.success("Conta criada com sucesso! Vá para a aba 'Entrar' para acessar.")
 
-# ==========================================================
+# ================= =========================================
 # ETAPA 1: PAINEL DO USUÁRIO (PERFIS + NOVO)
 # ==========================================================
 elif st.session_state.etapa == 1:
@@ -449,7 +461,7 @@ elif st.session_state.etapa == 1:
                     except Exception as e:
                         st.error("Erro de conexão.")
 
-# ==========================================================
+# ================= =========================================
 # ETAPA 2: PÁGINA DO PLANO GERADO E CHAT DA IA
 # ==========================================================
 elif st.session_state.etapa == 2:
@@ -459,6 +471,7 @@ elif st.session_state.etapa == 2:
     nome = dados["nome"]
     peso = dados["peso"]
     altura = dados["altura"]
+    objetivo_atleta = dados["objetivo"] # Passando o objetivo completo
     objetivo_curto = dados["objetivo"].split("(")[0].strip()
     imc = peso / ((altura / 100) ** 2)
 
@@ -485,15 +498,15 @@ elif st.session_state.etapa == 2:
             with st.chat_message("user"):
                 st.markdown(conteudo)
     
-    # 🟢 NOVO: BOTÃO DE DOWNLOAD DO PDF
+    # 🟢 NOVO: BOTÃO DE DOWNLOAD DO PDF (Passando o objetivo)
     st.divider()
     plano_principal = limpar_none(st.session_state.mensagens[0].get("content")) if st.session_state.mensagens else ""
     
     # Gera o PDF guardando em variável
-    pdf_final = gerar_pdf(plano_principal, nome)
+    pdf_final = gerar_pdf(plano_principal, nome, objetivo_atleta)
     
     st.download_button(
-        label="📥 Baixar Protocolo Completo em PDF",
+        label="📥 Baixar Protocolo Completo em PDF (Estilo Planner)",
         data=pdf_final,
         file_name=f"Protocolo_{nome.replace(' ', '_')}.pdf",
         mime="application/pdf",
