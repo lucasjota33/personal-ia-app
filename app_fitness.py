@@ -227,7 +227,7 @@ def gerar_pdf(texto_md, nome_atleta):
 # Configuração da Página
 st.set_page_config(page_title="Fitness AI", page_icon="⚡", layout="wide")
 
-# --- CSS CUSTOMIZADO COM REGRAS ESPECÍFICAS PARA CELULAR ---
+# --- CSS CUSTOMIZADO COM REGRAS ESPECÍFICAS PARA CELULAR E TABELAS ESTILO CHATGPT ---
 st.markdown("""
     <style>
     [data-testid="stToolbar"], [data-testid="stToolbarActions"], .stDeployButton { display: none !important; visibility: hidden !important; }
@@ -241,25 +241,40 @@ st.markdown("""
         background-color: rgba(28, 131, 225, 0.1); border: 1px solid rgba(28, 131, 225, 0.1);
         padding: 5% 10% 5% 10%; border-radius: 10px; box-shadow: 2px 2px 10px rgba(0,0,0,0.05);
     }
+    
+    /* BLOQUEIO DE SCROLL HORIZONTAL NA PÁGINA INTEIRA */
+    .stApp {
+        overflow-x: hidden;
+    }
 
-    /* 📱 OTIMIZAÇÕES EXCLUSIVAS PARA CELULAR (Não afeta o PC) */
+    /* 🟢 NOVO: COMPORTAMENTO DE TABELA ESTILO CHATGPT */
+    .stMarkdown table {
+        display: block !important;
+        overflow-x: auto !important;
+        white-space: nowrap !important; /* Impede que a tabela fique amassada */
+        max-width: 100% !important;
+        -webkit-overflow-scrolling: touch; /* Scroll suave no celular */
+        border-radius: 8px; /* Estética um pouco mais moderna */
+    }
+    
+    /* Garante que os textos fora da tabela quebrem linha e não estiquem a página */
+    .stMarkdown p, .stMarkdown li {
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+    }
+
+    /* 📱 OTIMIZAÇÕES EXCLUSIVAS PARA CELULAR */
     @media (max-width: 768px) {
-        /* Remove o buraco branco no topo da tela do celular */
         .block-container { 
             padding-top: 1.5rem !important; 
             margin-top: 0 !important;
             padding-left: 1rem !important; 
             padding-right: 1rem !important;
         }
-        /* Previne zoom automático chato no iPhone ao digitar nos formulários */
-        input, select, textarea {
-            font-size: 16px !important;
-        }
-        /* Botões mais altos para facilitar o clique com o polegar */
+        input, select, textarea { font-size: 16px !important; }
         .stButton > button, [data-testid="stFormSubmitButton"] > button {
             min-height: 50px !important;
         }
-        /* Reduz a margem dentro das caixas de métricas (IMC, Peso) no celular */
         div[data-testid="metric-container"] {
             padding: 15px !important;
         }
@@ -352,7 +367,7 @@ if st.session_state.etapa == 0:
                     elif novo_usuario in st.session_state.banco:
                         st.error("Este nome de usuário já está em uso! Escolha outro.")
                     elif email_em_uso:
-                        st.error("Este e-mail já está cadastrado no sistema!")
+                        st.error("Este e-mail já cadastrado no sistema!")
                     else:
                         st.session_state.banco[novo_usuario] = {
                             "email": novo_email,
@@ -487,30 +502,34 @@ elif st.session_state.etapa == 2:
     objetivo_curto = dados["objetivo"].split("(")[0].strip()
     imc = peso / ((altura / 100) ** 2)
 
-    if st.button("⬅️ Voltar ao Painel Inicial"):
-        st.session_state.etapa = 1
-        st.session_state.mensagens = []
-        st.rerun()
+    col_voltar, col_vazia = st.columns([4, 6])
+    with col_voltar:
+        if st.button("⬅️ Voltar ao Painel"):
+            st.session_state.etapa = 1
+            st.session_state.mensagens = []
+            st.rerun()
 
     st.success(f"**Análise concluída, {nome}!** Confira seu protocolo abaixo.")
     
-    c1, c2, c3, c4 = st.columns(4)
+    c1, c2 = st.columns(2)
     c1.metric("Atleta", nome)
     c2.metric("Objetivo", objetivo_curto)
+    
+    c3, c4 = st.columns(2)
     c3.metric("Peso Atual", f"{peso} kg")
     c4.metric("IMC Inicial", f"{imc:.1f}")
     
     st.divider()
     
+    # 🟢 NOVO: TEXTOS DA IA AGORA RENDERIZADOS COMO BOLHAS DE CHAT
     for msg in st.session_state.mensagens:
         conteudo = limpar_none(msg.get("content"))
-        if msg.get("role") == "assistant":
+        role = msg.get("role")
+        
+        # O "with st.chat_message(role)" cria o design de avatar + contêiner
+        with st.chat_message(role):
             st.markdown(conteudo)
-        else:
-            with st.chat_message("user"):
-                st.markdown(conteudo)
     
-    # 🟢 NOVO: BOTÃO DE DOWNLOAD DO PDF
     st.divider()
     plano_principal = limpar_none(st.session_state.mensagens[0].get("content")) if st.session_state.mensagens else ""
     
