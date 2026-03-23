@@ -274,9 +274,7 @@ def gerar_pdf(texto_md, nome_atleta):
 st.set_page_config(page_title="Fitness AI", page_icon="⚡", layout="wide")
 
 # --- CSS CUSTOMIZADO COM REGRAS ESPECÍFICAS PARA CELULAR E TABELAS ESTILO CHATGPT ---
-# --- CSS CUSTOMIZADO PARA DESIGN PREMIUM (PRETO/GRAFITE/BRANCO) ---
-# --- CSS CUSTOMIZADO (DESIGN ELITE ADAPTÁVEL) ---
-# --- CSS CUSTOMIZADO (BOTÕES ADAPTÁVEIS LIGHT/DARK) ---
+# --- CSS CUSTOMIZADO (DESIGN ADAPTÁVEL COM ALTO CONTRASTE) ---
 st.markdown("""
     <style>
     /* 1. Limpeza de Interface */
@@ -284,47 +282,49 @@ st.markdown("""
     header { background-color: transparent !important; }
     #MainMenu, footer { display: none !important; }
 
-    /* 2. LÓGICA DE CORES DOS BOTÕES */
+    /* 2. LÓGICA DE CORES DOS BOTÕES (LIGHT vs DARK) */
     
-    /* Configuração padrão (Geralmente Light Mode ou Fallback) */
-    .stButton > button, div[data-testid="stFormSubmitButton"] > button {
-        background-color: #1A1A1A !important; /* Grafite escuro no Light Mode */
-        color: white !important;
-        border-radius: 10px !important;
-        border: 1px solid #333333 !important;
-        transition: all 0.3s ease;
-        font-weight: 600 !important;
-        width: 100%;
-    }
-
-    /* Ajuste Automático para DARK MODE */
+    /* MODO ESCURO (Dark Mode) */
     @media (prefers-color-scheme: dark) {
         .stButton > button, div[data-testid="stFormSubmitButton"] > button {
-            background-color: #4A4A4A !important; /* Cinza mais claro no Dark Mode */
-            border: 1px solid #666666 !important;
-            color: #FFFFFF !important;
+            background-color: #CCCCCC !important; /* Cinza claro */
+            color: #000000 !important;       /* LETRAS PRETAS */
+            border-radius: 10px !important;
+            border: 1px solid #FFFFFF !important;
+            transition: all 0.3s ease;
+            font-weight: 700 !important;
+            width: 100%;
         }
         
         .stButton > button:hover, div[data-testid="stFormSubmitButton"] > button:hover {
-            background-color: #606060 !important;
-            border-color: #FFFFFF !important;
+            background-color: #FFFFFF !important; /* Brilha ao passar o mouse */
+            box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.2) !important;
         }
     }
 
-    /* Hover no Light Mode */
+    /* MODO CLARO (Light Mode) */
     @media (prefers-color-scheme: light) {
+        .stButton > button, div[data-testid="stFormSubmitButton"] > button {
+            background-color: #1A1A1A !important; /* Grafite escuro */
+            color: #FFFFFF !important;       /* LETRAS BRANCAS */
+            border-radius: 10px !important;
+            border: 1px solid #333333 !important;
+            transition: all 0.3s ease;
+            font-weight: 600 !important;
+            width: 100%;
+        }
+
         .stButton > button:hover, div[data-testid="stFormSubmitButton"] > button:hover {
             background-color: #333333 !important;
             box-shadow: 0px 4px 10px rgba(0,0,0,0.1) !important;
         }
     }
 
-    /* 3. Ajuste de Abas (Tabs) para neutralizar o vermelho */
+    /* 3. Ajuste de Abas (Tabs) - Neutralizando o Vermelho */
     button[data-baseweb="tab"] { color: #888 !important; }
     
-    /* Cor da linha e texto da aba selecionada conforme o modo */
     @media (prefers-color-scheme: dark) {
-        button[aria-selected="true"] { color: #FFFFFF !important; border-bottom-color: #FFFFFF !important; }
+        button[aria-selected="true"] { color: #CCCCCC !important; border-bottom-color: #CCCCCC !important; }
     }
     @media (prefers-color-scheme: light) {
         button[aria-selected="true"] { color: #1A1A1A !important; border-bottom-color: #1A1A1A !important; }
