@@ -275,60 +275,71 @@ st.set_page_config(page_title="Fitness AI", page_icon="⚡", layout="wide")
 
 # --- CSS CUSTOMIZADO COM REGRAS ESPECÍFICAS PARA CELULAR E TABELAS ESTILO CHATGPT ---
 # --- CSS CUSTOMIZADO (DESIGN ADAPTÁVEL COM ALTO CONTRASTE) ---
+# --- CSS CUSTOMIZADO (EXTERMINADOR DE VERMELHO - PADRÃO ELITE UNIFICADO) ---
 st.markdown("""
     <style>
-    /* 1. Limpeza de Interface */
+    /* 1. Reset de Interface */
     [data-testid="stToolbar"], [data-testid="stToolbarActions"], .stDeployButton { display: none !important; visibility: hidden !important; }
     header { background-color: transparent !important; }
     #MainMenu, footer { display: none !important; }
 
-    /* 2. LÓGICA DE CORES DOS BOTÕES (LIGHT vs DARK) */
-    
-    /* MODO ESCURO (Dark Mode) */
+    /* 2. PADRONIZAÇÃO DE TODOS OS BOTÕES (Download, Formulário, Chat) */
+    /* MODO ESCURO */
     @media (prefers-color-scheme: dark) {
-        .stButton > button, div[data-testid="stFormSubmitButton"] > button {
-            background-color: #CCCCCC !important; /* Cinza claro */
-            color: #000000 !important;       /* LETRAS PRETAS */
+        .stButton > button, div[data-testid="stFormSubmitButton"] > button, .stDownloadButton > button {
+            background-color: #CCCCCC !important; 
+            color: #000000 !important;
             border-radius: 10px !important;
             border: 1px solid #FFFFFF !important;
             transition: all 0.3s ease;
             font-weight: 700 !important;
             width: 100%;
         }
-        
-        .stButton > button:hover, div[data-testid="stFormSubmitButton"] > button:hover {
-            background-color: #FFFFFF !important; /* Brilha ao passar o mouse */
+        .stButton > button:hover, .stDownloadButton > button:hover {
+            background-color: #FFFFFF !important;
             box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.2) !important;
+        }
+        /* Cor das Abas (Tabs) */
+        button[data-baseweb="tab"] { color: #888 !important; }
+        button[aria-selected="true"] { color: #CCCCCC !important; border-bottom-color: #CCCCCC !important; }
+        
+        /* Bordas de Input e Foco (Remove o vermelho de erro/digitação) */
+        div[data-baseweb="input"], div[data-baseweb="textarea"], div[data-baseweb="select"] {
+            border-color: #444 !important;
+        }
+        div[data-baseweb="input"]:focus-within {
+            border-color: #CCCCCC !important;
         }
     }
 
-    /* MODO CLARO (Light Mode) */
+    /* MODO CLARO */
     @media (prefers-color-scheme: light) {
-        .stButton > button, div[data-testid="stFormSubmitButton"] > button {
-            background-color: #1A1A1A !important; /* Grafite escuro */
-            color: #FFFFFF !important;       /* LETRAS BRANCAS */
+        .stButton > button, div[data-testid="stFormSubmitButton"] > button, .stDownloadButton > button {
+            background-color: #1A1A1A !important;
+            color: #FFFFFF !important;
             border-radius: 10px !important;
             border: 1px solid #333333 !important;
             transition: all 0.3s ease;
             font-weight: 600 !important;
             width: 100%;
         }
-
-        .stButton > button:hover, div[data-testid="stFormSubmitButton"] > button:hover {
+        .stButton > button:hover, .stDownloadButton > button:hover {
             background-color: #333333 !important;
-            box-shadow: 0px 4px 10px rgba(0,0,0,0.1) !important;
         }
-    }
-
-    /* 3. Ajuste de Abas (Tabs) - Neutralizando o Vermelho */
-    button[data-baseweb="tab"] { color: #888 !important; }
-    
-    @media (prefers-color-scheme: dark) {
-        button[aria-selected="true"] { color: #CCCCCC !important; border-bottom-color: #CCCCCC !important; }
-    }
-    @media (prefers-color-scheme: light) {
+        /* Cor das Abas (Tabs) */
+        button[data-baseweb="tab"] { color: #888 !important; }
         button[aria-selected="true"] { color: #1A1A1A !important; border-bottom-color: #1A1A1A !important; }
     }
+
+    /* 3. REMOVE O VERMELHO DE ERROS E MENSAGENS DE VALIDAÇÃO */
+    div[data-testid="stNotification"] {
+        background-color: rgba(128, 128, 128, 0.1) !important;
+        color: inherit !important;
+        border: 1px solid rgba(128, 128, 128, 0.2) !important;
+    }
+    
+    /* Remove a linha vermelha de 'campo obrigatório' */
+    div[data-testid="stForm"] { border-color: rgba(128, 128, 128, 0.2) !important; }
 
     /* 4. Métrica Profissional */
     div[data-testid="metric-container"] {
