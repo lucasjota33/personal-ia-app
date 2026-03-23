@@ -275,64 +275,54 @@ st.set_page_config(page_title="Fitness AI", page_icon="⚡", layout="wide")
 
 # --- CSS CUSTOMIZADO COM REGRAS ESPECÍFICAS PARA CELULAR E TABELAS ESTILO CHATGPT ---
 # --- CSS CUSTOMIZADO PARA DESIGN PREMIUM (PRETO/GRAFITE/BRANCO) ---
+# --- CSS CUSTOMIZADO (DESIGN ELITE ADAPTÁVEL) ---
 st.markdown("""
     <style>
-    /* 1. Limpeza de Interface */
+    /* 1. Limpeza e Reset */
     [data-testid="stToolbar"], [data-testid="stToolbarActions"], .stDeployButton { display: none !important; visibility: hidden !important; }
     header { background-color: transparent !important; box-shadow: none !important; }
     #MainMenu, footer { display: none !important; }
-    [data-testid="collapsedControl"] { display: none !important; }
     
-    /* 2. Cores dos Botões (Força o Grafite do Ícone e remove o Vermelho) */
-    /* Estiliza botões normais e de formulário */
+    /* 2. BOTÕES: Grafite Metálico para brilhar no Dark e no Light */
     .stButton > button, div[data-testid="stFormSubmitButton"] > button {
-        background-color: #1A1A1A !important; 
-        color: white !important;
-        border-radius: 8px !important;
-        border: 1px solid #333333 !important;
-        transition: 0.3s ease-in-out;
+        background-color: #2D2D2D !important; /* Grafite Médio: visível em qualquer fundo */
+        color: #FFFFFF !important;
+        border-radius: 10px !important;
+        border: 1px solid #4A4A4A !important; /* Borda que dá o aspecto metálico */
+        transition: all 0.3s ease;
         font-weight: 600 !important;
+        text-transform: uppercase;
+        letter-spacing: 1px;
     }
 
-    /* Efeito de Hover (Passar o mouse) */
+    /* Efeito de Destaque no Hover */
     .stButton > button:hover, div[data-testid="stFormSubmitButton"] > button:hover {
-        background-color: #333333 !important; 
-        border-color: #444444 !important;
-        color: white !important;
-        box-shadow: 0px 4px 10px rgba(0,0,0,0.2) !important;
+        background-color: #3D3D3D !important;
+        border-color: #FFFFFF !important; /* Brilho branco na borda ao passar o mouse */
+        box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.1) !important;
     }
 
-    /* 3. Estilo das Abas (Tabs) - Remove o traço vermelho */
-    button[data-baseweb="tab"] {
-        color: #888 !important;
-    }
+    /* 3. ABAS (Tabs): Neutralizando o traço vermelho */
+    button[data-baseweb="tab"] { color: #888 !important; }
     button[aria-selected="true"] {
-        color: #1A1A1A !important;
-        border-bottom-color: #1A1A1A !important;
+        color: #FFFFFF !important;
+        border-bottom-color: #FFFFFF !important;
     }
 
-    /* 4. Cards de Métricas (Estilo Dashboard Profissional) */
+    /* 4. INPUTS: Para combinar com o visual dark */
+    div[data-baseweb="input"], div[data-baseweb="select"] {
+        border-radius: 10px !important;
+    }
+
+    /* 5. MÉTRICAS: Visual limpo */
     div[data-testid="metric-container"] {
-        background-color: rgba(26, 26, 26, 0.03) !important; 
-        border: 1px solid #e0e0e0 !important;
-        padding: 15px !important; 
+        background-color: rgba(255, 255, 255, 0.03) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        padding: 15px !important;
         border-radius: 12px !important;
     }
-    div[data-testid="stMetricValue"] { color: #1A1A1A !important; }
 
-    /* 5. Ajustes Mobile e Tabelas */
     .stApp { overflow-x: hidden; }
-    .stMarkdown table {
-        display: block !important;
-        overflow-x: auto !important;
-        white-space: nowrap !important; 
-        border-radius: 8px; 
-    }
-    
-    @media (max-width: 768px) {
-        .block-container { padding-top: 1.5rem !important; }
-        .stButton > button { min-height: 50px !important; }
-    }
     </style>
 """, unsafe_allow_html=True)
 
