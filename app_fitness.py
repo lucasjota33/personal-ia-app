@@ -274,47 +274,64 @@ def gerar_pdf(texto_md, nome_atleta):
 st.set_page_config(page_title="Fitness AI", page_icon="⚡", layout="wide")
 
 # --- CSS CUSTOMIZADO COM REGRAS ESPECÍFICAS PARA CELULAR E TABELAS ESTILO CHATGPT ---
+# --- CSS CUSTOMIZADO PARA DESIGN PREMIUM (PRETO/GRAFITE/BRANCO) ---
 st.markdown("""
     <style>
+    /* 1. Limpeza de Interface */
     [data-testid="stToolbar"], [data-testid="stToolbarActions"], .stDeployButton { display: none !important; visibility: hidden !important; }
     header { background-color: transparent !important; box-shadow: none !important; }
     #MainMenu, footer { display: none !important; }
     [data-testid="collapsedControl"] { display: none !important; }
     
-    .block-container { padding-top: 4rem !important; margin-top: 2rem !important; }
-    div[data-testid="metric-container"] {
-        background-color: rgba(28, 131, 225, 0.1); border: 1px solid rgba(28, 131, 225, 0.1);
-        padding: 5% 10% 5% 10%; border-radius: 10px; box-shadow: 2px 2px 10px rgba(0,0,0,0.05);
+    /* 2. Cores dos Botões (Força o Grafite do Ícone e remove o Vermelho) */
+    /* Estiliza botões normais e de formulário */
+    .stButton > button, div[data-testid="stFormSubmitButton"] > button {
+        background-color: #1A1A1A !important; 
+        color: white !important;
+        border-radius: 8px !important;
+        border: 1px solid #333333 !important;
+        transition: 0.3s ease-in-out;
+        font-weight: 600 !important;
     }
-    
-    .stApp { overflow-x: hidden; }
 
+    /* Efeito de Hover (Passar o mouse) */
+    .stButton > button:hover, div[data-testid="stFormSubmitButton"] > button:hover {
+        background-color: #333333 !important; 
+        border-color: #444444 !important;
+        color: white !important;
+        box-shadow: 0px 4px 10px rgba(0,0,0,0.2) !important;
+    }
+
+    /* 3. Estilo das Abas (Tabs) - Remove o traço vermelho */
+    button[data-baseweb="tab"] {
+        color: #888 !important;
+    }
+    button[aria-selected="true"] {
+        color: #1A1A1A !important;
+        border-bottom-color: #1A1A1A !important;
+    }
+
+    /* 4. Cards de Métricas (Estilo Dashboard Profissional) */
+    div[data-testid="metric-container"] {
+        background-color: rgba(26, 26, 26, 0.03) !important; 
+        border: 1px solid #e0e0e0 !important;
+        padding: 15px !important; 
+        border-radius: 12px !important;
+    }
+    div[data-testid="stMetricValue"] { color: #1A1A1A !important; }
+
+    /* 5. Ajustes Mobile e Tabelas */
+    .stApp { overflow-x: hidden; }
     .stMarkdown table {
         display: block !important;
         overflow-x: auto !important;
         white-space: nowrap !important; 
-        max-width: 100% !important;
-        -webkit-overflow-scrolling: touch; 
         border-radius: 8px; 
     }
     
-    .stMarkdown p, .stMarkdown li {
-        word-wrap: break-word !important;
-        overflow-wrap: break-word !important;
-    }
-
     @media (max-width: 768px) {
-        .block-container { 
-            padding-top: 1.5rem !important; 
-            margin-top: 0 !important;
-            padding-left: 1rem !important; 
-            padding-right: 1rem !important;
-        }
-        input, select, textarea { font-size: 16px !important; }
-        .stButton > button, [data-testid="stFormSubmitButton"] > button {
-            min-height: 50px !important;
-        }
-        div[data-testid="metric-container"] { padding: 15px !important; }
+        .block-container { padding-top: 1.5rem !important; }
+        .stButton > button { min-height: 50px !important; }
     }
     </style>
 """, unsafe_allow_html=True)
