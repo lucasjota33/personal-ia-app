@@ -1,0 +1,9 @@
+[theme]
+# Esta é a cor que vai substituir o vermelho em todos os botões e detalhes
+primaryColor = "#1A1A1A"
+
+# Mantém o fundo e o texto adaptáveis ao sistema do usuário
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F0F2F6"
+textColor = "#262730"
+font = "sans serif"
