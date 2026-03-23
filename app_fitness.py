@@ -273,7 +273,7 @@ def gerar_pdf(texto_md, nome_atleta):
 # Configuração da Página
 st.set_page_config(page_title="Fitness AI", page_icon="⚡", layout="wide")
 
-# --- CSS CUSTOMIZADO (LAYOUT CHATGPT + SCROLL TABELAS + ZERO VERMELHO) ---
+# --- CSS CUSTOMIZADO (LAYOUT CHATGPT + SCROLL TABELAS + ZERO VERMELHO COM ANIMAÇÃO) ---
 st.markdown("""
     <style>
     /* 1. Reset e Limpeza de Interface */
@@ -285,7 +285,6 @@ st.markdown("""
     .block-container { padding-top: 4rem !important; margin-top: 2rem !important; }
 
     /* 2. LAYOUT DE CHAT (ESTILO CHATGPT - NÃO FLUTUANTE) */
-    /* Garante que o texto ocupe a largura e não fique em bolhas pequenas */
     .stMarkdown p, .stMarkdown li {
         word-wrap: break-word !important;
         overflow-wrap: break-word !important;
@@ -318,9 +317,13 @@ st.markdown("""
             background-color: #FFFFFF !important;
             box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.2) !important;
         }
-        /* Abas e Inputs */
-        button[data-baseweb="tab"] { color: #888 !important; border-bottom: none !important; }
-        button[aria-selected="true"] { color: #CCCCCC !important; border-bottom: 2px solid #CCCCCC !important; }
+        
+        /* Cor das Abas e da ANIMAÇÃO (Tab Highlight) */
+        button[data-baseweb="tab"] { color: #888 !important; }
+        button[aria-selected="true"] { color: #CCCCCC !important; }
+        div[data-baseweb="tab-highlight"] { background-color: #CCCCCC !important; }
+        
+        /* Inputs e Foco */
         div[data-baseweb="input"]:focus-within { border-color: #CCCCCC !important; box-shadow: 0 0 0 1px #CCCCCC !important; }
         input, textarea { caret-color: #CCCCCC !important; }
     }
@@ -337,9 +340,13 @@ st.markdown("""
             width: 100%;
         }
         .stButton > button:hover, .stDownloadButton > button:hover { background-color: #333333 !important; }
-        /* Abas e Inputs */
-        button[data-baseweb="tab"] { color: #888 !important; border-bottom: none !important; }
-        button[aria-selected="true"] { color: #1A1A1A !important; border-bottom: 2px solid #1A1A1A !important; }
+        
+        /* Cor das Abas e da ANIMAÇÃO (Tab Highlight) */
+        button[data-baseweb="tab"] { color: #888 !important; }
+        button[aria-selected="true"] { color: #1A1A1A !important; }
+        div[data-baseweb="tab-highlight"] { background-color: #1A1A1A !important; }
+        
+        /* Inputs e Foco */
         div[data-baseweb="input"]:focus-within { border-color: #1A1A1A !important; box-shadow: 0 0 0 1px #1A1A1A !important; }
         input, textarea { caret-color: #1A1A1A !important; }
     }
