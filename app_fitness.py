@@ -274,6 +274,7 @@ def gerar_pdf(texto_md, nome_atleta):
 st.set_page_config(page_title="Fitness AI", page_icon="⚡", layout="wide")
 
 # --- CSS CUSTOMIZADO COM REGRAS ESPECÍFICAS PARA CELULAR E TABELAS ESTILO CHATGPT ---
+# --- CSS CUSTOMIZADO COM PALETA PREMIUM DARK ---
 st.markdown("""
     <style>
     [data-testid="stToolbar"], [data-testid="stToolbarActions"], .stDeployButton { display: none !important; visibility: hidden !important; }
@@ -282,11 +283,36 @@ st.markdown("""
     [data-testid="collapsedControl"] { display: none !important; }
     
     .block-container { padding-top: 4rem !important; margin-top: 2rem !important; }
+    
+    /* Métrica Estilo Premium */
     div[data-testid="metric-container"] {
-        background-color: rgba(28, 131, 225, 0.1); border: 1px solid rgba(28, 131, 225, 0.1);
-        padding: 5% 10% 5% 10%; border-radius: 10px; box-shadow: 2px 2px 10px rgba(0,0,0,0.05);
+        background-color: #f8f9fa; 
+        border: 1px solid #e0e0e0;
+        padding: 5% 10% 5% 10%; 
+        border-radius: 12px; 
+        box-shadow: 2px 2px 12px rgba(0,0,0,0.03);
+    }
+    div[data-testid="stMetricValue"] { color: #121212 !important; }
+    
+    /* Botões seguindo a paleta do ícone (Preto/Grafite) */
+    .stButton > button, [data-testid="stFormSubmitButton"] > button {
+        background-color: #121212 !important;
+        color: white !important;
+        border-radius: 8px !important;
+        border: 1px solid #121212 !important;
+        transition: 0.3s ease-in-out;
     }
     
+    .stButton > button:hover {
+        background-color: #333333 !important;
+        border-color: #333333 !important;
+        box-shadow: 0px 4px 15px rgba(0,0,0,0.15);
+    }
+
+    /* Tabs (Entrar/Criar Conta) */
+    button[data-baseweb="tab"] { color: #666 !important; }
+    button[aria-selected="true"] { color: #121212 !important; border-bottom-color: #121212 !important; }
+
     .stApp { overflow-x: hidden; }
 
     .stMarkdown table {
@@ -298,23 +324,10 @@ st.markdown("""
         border-radius: 8px; 
     }
     
-    .stMarkdown p, .stMarkdown li {
-        word-wrap: break-word !important;
-        overflow-wrap: break-word !important;
-    }
-
     @media (max-width: 768px) {
-        .block-container { 
-            padding-top: 1.5rem !important; 
-            margin-top: 0 !important;
-            padding-left: 1rem !important; 
-            padding-right: 1rem !important;
-        }
+        .block-container { padding-top: 1.5rem !important; padding-left: 1rem !important; padding-right: 1rem !important; }
         input, select, textarea { font-size: 16px !important; }
-        .stButton > button, [data-testid="stFormSubmitButton"] > button {
-            min-height: 50px !important;
-        }
-        div[data-testid="metric-container"] { padding: 15px !important; }
+        .stButton > button { min-height: 50px !important; }
     }
     </style>
 """, unsafe_allow_html=True)
