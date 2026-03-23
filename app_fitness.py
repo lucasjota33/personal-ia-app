@@ -9,6 +9,11 @@ from fpdf import FPDF
 CHAVE = st.secrets["GEMINI_API_KEY"]
 MODELO = "models/gemini-2.5-flash"
 
+# Paleta de cores alinhada com a logo (monocromática: preto / cinza)
+PRIMARY_RGB = (34, 34, 34)        # cor principal (preto suave)
+SECONDARY_RGB = (120, 120, 120)   # textos secundários (cinza)
+PRIMARY_RGBA_BG = "rgba(34,34,34,0.06)"  # fundo sutil para blocos
+
 # ==========================================================
 # 🟢 MOTOR DE BANCO DE DADOS EM NUVEM (FIREBASE FIRESTORE)
 # ==========================================================
@@ -109,14 +114,13 @@ class PDF_Elite(FPDF):
     def __init__(self, nome_atleta):
         super().__init__()
         self.nome_atleta = nome_atleta
-
     def header(self):
         # Linha no topo de toda página
         self.set_font("Arial", "B", 10)
-        self.set_text_color(150, 150, 150)
+        self.set_text_color(*SECONDARY_RGB)
         self.cell(0, 10, "PROTOCOLO DE ELITE", 0, 0, "L")
         self.cell(0, 10, f"Atleta: {self.nome_atleta}", 0, 1, "R")
-        self.set_draw_color(28, 131, 225)
+        self.set_draw_color(*PRIMARY_RGB)
         self.set_line_width(0.5)
         self.line(10, 18, 200, 18)
         self.ln(5)
@@ -125,7 +129,7 @@ class PDF_Elite(FPDF):
         # Rodapé com numeração
         self.set_y(-15)
         self.set_font("Arial", "I", 8)
-        self.set_text_color(150, 150, 150)
+        self.set_text_color(*SECONDARY_RGB)
         self.cell(0, 10, f"Página {self.page_no()}", 0, 0, "C")
 
 # 🟢 MOTOR DE GERAR PDF (TABELAS INTELIGENTES NO FORMATO ORIGINAL)
@@ -137,7 +141,7 @@ def gerar_pdf(texto_md, nome_atleta):
     
     # Capa Principal
     _ = pdf.set_font("Arial", "B", 20)
-    _ = pdf.set_text_color(28, 131, 225) 
+    _ = pdf.set_text_color(*PRIMARY_RGB)
     _ = pdf.ln(10)
     _ = pdf.multi_cell(0, 10, limpar_para_pdf(f"PLANEJAMENTO ESTRATÉGICO\n{nome_atleta.upper()}"), 0, "C")
     _ = pdf.ln(15)
@@ -193,7 +197,7 @@ def gerar_pdf(texto_md, nome_atleta):
                             y_ini = pdf.get_y()
                             
                             if eh_cabecalho:
-                                _ = pdf.set_fill_color(28, 131, 225)
+                                _ = pdf.set_fill_color(*PRIMARY_RGB)
                                 _ = pdf.set_text_color(255, 255, 255)
                             else:
                                 _ = pdf.set_text_color(40, 40, 40)
@@ -244,14 +248,14 @@ def gerar_pdf(texto_md, nome_atleta):
         elif l_strip.startswith('## '):
             _ = pdf.ln(4)
             _ = pdf.set_font("Arial", "B", 14)
-            _ = pdf.set_text_color(28, 131, 225)
+            _ = pdf.set_text_color(*PRIMARY_RGB)
             _ = pdf.multi_cell(0, 8, limpar_para_pdf(l_limpa.replace('## ', '')))
         elif l_strip.startswith('# '):
             _ = pdf.ln(6)
             _ = pdf.set_font("Arial", "B", 18)
-            _ = pdf.set_text_color(28, 131, 225)
+            _ = pdf.set_text_color(*PRIMARY_RGB)
             _ = pdf.multi_cell(0, 10, limpar_para_pdf(l_limpa.replace('# ', '')))
-            _ = pdf.set_draw_color(28, 131, 225)
+            _ = pdf.set_draw_color(*PRIMARY_RGB)
             _ = pdf.line(10, pdf.get_y(), 200, pdf.get_y())
             _ = pdf.ln(2)
         else:
@@ -274,7 +278,7 @@ def gerar_pdf(texto_md, nome_atleta):
 st.set_page_config(page_title="Fitness AI", page_icon="⚡", layout="wide")
 
 # --- CSS CUSTOMIZADO COM REGRAS ESPECÍFICAS PARA CELULAR E TABELAS ESTILO CHATGPT ---
-st.markdown("""
+css = """
     <style>
     [data-testid="stToolbar"], [data-testid="stToolbarActions"], .stDeployButton { display: none !important; visibility: hidden !important; }
     header { background-color: transparent !important; box-shadow: none !important; }
@@ -283,7 +287,7 @@ st.markdown("""
     
     .block-container { padding-top: 4rem !important; margin-top: 2rem !important; }
     div[data-testid="metric-container"] {
-        background-color: rgba(28, 131, 225, 0.1); border: 1px solid rgba(28, 131, 225, 0.1);
+        background-color: {PRIMARY_RGBA_BG}; border: 1px solid rgba(34,34,34,0.06);
         padding: 5% 10% 5% 10%; border-radius: 10px; box-shadow: 2px 2px 10px rgba(0,0,0,0.05);
     }
     
@@ -317,7 +321,9 @@ st.markdown("""
         div[data-testid="metric-container"] { padding: 15px !important; }
     }
     </style>
-""", unsafe_allow_html=True)
+"""
+css = css.replace('{PRIMARY_RGBA_BG}', PRIMARY_RGBA_BG)
+st.markdown(css, unsafe_allow_html=True)
 
 # --- GERENCIADOR DE ESTADO (MEMÓRIA DO APP) ---
 if "etapa" not in st.session_state:
