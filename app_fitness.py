@@ -283,9 +283,9 @@ st.markdown("""
     header { background-color: transparent !important; }
     #MainMenu, footer { display: none !important; }
 
-    /* 2. PADRONIZAÇÃO DE TODOS OS BOTÕES (Download, Formulário, Chat) */
-    /* MODO ESCURO */
+    /* 2. PADRONIZAÇÃO ELITE (MODO ESCURO) */
     @media (prefers-color-scheme: dark) {
+        /* Botões, Download e Formulário */
         .stButton > button, div[data-testid="stFormSubmitButton"] > button, .stDownloadButton > button {
             background-color: #CCCCCC !important; 
             color: #000000 !important;
@@ -299,21 +299,27 @@ st.markdown("""
             background-color: #FFFFFF !important;
             box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.2) !important;
         }
-        /* Cor das Abas (Tabs) */
-        button[data-baseweb="tab"] { color: #888 !important; }
-        button[aria-selected="true"] { color: #CCCCCC !important; border-bottom-color: #CCCCCC !important; }
+
+        /* Tabs (Abas) selecionadas */
+        button[data-baseweb="tab"] { color: #888 !important; border-bottom: none !important; }
+        div[data-baseweb="tab-highlight"] { background-color: #CCCCCC !important; }
+        button[aria-selected="true"] { color: #CCCCCC !important; border-bottom: 2px solid #CCCCCC !important; }
         
-        /* Bordas de Input e Foco (Remove o vermelho de erro/digitação) */
+        /* Inputs e Bordas (Remove foco vermelho) */
         div[data-baseweb="input"], div[data-baseweb="textarea"], div[data-baseweb="select"] {
             border-color: #444 !important;
         }
-        div[data-baseweb="input"]:focus-within {
+        div[data-baseweb="input"]:focus-within, div[data-baseweb="textarea"]:focus-within {
             border-color: #CCCCCC !important;
+            box-shadow: 0 0 0 1px #CCCCCC !important;
         }
+        /* Cursor de digitação */
+        input, textarea { caret-color: #CCCCCC !important; }
     }
 
-    /* MODO CLARO */
+    /* 3. PADRONIZAÇÃO ELITE (MODO CLARO) */
     @media (prefers-color-scheme: light) {
+        /* Botões, Download e Formulário */
         .stButton > button, div[data-testid="stFormSubmitButton"] > button, .stDownloadButton > button {
             background-color: #1A1A1A !important;
             color: #FFFFFF !important;
@@ -326,22 +332,33 @@ st.markdown("""
         .stButton > button:hover, .stDownloadButton > button:hover {
             background-color: #333333 !important;
         }
-        /* Cor das Abas (Tabs) */
-        button[data-baseweb="tab"] { color: #888 !important; }
-        button[aria-selected="true"] { color: #1A1A1A !important; border-bottom-color: #1A1A1A !important; }
+
+        /* Tabs (Abas) selecionadas */
+        button[data-baseweb="tab"] { color: #888 !important; border-bottom: none !important; }
+        div[data-baseweb="tab-highlight"] { background-color: #1A1A1A !important; }
+        button[aria-selected="true"] { color: #1A1A1A !important; border-bottom: 2px solid #1A1A1A !important; }
+
+        /* Inputs e Bordas (Foco Grafite) */
+        div[data-baseweb="input"]:focus-within, div[data-baseweb="textarea"]:focus-within {
+            border-color: #1A1A1A !important;
+            box-shadow: 0 0 0 1px #1A1A1A !important;
+        }
+        /* Cursor de digitação */
+        input, textarea { caret-color: #1A1A1A !important; }
     }
 
-    /* 3. REMOVE O VERMELHO DE ERROS E MENSAGENS DE VALIDAÇÃO */
+    /* 4. NOTIFICAÇÕES E ALERTAS (EXTERMINA O VERMELHO) */
     div[data-testid="stNotification"] {
         background-color: rgba(128, 128, 128, 0.1) !important;
         color: inherit !important;
         border: 1px solid rgba(128, 128, 128, 0.2) !important;
     }
     
-    /* Remove a linha vermelha de 'campo obrigatório' */
+    /* Remove bordas vermelhas de formulário e erros */
     div[data-testid="stForm"] { border-color: rgba(128, 128, 128, 0.2) !important; }
+    .st-ae { border-color: rgba(128, 128, 128, 0.2) !important; }
 
-    /* 4. Métrica Profissional */
+    /* 5. Métrica Profissional */
     div[data-testid="metric-container"] {
         background-color: rgba(128, 128, 128, 0.05);
         border: 1px solid rgba(128, 128, 128, 0.2);
