@@ -273,19 +273,38 @@ def gerar_pdf(texto_md, nome_atleta):
 # Configuração da Página
 st.set_page_config(page_title="Fitness AI", page_icon="⚡", layout="wide")
 
-# --- CSS CUSTOMIZADO COM REGRAS ESPECÍFICAS PARA CELULAR E TABELAS ESTILO CHATGPT ---
-# --- CSS CUSTOMIZADO (DESIGN ADAPTÁVEL COM ALTO CONTRASTE) ---
-# --- CSS CUSTOMIZADO (EXTERMINADOR DE VERMELHO - PADRÃO ELITE UNIFICADO) ---
+# --- CSS CUSTOMIZADO (LAYOUT CHATGPT + SCROLL TABELAS + ZERO VERMELHO) ---
 st.markdown("""
     <style>
-    /* 1. Reset de Interface */
+    /* 1. Reset e Limpeza de Interface */
     [data-testid="stToolbar"], [data-testid="stToolbarActions"], .stDeployButton { display: none !important; visibility: hidden !important; }
-    header { background-color: transparent !important; }
+    header { background-color: transparent !important; box-shadow: none !important; }
     #MainMenu, footer { display: none !important; }
+    [data-testid="collapsedControl"] { display: none !important; }
+    
+    .block-container { padding-top: 4rem !important; margin-top: 2rem !important; }
 
-    /* 2. PADRONIZAÇÃO ELITE (MODO ESCURO) */
+    /* 2. LAYOUT DE CHAT (ESTILO CHATGPT - NÃO FLUTUANTE) */
+    /* Garante que o texto ocupe a largura e não fique em bolhas pequenas */
+    .stMarkdown p, .stMarkdown li {
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+    }
+    
+    /* 3. SCROLL NAS TABELAS (ESSENCIAL PARA CELULAR) */
+    .stMarkdown table {
+        display: block !important;
+        vertical-align: middle !important;
+        overflow-x: auto !important;
+        white-space: nowrap !important; 
+        max-width: 100% !important;
+        -webkit-overflow-scrolling: touch; 
+        border-radius: 8px; 
+        margin-bottom: 20px;
+    }
+
+    /* 4. PADRONIZAÇÃO ELITE (MODO ESCURO) */
     @media (prefers-color-scheme: dark) {
-        /* Botões, Download e Formulário */
         .stButton > button, div[data-testid="stFormSubmitButton"] > button, .stDownloadButton > button {
             background-color: #CCCCCC !important; 
             color: #000000 !important;
@@ -299,27 +318,15 @@ st.markdown("""
             background-color: #FFFFFF !important;
             box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.2) !important;
         }
-
-        /* Tabs (Abas) selecionadas */
+        /* Abas e Inputs */
         button[data-baseweb="tab"] { color: #888 !important; border-bottom: none !important; }
-        div[data-baseweb="tab-highlight"] { background-color: #CCCCCC !important; }
         button[aria-selected="true"] { color: #CCCCCC !important; border-bottom: 2px solid #CCCCCC !important; }
-        
-        /* Inputs e Bordas (Remove foco vermelho) */
-        div[data-baseweb="input"], div[data-baseweb="textarea"], div[data-baseweb="select"] {
-            border-color: #444 !important;
-        }
-        div[data-baseweb="input"]:focus-within, div[data-baseweb="textarea"]:focus-within {
-            border-color: #CCCCCC !important;
-            box-shadow: 0 0 0 1px #CCCCCC !important;
-        }
-        /* Cursor de digitação */
+        div[data-baseweb="input"]:focus-within { border-color: #CCCCCC !important; box-shadow: 0 0 0 1px #CCCCCC !important; }
         input, textarea { caret-color: #CCCCCC !important; }
     }
 
-    /* 3. PADRONIZAÇÃO ELITE (MODO CLARO) */
+    /* 5. PADRONIZAÇÃO ELITE (MODO CLARO) */
     @media (prefers-color-scheme: light) {
-        /* Botões, Download e Formulário */
         .stButton > button, div[data-testid="stFormSubmitButton"] > button, .stDownloadButton > button {
             background-color: #1A1A1A !important;
             color: #FFFFFF !important;
@@ -329,43 +336,31 @@ st.markdown("""
             font-weight: 600 !important;
             width: 100%;
         }
-        .stButton > button:hover, .stDownloadButton > button:hover {
-            background-color: #333333 !important;
-        }
-
-        /* Tabs (Abas) selecionadas */
+        .stButton > button:hover, .stDownloadButton > button:hover { background-color: #333333 !important; }
+        /* Abas e Inputs */
         button[data-baseweb="tab"] { color: #888 !important; border-bottom: none !important; }
-        div[data-baseweb="tab-highlight"] { background-color: #1A1A1A !important; }
         button[aria-selected="true"] { color: #1A1A1A !important; border-bottom: 2px solid #1A1A1A !important; }
-
-        /* Inputs e Bordas (Foco Grafite) */
-        div[data-baseweb="input"]:focus-within, div[data-baseweb="textarea"]:focus-within {
-            border-color: #1A1A1A !important;
-            box-shadow: 0 0 0 1px #1A1A1A !important;
-        }
-        /* Cursor de digitação */
+        div[data-baseweb="input"]:focus-within { border-color: #1A1A1A !important; box-shadow: 0 0 0 1px #1A1A1A !important; }
         input, textarea { caret-color: #1A1A1A !important; }
     }
 
-    /* 4. NOTIFICAÇÕES E ALERTAS (EXTERMINA O VERMELHO) */
-    div[data-testid="stNotification"] {
-        background-color: rgba(128, 128, 128, 0.1) !important;
-        color: inherit !important;
-        border: 1px solid rgba(128, 128, 128, 0.2) !important;
-    }
-    
-    /* Remove bordas vermelhas de formulário e erros */
-    div[data-testid="stForm"] { border-color: rgba(128, 128, 128, 0.2) !important; }
-    .st-ae { border-color: rgba(128, 128, 128, 0.2) !important; }
-
-    /* 5. Métrica Profissional */
+    /* 6. Métrica e Notificação */
     div[data-testid="metric-container"] {
         background-color: rgba(128, 128, 128, 0.05);
         border: 1px solid rgba(128, 128, 128, 0.2);
         border-radius: 12px;
     }
+    div[data-testid="stNotification"] {
+        background-color: rgba(128, 128, 128, 0.1) !important;
+        border: 1px solid rgba(128, 128, 128, 0.2) !important;
+    }
 
     .stApp { overflow-x: hidden; }
+
+    @media (max-width: 768px) {
+        .block-container { padding-top: 1.5rem !important; padding-left: 1rem !important; padding-right: 1rem !important; }
+        .stButton > button { min-height: 50px !important; }
+    }
     </style>
 """, unsafe_allow_html=True)
 
