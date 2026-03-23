@@ -276,50 +276,65 @@ st.set_page_config(page_title="Fitness AI", page_icon="⚡", layout="wide")
 # --- CSS CUSTOMIZADO COM REGRAS ESPECÍFICAS PARA CELULAR E TABELAS ESTILO CHATGPT ---
 # --- CSS CUSTOMIZADO PARA DESIGN PREMIUM (PRETO/GRAFITE/BRANCO) ---
 # --- CSS CUSTOMIZADO (DESIGN ELITE ADAPTÁVEL) ---
+# --- CSS CUSTOMIZADO (BOTÕES ADAPTÁVEIS LIGHT/DARK) ---
 st.markdown("""
     <style>
-    /* 1. Limpeza e Reset */
+    /* 1. Limpeza de Interface */
     [data-testid="stToolbar"], [data-testid="stToolbarActions"], .stDeployButton { display: none !important; visibility: hidden !important; }
-    header { background-color: transparent !important; box-shadow: none !important; }
+    header { background-color: transparent !important; }
     #MainMenu, footer { display: none !important; }
+
+    /* 2. LÓGICA DE CORES DOS BOTÕES */
     
-    /* 2. BOTÕES: Grafite Metálico para brilhar no Dark e no Light */
+    /* Configuração padrão (Geralmente Light Mode ou Fallback) */
     .stButton > button, div[data-testid="stFormSubmitButton"] > button {
-        background-color: #2D2D2D !important; /* Grafite Médio: visível em qualquer fundo */
-        color: #FFFFFF !important;
+        background-color: #1A1A1A !important; /* Grafite escuro no Light Mode */
+        color: white !important;
         border-radius: 10px !important;
-        border: 1px solid #4A4A4A !important; /* Borda que dá o aspecto metálico */
+        border: 1px solid #333333 !important;
         transition: all 0.3s ease;
         font-weight: 600 !important;
-        text-transform: uppercase;
-        letter-spacing: 1px;
+        width: 100%;
     }
 
-    /* Efeito de Destaque no Hover */
-    .stButton > button:hover, div[data-testid="stFormSubmitButton"] > button:hover {
-        background-color: #3D3D3D !important;
-        border-color: #FFFFFF !important; /* Brilho branco na borda ao passar o mouse */
-        box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.1) !important;
+    /* Ajuste Automático para DARK MODE */
+    @media (prefers-color-scheme: dark) {
+        .stButton > button, div[data-testid="stFormSubmitButton"] > button {
+            background-color: #4A4A4A !important; /* Cinza mais claro no Dark Mode */
+            border: 1px solid #666666 !important;
+            color: #FFFFFF !important;
+        }
+        
+        .stButton > button:hover, div[data-testid="stFormSubmitButton"] > button:hover {
+            background-color: #606060 !important;
+            border-color: #FFFFFF !important;
+        }
     }
 
-    /* 3. ABAS (Tabs): Neutralizando o traço vermelho */
+    /* Hover no Light Mode */
+    @media (prefers-color-scheme: light) {
+        .stButton > button:hover, div[data-testid="stFormSubmitButton"] > button:hover {
+            background-color: #333333 !important;
+            box-shadow: 0px 4px 10px rgba(0,0,0,0.1) !important;
+        }
+    }
+
+    /* 3. Ajuste de Abas (Tabs) para neutralizar o vermelho */
     button[data-baseweb="tab"] { color: #888 !important; }
-    button[aria-selected="true"] {
-        color: #FFFFFF !important;
-        border-bottom-color: #FFFFFF !important;
+    
+    /* Cor da linha e texto da aba selecionada conforme o modo */
+    @media (prefers-color-scheme: dark) {
+        button[aria-selected="true"] { color: #FFFFFF !important; border-bottom-color: #FFFFFF !important; }
+    }
+    @media (prefers-color-scheme: light) {
+        button[aria-selected="true"] { color: #1A1A1A !important; border-bottom-color: #1A1A1A !important; }
     }
 
-    /* 4. INPUTS: Para combinar com o visual dark */
-    div[data-baseweb="input"], div[data-baseweb="select"] {
-        border-radius: 10px !important;
-    }
-
-    /* 5. MÉTRICAS: Visual limpo */
+    /* 4. Métrica Profissional */
     div[data-testid="metric-container"] {
-        background-color: rgba(255, 255, 255, 0.03) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        padding: 15px !important;
-        border-radius: 12px !important;
+        background-color: rgba(128, 128, 128, 0.05);
+        border: 1px solid rgba(128, 128, 128, 0.2);
+        border-radius: 12px;
     }
 
     .stApp { overflow-x: hidden; }
