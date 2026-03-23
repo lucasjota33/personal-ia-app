@@ -282,80 +282,27 @@ st.markdown("""
     [data-testid="collapsedControl"] { display: none !important; }
     
     .block-container { padding-top: 4rem !important; margin-top: 2rem !important; }
-
-    /* 🔥 FUNDO GERAL */
-    .stApp {
-        background-color: #0D0D0D;
-        color: #EAEAEA;
-        overflow-x: hidden;
-    }
-
-    /* 🔥 CARDS (metrics) */
     div[data-testid="metric-container"] {
-        background-color: #1F1F1F;
-        border: 1px solid #2A2A2A;
-        padding: 5% 10%;
-        border-radius: 12px;
-        box-shadow: 0px 2px 10px rgba(0,0,0,0.4);
+        background-color: rgba(28, 131, 225, 0.1); border: 1px solid rgba(28, 131, 225, 0.1);
+        padding: 5% 10% 5% 10%; border-radius: 10px; box-shadow: 2px 2px 10px rgba(0,0,0,0.05);
     }
+    
+    .stApp { overflow-x: hidden; }
 
-    /* 🔥 BOTÕES */
-    .stButton > button, 
-    [data-testid="stFormSubmitButton"] > button {
-        background-color: #1F1F1F;
-        color: #FFFFFF;
-        border: 1px solid #3A3A3A;
-        border-radius: 10px;
-        transition: all 0.2s ease;
-    }
-
-    .stButton > button:hover,
-    [data-testid="stFormSubmitButton"] > button:hover {
-        background-color: #2A2A2A;
-        border-color: #555;
-    }
-
-    /* 🔥 INPUTS */
-    input, select, textarea {
-        background-color: #1F1F1F !important;
-        color: #FFFFFF !important;
-        border: 1px solid #3A3A3A !important;
-        border-radius: 8px !important;
-    }
-
-    /* 🔥 TABELAS */
     .stMarkdown table {
         display: block !important;
         overflow-x: auto !important;
         white-space: nowrap !important; 
         max-width: 100% !important;
-        border-radius: 8px;
-        background-color: #1F1F1F;
+        -webkit-overflow-scrolling: touch; 
+        border-radius: 8px; 
     }
-
-    .stMarkdown th {
-        background-color: #2A2A2A;
-        color: #FFFFFF;
-    }
-
-    .stMarkdown td {
-        background-color: #1A1A1A;
-        color: #EAEAEA;
-    }
-
-    /* 🔥 CHAT (mensagem do usuário) */
-    .user-msg {
-        background-color: #2A2A2A;
-        color: #FFFFFF;
-    }
-
-    /* 🔥 TEXTO */
+    
     .stMarkdown p, .stMarkdown li {
         word-wrap: break-word !important;
         overflow-wrap: break-word !important;
     }
 
-    /* MOBILE */
     @media (max-width: 768px) {
         .block-container { 
             padding-top: 1.5rem !important; 
@@ -618,7 +565,7 @@ elif st.session_state.etapa == 2:
         if role == "user":
             st.markdown(f"""
                 <div style='display: flex; justify-content: flex-end; margin-bottom: 25px;'>
-                    <div style='background-color: #2A2A2A; color: #FFFFFF; padding: 12px 18px; border-radius: 18px 18px 0px 18px; max-width: 85%; font-family: sans-serif; box-shadow: 1px 1px 3px rgba(0,0,0,0.05);'>
+                    <div style='background-color: #f4f4f4; color: #0d0d0d; padding: 12px 18px; border-radius: 18px 18px 0px 18px; max-width: 85%; font-family: sans-serif; box-shadow: 1px 1px 3px rgba(0,0,0,0.05);'>
                         {conteudo}
                     </div>
                 </div>
