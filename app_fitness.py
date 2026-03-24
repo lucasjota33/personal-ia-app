@@ -757,3 +757,4 @@ elif st.session_state.etapa == 2:
                     exibir_mensagem("Servidor ocupado. Tente perguntar em alguns instantes.", "warning")
             except:
                 exibir_mensagem("Erro ao conectar.", "error")
+                
