@@ -504,51 +504,79 @@ elif st.session_state.etapa == 1:
     usuario = st.session_state.usuario_logado
     perfis_do_usuario = st.session_state.banco[usuario]["perfis"]
     
-    col_logout1, col_logout2 = st.columns([8, 2])
-    with col_logout2:
-        if st.button("Sair da Conta"):
-            if "token" in st.session_state.banco[usuario]:
-                st.session_state.banco[usuario]["token"] = ""
-                salvar_banco(st.session_state.banco)
-            st.query_params.clear()
-            st.session_state.usuario_logado = None
-            st.session_state.etapa = 0
-            st.rerun()
-            
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        st.title(f"Olá, {usuario}! 👋")
+    # Restringimos o layout para o bloco central (mesmo grid da tela de login)
+    col_esquerda, col_centro, col_direita = st.columns([1, 1.5, 1])
+    
+    with col_centro:
+        # Botão de sair elegante no topo à direita do bloco central
+        c_vazia, c_botao_sair = st.columns([7, 3])
+        with c_botao_sair:
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("Sair 👋", use_container_width=True):
+                if "token" in st.session_state.banco[usuario]:
+                    st.session_state.banco[usuario]["token"] = ""
+                    salvar_banco(st.session_state.banco)
+                st.query_params.clear()
+                st.session_state.usuario_logado = None
+                st.session_state.etapa = 0
+                st.rerun()
         
+        # Tipografia Premium
+        st.markdown(f"""
+            <div style="text-align: center; margin-top: -1rem; margin-bottom: 2rem;">
+                <p style="color: #888; font-size: 0.9rem; font-weight: 600; letter-spacing: 1px; margin-bottom: 0;">PAINEL DE CONTROLE</p>
+                <h1 style="font-size: 2.2rem; font-weight: 800; margin-top: 0;">Bem-vindo, {usuario}!</h1>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        # 📋 Lista de Atletas
         if perfis_do_usuario:
-            st.markdown("### 📋 Seus Atletas:")
+            st.markdown("<h4 style='color: #888;'>🏆 Seus Atletas Salvos:</h4>", unsafe_allow_html=True)
             for nome_salvo in list(perfis_do_usuario.keys()):
+                # Proporção melhorada para os botões ficarem harmônicos
                 c_btn, c_del = st.columns([8, 2])
                 with c_btn:
-                    if st.button(f"👤 {nome_salvo}", key=f"btn_{nome_salvo}", use_container_width=True):
+                    if st.button(f"⚡ {nome_salvo.upper()}", key=f"btn_{nome_salvo}", use_container_width=True):
                         st.session_state.dados_usuario = perfis_do_usuario[nome_salvo]["dados"]
                         st.session_state.mensagens = perfis_do_usuario[nome_salvo]["mensagens"]
                         st.session_state.etapa = 2
                         st.rerun()
                 with c_del:
-                    if st.button("❌", key=f"del_{nome_salvo}"):
+                    if st.button("🗑️", key=f"del_{nome_salvo}", use_container_width=True):
                         del st.session_state.banco[usuario]["perfis"][nome_salvo]
                         salvar_banco(st.session_state.banco)
                         st.rerun()
             
-            st.divider()
-            st.markdown("### ➕ Ou cadastre um Novo Atleta:")
+            st.markdown("<br>", unsafe_allow_html=True)
+            st.markdown("<h4 style='color: #888;'>➕ Gerar Novo Protocolo:</h4>", unsafe_allow_html=True)
         else:
-            st.write("Você ainda não tem perfis salvos. Crie o primeiro abaixo!")
+            st.info("Nenhum atleta cadastrado ainda. Preencha os dados abaixo para gerar seu primeiro protocolo de elite.")
         
+        # Formulário de Cadastro Repaginado
         with st.form("perfil_usuario"):
-            nome = st.text_input("Nome Completo do Atleta", placeholder="Ex: Lucas")
+            nome = st.text_input("Nome Completo do Atleta", placeholder="Ex: Lucas Barbosa")
+            
             c_peso, c_altura = st.columns(2)
             with c_peso: peso = st.number_input("Peso (kg)", min_value=30.0, max_value=250.0, value=75.0, step=0.1)
             with c_altura: altura = st.number_input("Altura (cm)", min_value=100, max_value=230, value=175, step=1)
                 
-            objetivo = st.selectbox("Objetivo Principal", ["Ganhar Massa Muscular (Hipertrofia)", "Perder Peso (Déficit Calórico)", "Melhorar Performance (Força/Resistência)", "Definição Corporal", "Manutenção da Saúde"])
-            nivel_atividade = st.selectbox("Nível de Atividade Diária", ["Sedentário", "Levemente Ativo", "Moderadamente Ativo", "Muito Ativo", "Extremamente Ativo"])
+            objetivo = st.selectbox("Objetivo Principal", [
+                "Ganhar Massa Muscular (Hipertrofia)", 
+                "Perder Peso (Déficit Calórico)", 
+                "Melhorar Performance (Força/Resistência)", 
+                "Definição Corporal", 
+                "Manutenção da Saúde"
+            ])
+            
+            nivel_atividade = st.selectbox("Nível de Atividade Diária", [
+                "Sedentário (Trabalho de escritório, sem exercícios)", 
+                "Levemente Ativo (1 a 3 dias de exercício/semana)", 
+                "Moderadamente Ativo (3 a 5 dias de exercício/semana)", 
+                "Muito Ativo (6 a 7 dias de exercício intenso/semana)", 
+                "Extremamente Ativo (Atleta profissional, treinos duplos)"
+            ])
 
+            st.markdown("<br>", unsafe_allow_html=True) # Respiro antes do botão final
             submit_button = st.form_submit_button(label="🚀 GERAR PROTOCOLO ELITE", type="primary", use_container_width=True)
 
         if submit_button:
