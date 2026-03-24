@@ -582,7 +582,8 @@ elif st.session_state.etapa == 1:
                     | Taxa Metabólica Basal (Mifflin-St Jeor)| Gasto Energético Total | Meta Calórica Alvo |
 
                     ## 🥗 2. PLANO ALIMENTAR
-                    Crie uma tabela em Markdown seguindo EXATAMENTE as colunas abaixo:
+                    
+                    Crie uma tabela em Markdown seguindo EXATAMENTE as colunas abaixo(Seja variado na criação do plano, para que o usuário tenha uma experiência personalizada, não monte algo genérico de maneira que seja extremamente dificil cada novo plano vir igual):
                     | Refeição(Almoço, janta, etc) | Alimento Principal | Macronutrientes | Substituição |
                     
                     ## ⚡ 3. PLANILHA DE TREINAMENTO
