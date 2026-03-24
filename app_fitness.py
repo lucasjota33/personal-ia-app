@@ -9,9 +9,7 @@ import hashlib
 import secrets
 import base64
 import re
-import time
 import pandas as pd
-import plotly.express as px  # 🟢 NOVA BIBLIOTECA PARA O GRÁFICO DE DONUT
 from fpdf import FPDF 
 
 # Configurações iniciais
@@ -117,12 +115,7 @@ def exibir_mensagem(texto, tipo="info"):
         </div>
     """, unsafe_allow_html=True)
 
-# 🟢 NOVA FUNÇÃO: EFEITO DIGITANDO
-def gerador_de_texto(texto):
-    for palavra in texto.split(" "):
-        yield palavra + " "
-        time.sleep(0.03) # Velocidade da digitação
-
+# 🟢 NOVAS FUNÇÕES: EXTRAÇÃO DE DADOS PARA O DASHBOARD 🟢
 def extrair_json_da_ia(texto):
     match = re.search(r'```json\n(.*?)\n```', texto, re.DOTALL)
     if match:
@@ -193,6 +186,7 @@ class PDF_Elite(FPDF):
 
 @st.cache_data(show_spinner=False)
 def gerar_pdf(texto_md, nome_atleta):
+    # Removemos o bloco JSON do PDF para ficar limpo
     texto_limpo = re.sub(r'```json\n.*?\n```', '', texto_md, flags=re.DOTALL)
     
     pdf = PDF_Elite(nome_atleta)
@@ -331,45 +325,89 @@ def gerar_pdf(texto_md, nome_atleta):
         return resultado.encode("latin-1", "ignore")
     return bytes(resultado)
 
+
 # 🟢 CSS CUSTOMIZADO LIMPO E PRECISO
 st.markdown("""
 <style>
+/* Importando a fonte via CSS nativo */
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined');
 
-header[data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stToolbarActions"], .stDeployButton, #MainMenu, footer { display: none !important; }
+/* 1. Ocultar o Header invisível do Streamlit que ocupa espaço no topo */
+header[data-testid="stHeader"] {
+    display: none !important;
+}
 
-.block-container { padding-top: 2rem !important; padding-bottom: 2rem !important; }
+/* 2. Ocultar elementos padrão do Streamlit (menu hamburguer, botão deploy) */
+[data-testid="stToolbar"], [data-testid="stToolbarActions"], .stDeployButton { display: none !important; }
+#MainMenu, footer { display: none !important; }
 
+/* 3. Ajuste fino do container principal para usar todo o espaço sem cortar botões */
+.block-container {
+    padding-top: 2rem !important;
+    padding-bottom: 2rem !important;
+}
+
+/* 🟢 FORÇANDO O SCROLL HORIZONTAL NAS TABELAS (Chat) 🟢 */
 .stMarkdown table {
-    display: block !important; overflow-x: auto !important; white-space: nowrap !important; 
-    max-width: 100% !important; width: 100% !important; border-radius: 8px; margin-bottom: 20px;
+    display: block !important; 
+    overflow-x: auto !important;
+    white-space: nowrap !important; 
+    max-width: 100% !important; 
+    width: 100% !important;
+    border-radius: 8px; 
+    margin-bottom: 20px;
+    -webkit-overflow-scrolling: touch;
+}
+div[data-testid="stMarkdownContainer"] {
+    overflow-x: auto !important;
 }
 
+/* Botões Premium */
 .stButton > button, div[data-testid="stFormSubmitButton"] > button, .stDownloadButton > button {
-    border-radius: 8px !important; transition: all 0.3s ease; min-height: 45px;
+    border-radius: 8px !important;
+    transition: all 0.3s ease;
+    min-height: 45px;
 }
 
+::selection { background: rgba(128,128,128,0.3) !important; color: inherit !important; }
+
+/* 🟢 ESTILOS PADRÃO (Forçando visual do Modo Claro globalmente) 🟢 */
 div[data-baseweb="input"]:focus-within, div[data-baseweb="select"]:focus-within {
     border-color: #1A1A1A !important; box-shadow: 0 0 0 1px #1A1A1A !important;
 }
 
-button[data-baseweb="tab"]:hover p, button[data-baseweb="tab"]:focus p, button[data-baseweb="tab"]:active p, button[data-baseweb="tab"][aria-selected="true"] p { 
-    color: #1A1A1A !important; font-weight: 600 !important;
+button[data-baseweb="tab"]:hover p, button[data-baseweb="tab"]:hover span,
+button[data-baseweb="tab"]:focus p, button[data-baseweb="tab"]:focus span,
+button[data-baseweb="tab"]:active p, button[data-baseweb="tab"]:active span,
+button[data-baseweb="tab"][aria-selected="true"] p, 
+button[data-baseweb="tab"][aria-selected="true"] span { 
+    color: #1A1A1A !important; 
+    font-weight: 600 !important;
 }
 
+/* Melhorar a fonte das métricas no Dashboard */
 [data-testid="stMetricValue"] { font-size: 1.8rem !important; color: #1A1A1A !important; }
 div[data-testid="metric-container"] {
-    background-color: rgba(128,128,128,0.02); border: 1px solid rgba(128,128,128,0.1); padding: 10px 15px; border-radius: 10px;
+    background-color: rgba(128,128,128,0.02);
+    border: 1px solid rgba(128,128,128,0.1);
+    padding: 10px 15px;
+    border-radius: 10px;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# --- GERENCIADOR DE ESTADO ---
-if "etapa" not in st.session_state: st.session_state.etapa = 0 
-if "mensagens" not in st.session_state: st.session_state.mensagens = []
-if "dados_usuario" not in st.session_state: st.session_state.dados_usuario = {}
-if "banco" not in st.session_state: st.session_state.banco = carregar_banco() 
-if "usuario_logado" not in st.session_state: st.session_state.usuario_logado = None
+
+# --- GERENCIADOR DE ESTADO (MEMÓRIA DO APP) ---
+if "etapa" not in st.session_state:
+    st.session_state.etapa = 0 
+if "mensagens" not in st.session_state:
+    st.session_state.mensagens = []
+if "dados_usuario" not in st.session_state:
+    st.session_state.dados_usuario = {}
+if "banco" not in st.session_state:
+    st.session_state.banco = carregar_banco() 
+if "usuario_logado" not in st.session_state:
+    st.session_state.usuario_logado = None
 
 # 🟢 AUTO-LOGIN
 if st.session_state.usuario_logado is None:
@@ -406,7 +444,12 @@ if st.session_state.etapa == 0:
         try:
             with open("logo.png", "rb") as img_file:
                 img_b64 = base64.b64encode(img_file.read()).decode()
-            st.markdown(f'<div style="display: flex; justify-content: center; margin-bottom: 20px;"><img src="data:image/png;base64,{img_b64}" width="140"></div>', unsafe_allow_html=True)
+            st.markdown(
+                f'<div style="display: flex; justify-content: center; margin-bottom: 20px;">'
+                f'<img src="data:image/png;base64,{img_b64}" width="140">'
+                f'</div>', 
+                unsafe_allow_html=True
+            )
         except:
             pass
         
@@ -444,7 +487,7 @@ if st.session_state.etapa == 0:
                             
                         st.rerun()
                     else:
-                        exibir_mensagem("Credenciais incorretas.", "error")
+                        exibir_mensagem("Credenciais incorretas. Verifique seu usuário/e-mail e senha.", "error")
                         
         with tab2:
             with st.form("form_cadastro"):
@@ -460,17 +503,20 @@ if st.session_state.etapa == 0:
                     if not novo_usuario or not novo_email or not nova_senha or not confirma_senha:
                         exibir_mensagem("Preencha todos os campos!", "warning")
                     elif nova_senha != confirma_senha:
-                        exibir_mensagem("As senhas não coincidem.", "warning")
+                        exibir_mensagem("As senhas não coincidem. Tente novamente.", "warning")
                     elif novo_usuario in st.session_state.banco:
-                        exibir_mensagem("Usuário já em uso!", "warning")
+                        exibir_mensagem("Este nome de usuário já está em uso! Escolha outro.", "warning")
                     elif email_em_uso:
-                        exibir_mensagem("E-mail já cadastrado!", "warning")
+                        exibir_mensagem("Este e-mail já está cadastrado no sistema!", "warning")
                     else:
                         st.session_state.banco[novo_usuario] = {
-                            "email": novo_email, "senha": criptografar_senha(nova_senha), "token": "", "perfis": {}
+                            "email": novo_email,
+                            "senha": criptografar_senha(nova_senha),
+                            "token": "", 
+                            "perfis": {}
                         }
                         salvar_banco(st.session_state.banco)
-                        exibir_mensagem("Conta criada com sucesso!", "success")
+                        exibir_mensagem("Conta criada com sucesso! Vá para a aba 'Entrar' para acessar.", "success")
 
 # ==========================================================
 # ETAPA 1: PAINEL DO USUÁRIO (PERFIS + NOVO)
@@ -491,7 +537,12 @@ elif st.session_state.etapa == 1:
         """, unsafe_allow_html=True)
         
         if perfis_do_usuario:
-            st.markdown("""<div style='display: flex; align-items: center; gap: 8px; color: #888; margin-bottom: 10px;'><span class='material-symbols-outlined'>group</span><h4 style='margin: 0;'>Planejamentos Salvos</h4></div>""", unsafe_allow_html=True)
+            st.markdown("""
+                <div style='display: flex; align-items: center; gap: 8px; color: #888; margin-bottom: 10px;'>
+                    <span class='material-symbols-outlined'>group</span> 
+                    <h4 style='margin: 0;'>Planejamentos Salvos</h4>
+                </div>
+            """, unsafe_allow_html=True)
             
             for nome_salvo in list(perfis_do_usuario.keys()):
                 c_btn, c_del = st.columns([7.5, 2.5])
@@ -508,9 +559,14 @@ elif st.session_state.etapa == 1:
                         st.rerun()
             
             st.markdown("<br>", unsafe_allow_html=True)
-            st.markdown("""<div style='display: flex; align-items: center; gap: 8px; color: #888; margin-bottom: 10px;'><span class='material-symbols-outlined'>add_box</span><h4 style='margin: 0;'>Novo Planejamento</h4></div>""", unsafe_allow_html=True)
+            st.markdown("""
+                <div style='display: flex; align-items: center; gap: 8px; color: #888; margin-bottom: 10px;'>
+                    <span class='material-symbols-outlined'>add_box</span> 
+                    <h4 style='margin: 0;'>Novo Planejamento</h4>
+                </div>
+            """, unsafe_allow_html=True)
         else:
-            exibir_mensagem("Nenhum atleta cadastrado ainda.", "info")
+            exibir_mensagem("Nenhum atleta cadastrado ainda. Preencha os dados abaixo para gerar seu primeiro planejamento.", "info")
         
         with st.form("perfil_usuario"):
             nome = st.text_input("Nome Completo do Atleta", placeholder="Ex: Lucas Barbosa")
@@ -525,8 +581,21 @@ elif st.session_state.etapa == 1:
             
             alergias = st.text_input("Alergias ou Restrições Alimentares", placeholder="Ex: Nenhuma, Intolerância a lactose, Alergia a amendoim")
 
-            objetivo = st.selectbox("Objetivo Principal", ["Ganhar Massa Muscular (Hipertrofia)", "Perder Peso (Déficit Calórico)", "Melhorar Performance (Força/Resistência)", "Definição Corporal", "Manutenção da Saúde"])
-            nivel_atividade = st.selectbox("Nível de Atividade Diária", ["Sedentário (Trabalho de escritório, sem exercícios)", "Levemente Ativo (1 a 3 dias de exercício/semana)", "Moderadamente Ativo (3 a 5 dias de exercício/semana)", "Muito Ativo (6 a 7 dias de exercício intenso/semana)", "Extremamente Ativo (Atleta profissional, treinos duplos)"])
+            objetivo = st.selectbox("Objetivo Principal", [
+                "Ganhar Massa Muscular (Hipertrofia)", 
+                "Perder Peso (Déficit Calórico)", 
+                "Melhorar Performance (Força/Resistência)", 
+                "Definição Corporal", 
+                "Manutenção da Saúde"
+            ])
+            
+            nivel_atividade = st.selectbox("Nível de Atividade Diária", [
+                "Sedentário (Trabalho de escritório, sem exercícios)", 
+                "Levemente Ativo (1 a 3 dias de exercício/semana)", 
+                "Moderadamente Ativo (3 a 5 dias de exercício/semana)", 
+                "Muito Ativo (6 a 7 dias de exercício intenso/semana)", 
+                "Extremamente Ativo (Atleta profissional, treinos duplos)"
+            ])
 
             st.markdown("<br>", unsafe_allow_html=True)
             submit_button = st.form_submit_button(label="GERAR PLANEJAMENTO", type="primary", use_container_width=True)
@@ -535,16 +604,22 @@ elif st.session_state.etapa == 1:
             if not nome:
                 exibir_mensagem("Identificação necessária.", "warning")
             elif nome in perfis_do_usuario:
-                exibir_mensagem(f"O atleta '{nome}' já existe!", "warning")
+                exibir_mensagem(f"O atleta '{nome}' já existe! Exclua-o ou escolha outro nome.", "warning")
             else:
                 st.session_state.dados_usuario = {
-                    "nome": nome, "idade": idade, "sexo": sexo, "peso": peso, "altura": altura, 
-                    "alergias": alergias if alergias else "Nenhuma", "objetivo": objetivo, "nivel": nivel_atividade
+                    "nome": nome, 
+                    "idade": idade, 
+                    "sexo": sexo, 
+                    "peso": peso, 
+                    "altura": altura, 
+                    "alergias": alergias if alergias else "Nenhuma",
+                    "objetivo": objetivo, 
+                    "nivel": nivel_atividade
                 }
                 
                 with st.spinner("Analisando dados e estruturando planejamento Power BI..."):
                     
-                    # 🟢 Prompt Atualizado: Adicionado metas de água e passos
+                    # Prompt atualizado com instrução de gerar o JSON no final
                     prompt_mestre = f"""
                     Atue como um Nutricionista Esportivo Clínico e Personal Trainer de extrema qualidade. 
                     Crie um planejamento irretocável e personalizado para o(a) {nome}. Leve em consideração suas características.
@@ -579,19 +654,17 @@ elif st.session_state.etapa == 1:
                         "carboidratos_g": 0,
                         "gorduras_g": 0,
                         "tmb": 0,
-                        "gasto_total": 0,
-                        "agua_ml": 0,
-                        "passos": 0
+                        "gasto_total": 0
                     }}
                     ```
-                    Substitua os zeros pelos valores calculados em números inteiros (apenas números). Estime a água (ex: 35ml a 40ml por kg) e uma boa meta de passos diários baseada no objetivo.
+                    Substitua os zeros pelos valores calculados em números inteiros (apenas os números).
                     """
 
                     url = f"https://generativelanguage.googleapis.com/v1beta/{MODELO}:generateContent?key={CHAVE}"
                     payload = {"contents": [{"parts": [{"text": prompt_mestre}]}]}
                     
                     try:
-                        resposta = requests.post(url, json=payload, timeout=30)
+                        resposta = requests.post(url, json=payload, timeout=20)
                         if resposta.status_code == 200:
                             resposta_data = resposta.json()
                             texto_ia = resposta_data.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', '')
@@ -644,7 +717,7 @@ elif st.session_state.etapa == 2:
     with col_voltar:
         if st.button("Voltar ao Painel"):
             st.session_state.etapa = 1
-            # Mantemos o histórico de mensagens salvo no banco ao voltar
+            st.session_state.mensagens = []
             st.rerun()
 
     # Resgatando o plano atual mais recente gerado pela IA
@@ -660,6 +733,7 @@ elif st.session_state.etapa == 2:
     tabelas_extraidas = extrair_tabelas_do_markdown(plano_atual)
     dados_json = extrair_json_da_ia(plano_atual)
 
+    # DUAS ABAS: DASHBOARD VISUAL (sem texto) e CHAT
     tab_dash, tab_chat = st.tabs(["📊 DASHBOARD DE ESTATÍSTICAS", "💬 CHAT DO TREINADOR & TEXTO"])
 
     # ==========================================================
@@ -668,41 +742,43 @@ elif st.session_state.etapa == 2:
     with tab_dash:
         st.markdown(f"<h2>Painel de Performance: {nome.upper()}</h2>", unsafe_allow_html=True)
         
-        # 🟢 LINHA 1: MÉTRICAS (Power BI style Cards) - Adicionado Água e Passos
+        # LINHA 1: MÉTRICAS (Power BI style Cards)
         c1, c2, c3, c4 = st.columns(4)
-        c1.metric("Objetivo", objetivo_curto)
-        c2.metric("Meta Calórica Alvo", f"{dados_json.get('calorias', '0')} kcal" if dados_json else "0 kcal")
-        c3.metric("Meta de Água (Diária)", f"{dados_json.get('agua_ml', '0')} ml" if dados_json else "0 ml")
-        c4.metric("Meta de Passos", f"{dados_json.get('passos', '0')}" if dados_json else "0")
+        c1.metric("IMC Atual", f"{imc:.1f}")
+        c2.metric("Objetivo", objetivo_curto)
+        if dados_json:
+            c3.metric("Taxa Metab. Basal", f"{dados_json.get('tmb', '0')} kcal")
+            c4.metric("Meta Calórica Alvo", f"{dados_json.get('calorias', '0')} kcal")
+        else:
+            c3.metric("Peso", f"{peso} kg")
+            c4.metric("Altura", f"{altura} cm")
             
         st.divider()
         
-        # LINHA 2: GRÁFICO E TABELA DE DIETA
+        # LINHA 2: GRÁFICO E TABELA DE DIETA (Dataframes nativos)
         col_grafico, col_dieta = st.columns([1, 2.5])
         
         with col_grafico:
             st.markdown("#### Distribuição de Macros")
             if dados_json and "proteinas_g" in dados_json:
-                # 🟢 MUDANÇA: Gráfico de Donut super moderno com Plotly
+                # Criando o DataFrame pro gráfico
                 df_macros = pd.DataFrame({
-                    "Macro": ["Proteína", "Carboidrato", "Gordura"],
                     "Gramas": [dados_json.get("proteinas_g", 0), dados_json.get("carboidratos_g", 0), dados_json.get("gorduras_g", 0)]
-                })
-                fig = px.pie(df_macros, values='Gramas', names='Macro', hole=0.55, 
-                             color_discrete_sequence=['#1A1A1A', '#555555', '#A0A0A0'])
-                fig.update_traces(textposition='inside', textinfo='percent+label', textfont_size=14)
-                fig.update_layout(showlegend=False, margin=dict(t=10, b=10, l=10, r=10), height=300)
-                st.plotly_chart(fig, use_container_width=True)
+                }, index=["Proteína", "Carboidrato", "Gordura"])
+                
+                st.bar_chart(df_macros, color="#1A1A1A")
             else:
-                st.info("Gráfico numérico não disponível para planos antigos.")
+                st.info("Gráfico numérico não disponível para este plano antigo.")
 
         with col_dieta:
             st.markdown("#### Plano Alimentar Completo")
+            # Localiza a tabela alimentar (geralmente tem a palavra Refeição ou Alimento nas colunas)
             df_dieta = next((df for df in tabelas_extraidas if any("refeição" in c.lower() or "alimento" in c.lower() for c in df.columns)), None)
             
             if df_dieta is not None:
                 st.dataframe(df_dieta, use_container_width=True, hide_index=True)
             elif len(tabelas_extraidas) > 1:
+                # Se não achar pelo nome, chuta que é a segunda tabela do markdown
                 st.dataframe(tabelas_extraidas[1], use_container_width=True, hide_index=True)
             else:
                 st.warning("Gerando tabelas estruturadas...")
@@ -714,6 +790,8 @@ elif st.session_state.etapa == 2:
         
         with col_treino:
             st.markdown("#### Planilha de Treinamento")
+            
+            # 🟢 MUDANÇA AQUI: Extrai TODAS as tabelas de treino
             dfs_treino = [df for df in tabelas_extraidas if any("exercício" in c.lower() or "séries" in c.lower() for c in df.columns)]
             
             if dfs_treino:
@@ -747,7 +825,9 @@ elif st.session_state.etapa == 2:
     # ==========================================================
     with tab_chat:
         
+        # O modelo de texto cru que o usuário queria tirar da frente
         with st.expander("📄 VER PLANO COMPLETO EM TEXTO (MARKDOWN)", expanded=False):
+            # Limpa o JSON do texto para exibir bonitinho pro usuário
             texto_exibicao = re.sub(r'```json\n.*?\n```', '', limpar_none(plano_atual), flags=re.DOTALL)
             st.markdown(texto_exibicao)
             
@@ -756,62 +836,55 @@ elif st.session_state.etapa == 2:
                 <span class='material-symbols-outlined'>forum</span> 
                 <h3 style='margin: 0;'>Assistente de Ajustes</h3>
             </div>
-            <p style="color: #888; font-size: 0.9rem; margin-bottom: 10px;">
-                Peça mudanças no treino ou dieta. O Dashboard <b>será atualizado automaticamente</b>.
+            <p style="color: #888; font-size: 0.9rem; margin-bottom: 25px;">
+                Peça mudanças no treino ou dieta. O Dashboard <b>será atualizado automaticamente</b> com suas requisições.
             </p>
         """, unsafe_allow_html=True)
         
-        # 🟢 BOTÕES DE AÇÕES RÁPIDAS
-        c_btn1, c_btn2, c_btn3, c_btn_limpar = st.columns([1.5, 1.5, 1.5, 1])
-        acao_rapida = None
-        
-        if c_btn1.button("🥬 Tornar Dieta Vegana", use_container_width=True): acao_rapida = "Altere todo o plano alimentar para uma dieta estritamente vegana, garantindo o aporte de proteínas."
-        if c_btn2.button("🔄 Variar Refeições", use_container_width=True): acao_rapida = "Mude as opções de almoço e jantar para opções completamente diferentes das atuais."
-        if c_btn3.button("⏱️ Treino mais Curto", use_container_width=True): acao_rapida = "Ajuste o treino para que dure no máximo 45 minutos (menos exercícios ou métodos avançados)."
-        
-        # Botão especial para limpar a sujeira do chat
-        if c_btn_limpar.button("🗑️ Limpar Chat", use_container_width=True):
-            # Mantém apenas a primeira mensagem (o plano original mestre)
-            if len(st.session_state.mensagens) > 0:
-                st.session_state.mensagens = [st.session_state.mensagens[0]]
-                st.session_state.banco[usuario]["perfis"][nome]["mensagens"] = st.session_state.mensagens
-                salvar_banco(st.session_state.banco)
-            st.rerun()
-
-        st.divider()
-
-        # Renderiza o Histórico de Chat
+        # Histórico de Chat
         for msg in st.session_state.mensagens:
             conteudo = limpar_none(msg.get("content"))
+            # Só mostramos mensagens curtas do assistente no chat para não poluir
             if msg.get("role") == "assistant" and "## 🧬" in conteudo:
                 continue 
             
             if msg.get("role") == "user":
-                st.markdown(f"""<div style='display: flex; justify-content: flex-end; margin-bottom: 25px;'><div style='background-color: #f4f4f4; color: #0d0d0d; padding: 12px 18px; border-radius: 18px 18px 0px 18px; max-width: 85%; font-family: sans-serif; box-shadow: 1px 1px 3px rgba(0,0,0,0.05);'>{conteudo}</div></div>""", unsafe_allow_html=True)
+                st.markdown(f"""
+                    <div style='display: flex; justify-content: flex-end; margin-bottom: 25px;'>
+                        <div style='background-color: #f4f4f4; color: #0d0d0d; padding: 12px 18px; border-radius: 18px 18px 0px 18px; max-width: 85%; font-family: sans-serif; box-shadow: 1px 1px 3px rgba(0,0,0,0.05);'>
+                            {conteudo}
+                        </div>
+                    </div>
+                """, unsafe_allow_html=True)
             else:
                 st.markdown(f"<div style='margin-bottom: 25px;'>", unsafe_allow_html=True)
                 st.markdown(conteudo)
                 st.markdown("</div>", unsafe_allow_html=True)
         
-        # O campo de texto ou o botão acionado disparam a mesma lógica
-        prompt_duvida = st.chat_input("Ex: Troque meu jantar por uma opção vegana...")
-        comando_final = acao_rapida if acao_rapida else prompt_duvida
-        
-        if comando_final:
-            st.session_state.mensagens.append({"role": "user", "content": comando_final})
+        if prompt_duvida := st.chat_input("Ex: Troque meu jantar por uma opção vegana..."):
             
-            st.markdown(f"""<div style='display: flex; justify-content: flex-end; margin-bottom: 25px;'><div style='background-color: #f4f4f4; color: #0d0d0d; padding: 12px 18px; border-radius: 18px 18px 0px 18px; max-width: 85%; font-family: sans-serif; box-shadow: 1px 1px 3px rgba(0,0,0,0.05);'>{comando_final}</div></div>""", unsafe_allow_html=True)
+            st.session_state.mensagens.append({"role": "user", "content": prompt_duvida})
+            
+            st.markdown(f"""
+                <div style='display: flex; justify-content: flex-end; margin-bottom: 25px;'>
+                    <div style='background-color: #f4f4f4; color: #0d0d0d; padding: 12px 18px; border-radius: 18px 18px 0px 18px; max-width: 85%; font-family: sans-serif; box-shadow: 1px 1px 3px rgba(0,0,0,0.05);'>
+                        {prompt_duvida}
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
                 
-            with st.spinner("Processando..."):
+            with st.spinner("Sincronizando Dashboard com a nova requisição..."):
+                
+                # INSTRUÇÃO MESTRA PARA O CHAT
                 prompt_duvida_completo = f"""Plano Atual do Atleta:
 {plano_atual}
 
-Mensagem do Usuário: {comando_final}
+Mensagem do Usuário: {prompt_duvida}
 
 REGRA DE ATUALIZAÇÃO DO DASHBOARD: 
 Se o usuário estiver pedindo QUALQUER ALTERAÇÃO na dieta, treino ou suplementos, VOCÊ DEVE REESCREVER O PLANO COMPLETO aplicando as mudanças solicitadas. Mantenha estritamente a mesma estrutura de marcação (## 🧬, ## 🥗, etc) para que as tabelas sejam lidas.
-MUITO IMPORTANTE: Se você reescrever o plano, VOCÊ DEVE INCLUIR o bloco ```json``` no final com os dados numéricos atualizados para o sistema renderizar os gráficos (inclua metas de agua_ml e passos também).
-Se for APENAS uma dúvida, responda normalmente de forma curta, sem reescrever o plano."""
+MUITO IMPORTANTE: Se você reescrever o plano, VOCÊ DEVE INCLUIR o bloco ```json``` no final com os dados numéricos atualizados para o sistema renderizar os gráficos.
+Se for APENAS uma dúvida (ex: "como executo tal exercício?"), responda normalmente de forma curta, sem reescrever o plano."""
                 
                 url = f"https://generativelanguage.googleapis.com/v1beta/{MODELO}:generateContent?key={CHAVE}"
                 payload = {"contents": [{"parts": [{"text": prompt_duvida_completo}]}]}
@@ -823,19 +896,11 @@ Se for APENAS uma dúvida, responda normalmente de forma curta, sem reescrever o
                         texto_ia_duvida = resposta_data.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', '')
                         texto_ia_duvida = limpar_none(texto_ia_duvida)
                         
-                        # 🟢 MUDANÇA: Efeito visual digitando a resposta!
-                        if "## 🧬" not in texto_ia_duvida:
-                            # Se for só uma dica curta, mostra digitando
-                            st.write_stream(gerador_de_texto(texto_ia_duvida))
-                        else:
-                            # Se reescreveu o plano inteiro, avisa que o dashboard foi atualizado
-                            st.success("✨ Plano atualizado com sucesso! Confira o Dashboard.")
-                            
                         st.session_state.mensagens.append({"role": "assistant", "content": texto_ia_duvida})
+                        
                         st.session_state.banco[usuario]["perfis"][nome]["mensagens"] = st.session_state.mensagens
                         salvar_banco(st.session_state.banco)
                         
-                        time.sleep(1) # Pausa dramática para leitura
                         st.rerun() 
                     else:
                         exibir_mensagem("Servidor ocupado. Tente perguntar em alguns instantes.", "warning")
