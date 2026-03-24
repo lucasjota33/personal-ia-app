@@ -491,7 +491,7 @@ elif st.session_state.etapa == 1:
         """, unsafe_allow_html=True)
         
         if perfis_do_usuario:
-            st.markdown("""<div style='display: flex; align-items: center; gap: 8px; color: #888; margin-bottom: 10px;'><span class='material-symbols-outlined'>group</span><h4 style='margin: 0;'>Atletas Ativos</h4></div>""", unsafe_allow_html=True)
+            st.markdown("""<div style='display: flex; align-items: center; gap: 8px; color: #888; margin-bottom: 10px;'><span class='material-symbols-outlined'>group</span><h4 style='margin: 0;'>Planejamentos Criados</h4></div>""", unsafe_allow_html=True)
             
             # 🟢 NOVO: Criação de Grid (2 colunas) para os Cards
             colunas_grid = st.columns(2)
