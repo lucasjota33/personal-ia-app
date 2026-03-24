@@ -282,25 +282,14 @@ def gerar_pdf(texto_md, nome_atleta):
 # 🟢 CSS CUSTOMIZADO LIMPO E PRECISO
 st.markdown("""
 <style>
-/* MATANDO O QUADRADO FANTASMA: Importando a fonte via CSS nativo (@import) ao invés de usar a tag <link> */
+/* Importando a fonte via CSS nativo */
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined');
 
-/* 1. ELIMINAR O HEADER E BARRA SUPERIOR */
-[data-testid="stHeader"] { display: none !important; }
-header { visibility: hidden !important; height: 0px !important; }
-
-/* Reset base da interface */
+/* Reset base da interface (Ocultando itens desnecessários do Streamlit) */
 [data-testid="stToolbar"], [data-testid="stToolbarActions"], .stDeployButton { display: none !important; visibility: hidden !important; }
 #MainMenu, footer { display: none !important; }
 [data-testid="collapsedControl"] { display: none !important; }
 div[data-testid="stNotification"] { display: none !important; }
-
-/* 2. PUXAR O CONTEÚDO PARA O TOPO REAL */
-.block-container { 
-    padding-top: 0rem !important; 
-    margin-top: -5rem !important;
-    padding-bottom: 2rem !important;
-}
 
 /* 🟢 FORÇANDO O SCROLL HORIZONTAL NAS TABELAS 🟢 */
 .stMarkdown table {
@@ -322,18 +311,6 @@ div[data-testid="stMarkdownContainer"] {
     border-radius: 8px !important;
     transition: all 0.3s ease;
     min-height: 45px;
-}
-
-/* Ajustes Responsivos */
-.stApp { overflow-x: hidden; }
-@media (max-width: 768px) {
-    .block-container { 
-        padding-top: 1.5rem !important; 
-        padding-left: 1rem !important; 
-        padding-right: 1rem !important; 
-        margin-top: -6rem !important;
-    }
-    .stButton > button { min-height: 50px !important; }
 }
 
 /* Substituindo a cor de seleção */
