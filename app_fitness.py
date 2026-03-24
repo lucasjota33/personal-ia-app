@@ -620,8 +620,7 @@ elif st.session_state.etapa == 1:
                             exibir_mensagem("Erro no Servidor. Tente novamente.", "error")
                     except Exception as e:
                         exibir_mensagem("Erro de conexão.", "error")
-
-        
+  
         st.divider()
         c_vazia1, c_botao_sair, c_vazia2 = st.columns([3, 4, 3])
         with c_botao_sair:
