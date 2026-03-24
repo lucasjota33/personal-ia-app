@@ -12,7 +12,7 @@ from fpdf import FPDF
 
 # Configurações iniciais
 CHAVE = st.secrets["GEMINI_API_KEY"]
-MODELO = "models/gemini-2.5-flash"
+MODELO = "models/gemini-1.5-flash-8b"
 
 # ==========================================================
 # 🟢 MOTOR DE BANCO DE DADOS EM NUVEM (FIREBASE FIRESTORE)
