@@ -277,8 +277,8 @@ def gerar_pdf(texto_md, nome_atleta):
         return resultado.encode("latin-1", "ignore")
     return bytes(resultado)
 
-# Configuração da Página
-st.set_page_config(page_title="Treinador Digital Elite", page_icon="⚡", layout="wide")
+# Configuração da Página - ATUALIZADO AQUI
+st.set_page_config(page_title="Treinador Digital Elite", page_icon="logo.png", layout="wide")
 
 # --- CSS CUSTOMIZADO (LAYOUT CHATGPT + SCROLL TABELAS + ZERO VERMELHO COM ANIMAÇÃO) ---
 st.markdown("""
@@ -371,9 +371,18 @@ st.markdown("""
 
     .stApp { overflow-x: hidden; }
 
+    /* --- LIMITA O TAMANHO DA LOGO NO MOBILE (COMO VOCÊ PEDIU) --- */
     @media (max-width: 768px) {
         .block-container { padding-top: 1.5rem !important; padding-left: 1rem !important; padding-right: 1rem !important; }
         .stButton > button { min-height: 50px !important; }
+        
+        /* Força a imagem a não passar de 150px de largura no mobile e ficar centralizada */
+        [data-testid="stImage"] img {
+            max-width: 150px !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+            display: block !important;
+        }
     }
     </style>
 """, unsafe_allow_html=True)
