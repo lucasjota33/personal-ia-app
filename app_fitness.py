@@ -295,10 +295,10 @@ header { visibility: hidden !important; height: 0px !important; }
 [data-testid="collapsedControl"] { display: none !important; }
 div[data-testid="stNotification"] { display: none !important; }
 
-/* 2. PUXAR O CONTEÚDO PARA O TOPO DE FORMA SEGURA */
+/* 2. PUXAR O CONTEÚDO PARA O TOPO REAL */
 .block-container { 
-    padding-top: 1rem !important; 
-    margin-top: 0rem !important;
+    padding-top: 0rem !important; 
+    margin-top: -5rem !important;
     padding-bottom: 2rem !important;
 }
 
@@ -331,6 +331,7 @@ div[data-testid="stMarkdownContainer"] {
         padding-top: 1.5rem !important; 
         padding-left: 1rem !important; 
         padding-right: 1rem !important; 
+        margin-top: -6rem !important;
     }
     .stButton > button { min-height: 50px !important; }
 }
