@@ -285,13 +285,22 @@ st.markdown("""
 /* MATANDO O QUADRADO FANTASMA: Importando a fonte via CSS nativo (@import) ao invés de usar a tag <link> */
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined');
 
+/* 1. ELIMINAR O HEADER E BARRA SUPERIOR */
+[data-testid="stHeader"] { display: none !important; }
+header { visibility: hidden !important; height: 0px !important; }
+
 /* Reset base da interface */
 [data-testid="stToolbar"], [data-testid="stToolbarActions"], .stDeployButton { display: none !important; visibility: hidden !important; }
-header { background-color: transparent !important; box-shadow: none !important; }
 #MainMenu, footer { display: none !important; }
 [data-testid="collapsedControl"] { display: none !important; }
-.block-container { padding-top: 2rem !important; margin-top: 1rem !important; }
 div[data-testid="stNotification"] { display: none !important; }
+
+/* 2. PUXAR O CONTEÚDO PARA O TOPO REAL */
+.block-container { 
+    padding-top: 0rem !important; 
+    margin-top: -5rem !important;
+    padding-bottom: 2rem !important;
+}
 
 /* 🟢 FORÇANDO O SCROLL HORIZONTAL NAS TABELAS 🟢 */
 .stMarkdown table {
@@ -318,7 +327,12 @@ div[data-testid="stMarkdownContainer"] {
 /* Ajustes Responsivos */
 .stApp { overflow-x: hidden; }
 @media (max-width: 768px) {
-    .block-container { padding-top: 1.5rem !important; padding-left: 1rem !important; padding-right: 1rem !important; }
+    .block-container { 
+        padding-top: 1.5rem !important; 
+        padding-left: 1rem !important; 
+        padding-right: 1rem !important; 
+        margin-top: -6rem !important;
+    }
     .stButton > button { min-height: 50px !important; }
 }
 
@@ -332,34 +346,19 @@ button[data-baseweb="tab"] p, button[data-baseweb="tab"] span {
 }
 div[data-baseweb="tab-highlight"] { background-color: #555555 !important; }
 
-@media (prefers-color-scheme: dark) {
-    div[data-baseweb="input"]:focus-within, div[data-baseweb="select"]:focus-within {
-        border-color: #CCCCCC !important; box-shadow: 0 0 0 1px #CCCCCC !important;
-    }
-    /* Texto Selecionado Dark Mode */
-    button[data-baseweb="tab"][aria-selected="true"] p, 
-    button[data-baseweb="tab"][aria-selected="true"] span { 
-        color: #FFFFFF !important; 
-        font-weight: 600 !important;
-    }
+/* 🟢 ESTILOS PADRÃO (Forçando visual do Modo Claro globalmente) 🟢 */
+div[data-baseweb="input"]:focus-within, div[data-baseweb="select"]:focus-within {
+    border-color: #1A1A1A !important; box-shadow: 0 0 0 1px #1A1A1A !important;
 }
 
-@media (prefers-color-scheme: light) {
-    div[data-baseweb="input"]:focus-within, div[data-baseweb="select"]:focus-within {
-        border-color: #1A1A1A !important; box-shadow: 0 0 0 1px #1A1A1A !important;
-    }
-    
-    /* 🟢 FIX DE TEXTO BRANCO AO CLICAR (MODO CLARO) 🟢 */
-    /* Forçamos a cor escura durante hover, foco, e clique (active) para os filhos do botão */
-    button[data-baseweb="tab"]:hover p, button[data-baseweb="tab"]:hover span,
-    button[data-baseweb="tab"]:focus p, button[data-baseweb="tab"]:focus span,
-    button[data-baseweb="tab"]:active p, button[data-baseweb="tab"]:active span,
-    /* E para o estado já selecionado */
-    button[data-baseweb="tab"][aria-selected="true"] p, 
-    button[data-baseweb="tab"][aria-selected="true"] span { 
-        color: #1A1A1A !important; 
-        font-weight: 600 !important;
-    }
+/* FIX DE TEXTO DAS ABAS: Forçamos a cor escura durante hover, foco, e clique (active) */
+button[data-baseweb="tab"]:hover p, button[data-baseweb="tab"]:hover span,
+button[data-baseweb="tab"]:focus p, button[data-baseweb="tab"]:focus span,
+button[data-baseweb="tab"]:active p, button[data-baseweb="tab"]:active span,
+button[data-baseweb="tab"][aria-selected="true"] p, 
+button[data-baseweb="tab"][aria-selected="true"] span { 
+    color: #1A1A1A !important; 
+    font-weight: 600 !important;
 }
 </style>
 """, unsafe_allow_html=True)
