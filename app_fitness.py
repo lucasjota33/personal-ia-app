@@ -280,7 +280,7 @@ def gerar_pdf(texto_md, nome_atleta):
 # Configuração da Página 
 st.set_page_config(page_title="Treinador Digital Elite", page_icon="logo.png", layout="wide")
 
-# --- CSS CUSTOMIZADO ---
+# --- CSS CUSTOMIZADO (LAYOUT CHATGPT + SCROLL TABELAS + ZERO VERMELHO COM ANIMAÇÃO) ---
 st.markdown("""
     <style>
     /* 1. Reset e Limpeza de Interface */
@@ -291,7 +291,7 @@ st.markdown("""
     
     .block-container { padding-top: 2rem !important; margin-top: 1rem !important; }
 
-    /* 2. LAYOUT DE CHAT */
+    /* 2. LAYOUT DE CHAT (ESTILO CHATGPT - NÃO FLUTUANTE) */
     .stMarkdown p, .stMarkdown li {
         word-wrap: break-word !important;
         overflow-wrap: break-word !important;
@@ -324,9 +324,11 @@ st.markdown("""
             background-color: #FFFFFF !important;
             box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.2) !important;
         }
+        
         button[data-baseweb="tab"] { color: #888 !important; }
         button[aria-selected="true"] { color: #CCCCCC !important; }
         div[data-baseweb="tab-highlight"] { background-color: #CCCCCC !important; }
+        
         div[data-baseweb="input"]:focus-within { border-color: #CCCCCC !important; box-shadow: 0 0 0 1px #CCCCCC !important; }
         input, textarea { caret-color: #CCCCCC !important; }
     }
@@ -343,9 +345,11 @@ st.markdown("""
             width: 100%;
         }
         .stButton > button:hover, .stDownloadButton > button:hover { background-color: #333333 !important; }
+        
         button[data-baseweb="tab"] { color: #888 !important; }
         button[aria-selected="true"] { color: #1A1A1A !important; }
         div[data-baseweb="tab-highlight"] { background-color: #1A1A1A !important; }
+        
         div[data-baseweb="input"]:focus-within { border-color: #1A1A1A !important; box-shadow: 0 0 0 1px #1A1A1A !important; }
         input, textarea { caret-color: #1A1A1A !important; }
     }
@@ -363,25 +367,22 @@ st.markdown("""
 
     .stApp { overflow-x: hidden; }
 
-    /* 🟢 7. CENTRALIZAÇÃO DEFINITIVA DA LOGO 🟢 */
-    div[data-testid="stImage"], div[data-testid="stImage"] > div {
-        display: flex !important;
-        justify-content: center !important;
-        align-items: center !important;
-        width: 100% !important;
-        margin: 0 auto !important;
-    }
-
-    div[data-testid="stImage"] img {
-        max-width: 150px !important;
-        margin: 0 auto !important;
-        display: block !important;
-    }
-
-    /* Ajustes específicos para celular */
+    /* --- LIMITA O TAMANHO DA LOGO E CENTRALIZA NO MOBILE --- */
     @media (max-width: 768px) {
         .block-container { padding-top: 1.5rem !important; padding-left: 1rem !important; padding-right: 1rem !important; }
         .stButton > button { min-height: 50px !important; }
+        
+        /* Centraliza o container da imagem no mobile */
+        [data-testid="stImage"] {
+            display: flex !important;
+            justify-content: center !important;
+            width: 100% !important;
+        }
+
+        /* Limita a largura da imagem */
+        [data-testid="stImage"] img {
+            max-width: 150px !important;
+        }
     }
     </style>
 """, unsafe_allow_html=True)
@@ -432,11 +433,13 @@ if st.session_state.etapa == 0:
     # --- ÁREA DE LOGIN CENTRALIZADA ---
     col1, col2, col3 = st.columns([1, 1.5, 1])
     with col2:
-        # A Logo centralizada elegantemente acima do formulário SEM as sub-colunas que quebram no mobile
-        try:
-            st.image("logo.png")
-        except:
-            pass
+        # A Logo centralizada elegantemente acima do formulário
+        c_img1, c_img2, c_img3 = st.columns([1, 1, 1])
+        with c_img2:
+            try:
+                st.image("logo.png", use_container_width=True)
+            except:
+                pass # Não quebra se a logo não for encontrada
         
         st.markdown("<br>", unsafe_allow_html=True)
         
