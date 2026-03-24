@@ -325,24 +325,27 @@ div[data-testid="stMarkdownContainer"] {
 /* Substituindo a cor de seleção e abas por CSS */
 ::selection { background: rgba(128,128,128,0.3) !important; color: inherit !important; }
 
-/* Força TODOS os elementos de texto dentro da aba inativa a ficarem cinza */
+/* 🟢 Unselected tabs text globally (unchanged, light gray) 🟢 */
 button[data-baseweb="tab"] * { color: #888888 !important; }
+
+/* 🟢 Unify tab highlight globally to primaryColor ("#555555" from config.toml) 🟢 */
+div[data-baseweb="tab-highlight"] { background-color: #555555 !important; }
 
 @media (prefers-color-scheme: dark) {
     div[data-baseweb="input"]:focus-within, div[data-baseweb="select"]:focus-within {
         border-color: #CCCCCC !important; box-shadow: 0 0 0 1px #CCCCCC !important;
     }
-    /* Força TODOS os textos dentro da aba ativa a ficarem BRANCOS no modo escuro */
+    /* 🟢 Dark Mode logic: white selected text for contrast on dark 🟢 */
     button[aria-selected="true"] * { color: #FFFFFF !important; }
-    div[data-baseweb="tab-highlight"] { background-color: #FFFFFF !important; }
 }
 @media (prefers-color-scheme: light) {
     div[data-baseweb="input"]:focus-within, div[data-baseweb="select"]:focus-within {
         border-color: #1A1A1A !important; box-shadow: 0 0 0 1px #1A1A1A !important;
     }
-    /* Força TODOS os textos dentro da aba ativa a ficarem PRETOS/GRAFITE no modo claro */
-    button[aria-selected="true"] * { color: #1A1A1A !important; }
-    div[data-baseweb="tab-highlight"] { background-color: #1A1A1A !important; }
+    /* 🟢 Light Mode logic: targeted dark gray selection for contrast on light 🟢 */
+    /* 🟢 This targets the selected text on light background specifically to prevent turning white on click 🟢 */
+    /* 🟢 We use the specific #555555 from config.toml 🟢 */
+    button[aria-selected="true"] * { color: #555555 !important; }
 }
 </style>
 """, unsafe_allow_html=True)
