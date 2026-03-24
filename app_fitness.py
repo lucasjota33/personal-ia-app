@@ -524,10 +524,18 @@ elif st.session_state.etapa == 1:
         with st.form("perfil_usuario"):
             nome = st.text_input("Nome Completo do Atleta", placeholder="Ex: Lucas Barbosa")
             
+            # 🟢 NOVOS CAMPOS: Idade e Sexo
+            c_idade, c_sexo = st.columns(2)
+            with c_idade: idade = st.number_input("Idade", min_value=12, max_value=100, value=25, step=1)
+            with c_sexo: sexo = st.selectbox("Sexo", ["Masculino", "Feminino", "Outro"])
+
             c_peso, c_altura = st.columns(2)
             with c_peso: peso = st.number_input("Peso (kg)", min_value=30.0, max_value=250.0, value=75.0, step=0.1)
             with c_altura: altura = st.number_input("Altura (cm)", min_value=100, max_value=230, value=175, step=1)
-                
+            
+            # 🟢 NOVO CAMPO: Alergias Alimentares
+            alergias = st.text_input("Alergias ou Restrições Alimentares", placeholder="Ex: Nenhuma, Intolerância a lactose, Alergia a amendoim")
+
             objetivo = st.selectbox("Objetivo Principal", [
                 "Ganhar Massa Muscular (Hipertrofia)", 
                 "Perder Peso (Déficit Calórico)", 
@@ -553,13 +561,27 @@ elif st.session_state.etapa == 1:
             elif nome in perfis_do_usuario:
                 exibir_mensagem(f"O atleta '{nome}' já existe! Exclua-o ou escolha outro nome.", "warning")
             else:
-                st.session_state.dados_usuario = {"nome": nome, "peso": peso, "altura": altura, "objetivo": objetivo, "nivel": nivel_atividade}
+                # 🟢 Salvando os novos dados na sessão
+                st.session_state.dados_usuario = {
+                    "nome": nome, 
+                    "idade": idade, 
+                    "sexo": sexo, 
+                    "peso": peso, 
+                    "altura": altura, 
+                    "alergias": alergias if alergias else "Nenhuma",
+                    "objetivo": objetivo, 
+                    "nivel": nivel_atividade
+                }
                 
                 with st.spinner("Processando dados e estruturando planejamento..."):
+                    
+                    # 🟢 Atualizando o Prompt para incluir idade, sexo e alergias
                     prompt_mestre = f"""
                     Atue como um Nutricionista Esportivo Clínico e Personal Trainer de extrema qualidade. 
-                    Crie um planejamento irretocável e personalizado para o(a) {nome} Leve em consideração suas características.
+                    Crie um planejamento irretocável e personalizado para o(a) {nome}. Leve em consideração suas características.
+                    Idade: {idade} anos | Sexo: {sexo}
                     Peso: {peso}kg | Altura: {altura}cm | Nível: {nivel_atividade} | Objetivo: {objetivo}
+                    Alergias/Restrições: {alergias if alergias else 'Nenhuma'}
 
                     # PLANEJAMENTO: {nome.upper()}
 
@@ -568,12 +590,11 @@ elif st.session_state.etapa == 1:
                     | Taxa Metabólica Basal (Mifflin-St Jeor)| Gasto Energético Total | Meta Calórica Alvo |
 
                     ## 🥗 2. PLANO ALIMENTAR
-                    
-                    Crie uma tabela em Markdown seguindo EXATAMENTE as colunas abaixo(Seja variado na criação do plano, para que o usuário tenha uma experiência personalizada, não monte algo genérico de maneira que seja extremamente dificil cada novo plano vir igual):
+                    Crie uma tabela em Markdown seguindo EXATAMENTE as colunas abaixo (Seja variado na criação do plano, não monte algo genérico e respeite as restrições alimentares mencionadas):
                     | Refeição(Almoço, janta, etc) | Alimento Principal | Macronutrientes | Substituição |
                     
                     ## ⚡ 3. PLANILHA DE TREINAMENTO
-                    Defina uma divisão semanal inteligente (ex:ABCDE, ABC, AB, Fullbody) com base no objetivo.
+                    Defina uma divisão semanal inteligente (ex:ABCDE, ABC, AB, Fullbody) com base no objetivo e sexo.
                     Para CADA DIA de treino, crie uma tabela em Markdown seguindo EXATAMENTE as colunas abaixo:
 
                     | Exercício | Séries | Repetições | Descanso |
@@ -625,9 +646,14 @@ elif st.session_state.etapa == 2:
     
     usuario = st.session_state.usuario_logado
     dados = st.session_state.dados_usuario
+    
+    # 🟢 Resgatando os novos dados de forma segura (usando get para evitar erro em perfis antigos)
     nome = dados["nome"]
+    idade = dados.get("idade", "-")
+    sexo = dados.get("sexo", "-")
     peso = dados["peso"]
     altura = dados["altura"]
+    alergias = dados.get("alergias", "Nenhuma")
     objetivo_curto = dados["objetivo"].split("(")[0].strip()
     imc = peso / ((altura / 100) ** 2)
 
@@ -640,13 +666,16 @@ elif st.session_state.etapa == 2:
 
     exibir_mensagem(f"<strong>Análise concluída, {nome}!</strong> Confira seu planejamento abaixo.", "success")
     
-    c1, c2 = st.columns(2)
-    c1.metric("Atleta", nome)
+    # 🟢 Exibindo as métricas atualizadas
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Atleta", f"{nome} ({idade}a)")
     c2.metric("Objetivo", objetivo_curto)
+    c3.metric("IMC Inicial", f"{imc:.1f}")
     
-    c3, c4 = st.columns(2)
-    c3.metric("Peso Atual", f"{peso} kg")
-    c4.metric("IMC Inicial", f"{imc:.1f}")
+    c4, c5, c6 = st.columns(3)
+    c4.metric("Peso Atual", f"{peso} kg")
+    c5.metric("Altura", f"{altura} cm")
+    c6.metric("Restrições", alergias)
     
     st.divider()
     
