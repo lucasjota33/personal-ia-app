@@ -127,7 +127,7 @@ class PDF_Elite(FPDF):
             pass
         self.set_font("Arial", "B", 10)
         self.set_text_color(150, 150, 150)
-        self.cell(0, 10, "PROTOCOLO DE ELITE", 0, 0, "L")
+        self.cell(0, 10, "PLANEJAMENTO", 0, 0, "L")
         self.cell(0, 10, f"Atleta: {self.nome_atleta}", 0, 1, "R")
         self.set_draw_color(30, 30, 30)
         self.set_line_width(0.5)
@@ -530,11 +530,11 @@ elif st.session_state.etapa == 1:
             st.markdown("""
                 <div style='display: flex; align-items: center; gap: 8px; color: #888; margin-bottom: 10px;'>
                     <span class='material-symbols-outlined'>add_box</span> 
-                    <h4 style='margin: 0;'>Novo Protocolo</h4>
+                    <h4 style='margin: 0;'>Novo Planejamento</h4>
                 </div>
             """, unsafe_allow_html=True)
         else:
-            exibir_mensagem("Nenhum atleta cadastrado ainda. Preencha os dados abaixo para gerar seu primeiro protocolo de elite.", "info")
+            exibir_mensagem("Nenhum atleta cadastrado ainda. Preencha os dados abaixo para gerar seu primeiro planejamento.", "info")
         
         with st.form("perfil_usuario"):
             nome = st.text_input("Nome Completo do Atleta", placeholder="Ex: Lucas Barbosa")
@@ -560,7 +560,7 @@ elif st.session_state.etapa == 1:
             ])
 
             st.markdown("<br>", unsafe_allow_html=True)
-            submit_button = st.form_submit_button(label="GERAR PROTOCOLO ELITE", type="primary", use_container_width=True)
+            submit_button = st.form_submit_button(label="GERAR PLANEJAMENTO", type="primary", use_container_width=True)
 
         if submit_button:
             if not nome:
@@ -572,11 +572,11 @@ elif st.session_state.etapa == 1:
                 
                 with st.spinner("Processando dados e estruturando planejamento..."):
                     prompt_mestre = f"""
-                    Atue como um Nutricionista Esportivo Clínico e Personal Trainer de Atletas de Elite. 
+                    Atue como um Nutricionista Esportivo Clínico e Personal Trainer de extrema qualidade. 
                     Crie um planejamento irretocável para o(a) {nome}.
                     Peso: {peso}kg | Altura: {altura}cm | Nível: {nivel_atividade} | Objetivo: {objetivo}
 
-                    # PROTOCOLO DE ELITE: {nome.upper()}
+                    # PLANEJAMENTO: {nome.upper()}
                     ## 🧬 1. ANÁLISE METABÓLICA
                     Crie uma tabela em Markdown seguindo EXATAMENTE as colunas abaixo:
                     Taxa Metabólica Basal (Mifflin-St Jeor)| Gasto Energético Total | Meta Calórica Alvo
@@ -651,7 +651,7 @@ elif st.session_state.etapa == 2:
             st.session_state.mensagens = []
             st.rerun()
 
-    exibir_mensagem(f"<strong>Análise concluída, {nome}!</strong> Confira seu protocolo abaixo.", "success")
+    exibir_mensagem(f"<strong>Análise concluída, {nome}!</strong> Confira seu planejamento abaixo.", "success")
     
     c1, c2 = st.columns(2)
     c1.metric("Atleta", nome)
@@ -686,9 +686,9 @@ elif st.session_state.etapa == 2:
     pdf_final = gerar_pdf(plano_principal, nome)
     
     st.download_button(
-        label="Baixar Protocolo Completo em PDF",
+        label="Baixar Planejamento Completo em PDF",
         data=pdf_final,
-        file_name=f"Protocolo_{nome.replace(' ', '_')}.pdf",
+        file_name=f"Planejamento_{nome.replace(' ', '_')}.pdf",
         mime="application/pdf",
         type="primary",
         use_container_width=True
@@ -715,7 +715,7 @@ elif st.session_state.etapa == 2:
             </div>
         """, unsafe_allow_html=True)
             
-        with st.spinner("Analisando protocolo..."):
+        with st.spinner("Analisando planejamento..."):
             plano_contexto = st.session_state.mensagens[0]["content"]
             prompt_duvida_completo = f"Plano:\n{plano_contexto}\n\nDúvida: {prompt_duvida}"
             
