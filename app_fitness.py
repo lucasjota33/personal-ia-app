@@ -417,11 +417,11 @@ if st.session_state.etapa == 0:
     st.markdown("""
         <div style="text-align: center; margin-top: 1rem; margin-bottom: 3rem;">
             <span style="background-color: rgba(128,128,128,0.1); border: 1px solid rgba(128,128,128,0.2); padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; letter-spacing: 1px;">
-                ⚡ O FUTURO DA ALTA PERFORMANCE
+                ⚡ O FUTURO DO TREINAMENTO ESPORTIVO
             </span>
             <h1 style="font-size: 3.5rem; font-weight: 800; margin-top: 1.5rem; line-height: 1.1; letter-spacing: -1px;">
-                Transforme seu corpo com um <br>
-                <span style="background: -webkit-linear-gradient(45deg, #1A1A1A, #888888); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">protocolo de elite</span>
+                Transforme seu corpo com apenas um <br>
+                <span style="background: -webkit-linear-gradient(45deg, #1A1A1A, #888888); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">prompt</span>
             </h1>
             <p style="font-size: 1.2rem; color: #888; max-width: 600px; margin: 1.5rem auto; line-height: 1.6;">
                 Treinos, dieta e suplementação milimetricamente calculados por IA. 
