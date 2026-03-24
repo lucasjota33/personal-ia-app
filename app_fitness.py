@@ -493,7 +493,7 @@ elif st.session_state.etapa == 1:
         if perfis_do_usuario:
             st.markdown("""<div style='display: flex; align-items: center; gap: 8px; color: #888; margin-bottom: 10px;'><span class='material-symbols-outlined'>group</span><h4 style='margin: 0;'>Planejamentos Criados</h4></div>""", unsafe_allow_html=True)
             
-            # 🟢 NOVO: Criação de Grid (2 colunas) para os Cards
+            # 🟢 Criação de Grid (2 colunas) para os Cards
             colunas_grid = st.columns(2)
             
             for i, nome_salvo in enumerate(list(perfis_do_usuario.keys())):
@@ -516,12 +516,24 @@ elif st.session_state.etapa == 1:
                             except:
                                 pass
 
-                        # Título e Informações do Card
-                        st.markdown(f"<h4 style='margin-bottom: 5px; color: #1A1A1A; font-weight: 700;'>👤 {nome_salvo.upper()}</h4>", unsafe_allow_html=True)
+                        # 🟢 AQUI ESTÁ A ATUALIZAÇÃO DOS ÍCONES COM DESIGN ALINHADO
                         st.markdown(f"""
-                        <div style="color: #666; font-size: 0.85rem; margin-bottom: 15px; line-height: 1.5;">
-                            <b>🎯 Objetivo:</b> {obj_salvo}<br>
-                            <b>⚖️ Peso:</b> {peso_salvo}kg &nbsp;|&nbsp; <b>📊 IMC:</b> {imc_salvo}
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <span class="material-symbols-outlined" style="color: #1A1A1A; font-size: 1.4rem;">person</span>
+                            <h4 style="margin: 0; color: #1A1A1A; font-weight: 700;">{nome_salvo.upper()}</h4>
+                        </div>
+                        <div style="color: #666; font-size: 0.85rem; margin-bottom: 15px; display: flex; flex-direction: column; gap: 5px;">
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span class="material-symbols-outlined" style="font-size: 16px;">track_changes</span>
+                                <span><b>Objetivo:</b> {obj_salvo}</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span class="material-symbols-outlined" style="font-size: 16px;">scale</span>
+                                <span><b>Peso:</b> {peso_salvo}kg</span>
+                                <span style="margin: 0 2px; color: #ccc;">|</span>
+                                <span class="material-symbols-outlined" style="font-size: 16px;">bar_chart</span>
+                                <span><b>IMC:</b> {imc_salvo}</span>
+                            </div>
                         </div>
                         """, unsafe_allow_html=True)
                         
@@ -534,7 +546,7 @@ elif st.session_state.etapa == 1:
                                 st.session_state.etapa = 2
                                 st.rerun()
                         with c_del:
-                            # O botão de excluir agora é apenas uma lixeira discreta
+                            # O botão de excluir permanece como uma lixeirinha discreta
                             if st.button("🗑️", key=f"del_{nome_salvo}", use_container_width=True):
                                 del st.session_state.banco[usuario]["perfis"][nome_salvo]
                                 salvar_banco(st.session_state.banco)
