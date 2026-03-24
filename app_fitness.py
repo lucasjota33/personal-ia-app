@@ -544,7 +544,6 @@ elif st.session_state.etapa == 1:
                 
                 with st.spinner("Analisando dados e estruturando planejamento Power BI..."):
                     
-                    # 🟢 Prompt Atualizado: Adicionado metas de água e passos
                     prompt_mestre = f"""
                     Atue como um Nutricionista Esportivo Clínico e Personal Trainer de extrema qualidade. 
                     Crie um planejamento irretocável e personalizado para o(a) {nome}. Leve em consideração suas características.
@@ -644,7 +643,6 @@ elif st.session_state.etapa == 2:
     with col_voltar:
         if st.button("Voltar ao Painel"):
             st.session_state.etapa = 1
-            # Mantemos o histórico de mensagens salvo no banco ao voltar
             st.rerun()
 
     # Resgatando o plano atual mais recente gerado pela IA
@@ -656,7 +654,6 @@ elif st.session_state.etapa == 2:
     if not plano_atual and st.session_state.mensagens:
         plano_atual = st.session_state.mensagens[0]["content"]
 
-    # Extraindo dados para os componentes do Power BI
     tabelas_extraidas = extrair_tabelas_do_markdown(plano_atual)
     dados_json = extrair_json_da_ia(plano_atual)
 
@@ -668,7 +665,6 @@ elif st.session_state.etapa == 2:
     with tab_dash:
         st.markdown(f"<h2>Painel de Performance: {nome.upper()}</h2>", unsafe_allow_html=True)
         
-        # 🟢 LINHA 1: MÉTRICAS (Power BI style Cards) - Adicionado Água e Passos
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("Objetivo", objetivo_curto)
         c2.metric("Meta Calórica Alvo", f"{dados_json.get('calorias', '0')} kcal" if dados_json else "0 kcal")
@@ -677,13 +673,11 @@ elif st.session_state.etapa == 2:
             
         st.divider()
         
-        # LINHA 2: GRÁFICO E TABELA DE DIETA
         col_grafico, col_dieta = st.columns([1, 2.5])
         
         with col_grafico:
             st.markdown("#### Distribuição de Macros")
             if dados_json and "proteinas_g" in dados_json:
-                # 🟢 MUDANÇA: Gráfico de Donut super moderno com Plotly
                 df_macros = pd.DataFrame({
                     "Macro": ["Proteína", "Carboidrato", "Gordura"],
                     "Gramas": [dados_json.get("proteinas_g", 0), dados_json.get("carboidratos_g", 0), dados_json.get("gorduras_g", 0)]
@@ -709,7 +703,6 @@ elif st.session_state.etapa == 2:
 
         st.divider()
 
-        # LINHA 3: TREINO E SUPLEMENTOS
         col_treino, col_suple = st.columns([2, 1])
         
         with col_treino:
@@ -761,7 +754,6 @@ elif st.session_state.etapa == 2:
             </p>
         """, unsafe_allow_html=True)
         
-        # 🟢 BOTÕES DE AÇÕES RÁPIDAS
         c_btn1, c_btn2, c_btn3, c_btn_limpar = st.columns([1.5, 1.5, 1.5, 1])
         acao_rapida = None
         
@@ -769,9 +761,7 @@ elif st.session_state.etapa == 2:
         if c_btn2.button("🔄 Variar Refeições", use_container_width=True): acao_rapida = "Mude as opções de almoço e jantar para opções completamente diferentes das atuais."
         if c_btn3.button("⏱️ Treino mais Curto", use_container_width=True): acao_rapida = "Ajuste o treino para que dure no máximo 45 minutos (menos exercícios ou métodos avançados)."
         
-        # Botão especial para limpar a sujeira do chat
         if c_btn_limpar.button("🗑️ Limpar Chat", use_container_width=True):
-            # Mantém apenas a primeira mensagem (o plano original mestre)
             if len(st.session_state.mensagens) > 0:
                 st.session_state.mensagens = [st.session_state.mensagens[0]]
                 st.session_state.banco[usuario]["perfis"][nome]["mensagens"] = st.session_state.mensagens
@@ -780,7 +770,7 @@ elif st.session_state.etapa == 2:
 
         st.divider()
 
-        # Renderiza o Histórico de Chat
+        # Renderiza o Histórico de Chat ANTES do input
         for msg in st.session_state.mensagens:
             conteudo = limpar_none(msg.get("content"))
             if msg.get("role") == "assistant" and "## 🧬" in conteudo:
@@ -797,16 +787,25 @@ elif st.session_state.etapa == 2:
         prompt_duvida = st.chat_input("Ex: Troque meu jantar por uma opção vegana...")
         comando_final = acao_rapida if acao_rapida else prompt_duvida
         
+        # 🟢 AQUI ESTÁ A CORREÇÃO DE ESTABILIDADE: O IF "SEPARADO" 🟢
         if comando_final:
             st.session_state.mensagens.append({"role": "user", "content": comando_final})
+            # Salva no banco de dados para não perder se houver pico de internet
+            st.session_state.banco[usuario]["perfis"][nome]["mensagens"] = st.session_state.mensagens
+            salvar_banco(st.session_state.banco)
+            st.rerun() # 🟢 FORÇA O RECARREGAMENTO IMEDIATO PARA MOSTRAR A PERGUNTA
+
+        # 🟢 LÓGICA DE RESPOSTA DA IA (Rodará após a página recarregar a pergunta do usuário)
+        if st.session_state.mensagens and st.session_state.mensagens[-1]["role"] == "user":
             
-            st.markdown(f"""<div style='display: flex; justify-content: flex-end; margin-bottom: 25px;'><div style='background-color: #f4f4f4; color: #0d0d0d; padding: 12px 18px; border-radius: 18px 18px 0px 18px; max-width: 85%; font-family: sans-serif; box-shadow: 1px 1px 3px rgba(0,0,0,0.05);'>{comando_final}</div></div>""", unsafe_allow_html=True)
+            # Mostra a bolinha de "pensando" embaixo de todas as mensagens
+            with st.spinner("O Treinador está reformulando seu planejamento..."):
+                comando_usuario = st.session_state.mensagens[-1]["content"]
                 
-            with st.spinner("Processando..."):
                 prompt_duvida_completo = f"""Plano Atual do Atleta:
 {plano_atual}
 
-Mensagem do Usuário: {comando_final}
+Mensagem do Usuário: {comando_usuario}
 
 REGRA DE ATUALIZAÇÃO DO DASHBOARD: 
 Se o usuário estiver pedindo QUALQUER ALTERAÇÃO na dieta, treino ou suplementos, VOCÊ DEVE REESCREVER O PLANO COMPLETO aplicando as mudanças solicitadas. Mantenha estritamente a mesma estrutura de marcação (## 🧬, ## 🥗, etc) para que as tabelas sejam lidas.
@@ -817,27 +816,28 @@ Se for APENAS uma dúvida, responda normalmente de forma curta, sem reescrever o
                 payload = {"contents": [{"parts": [{"text": prompt_duvida_completo}]}]}
                 
                 try:
-                    resposta = requests.post(url, json=payload, timeout=30)
+                    # 🟢 Aumentado o timeout para 45 segundos para dar folga ao Google
+                    resposta = requests.post(url, json=payload, timeout=45) 
+                    
                     if resposta.status_code == 200:
                         resposta_data = resposta.json()
                         texto_ia_duvida = resposta_data.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', '')
                         texto_ia_duvida = limpar_none(texto_ia_duvida)
                         
-                        # 🟢 MUDANÇA: Efeito visual digitando a resposta!
                         if "## 🧬" not in texto_ia_duvida:
-                            # Se for só uma dica curta, mostra digitando
+                            # Se for só uma dica curta, mostra o efeito digitando
                             st.write_stream(gerador_de_texto(texto_ia_duvida))
                         else:
                             # Se reescreveu o plano inteiro, avisa que o dashboard foi atualizado
                             st.success("✨ Plano atualizado com sucesso! Confira o Dashboard.")
+                            time.sleep(1.5) # Dá um tempinho para o usuário ler o aviso
                             
                         st.session_state.mensagens.append({"role": "assistant", "content": texto_ia_duvida})
                         st.session_state.banco[usuario]["perfis"][nome]["mensagens"] = st.session_state.mensagens
                         salvar_banco(st.session_state.banco)
                         
-                        time.sleep(1) # Pausa dramática para leitura
-                        st.rerun() 
+                        st.rerun() # Atualiza a tela para exibir a mensagem da IA e o novo Dash
                     else:
-                        exibir_mensagem("Servidor ocupado. Tente perguntar em alguns instantes.", "warning")
-                except:
-                    exibir_mensagem("Erro ao conectar.", "error")
+                        st.error(f"O Google recusou a conexão (Erro {resposta.status_code}). Tente novamente em alguns segundos.")
+                except Exception as e:
+                    st.error("Instabilidade na rede. O plano pode não ter sido salvo. Tente novamente.")
