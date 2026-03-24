@@ -325,10 +325,12 @@ st.markdown("""
             box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.2) !important;
         }
         
+        /* Cor das Abas e da ANIMAÇÃO (Tab Highlight) */
         button[data-baseweb="tab"] { color: #888 !important; }
         button[aria-selected="true"] { color: #CCCCCC !important; }
         div[data-baseweb="tab-highlight"] { background-color: #CCCCCC !important; }
         
+        /* Inputs e Foco */
         div[data-baseweb="input"]:focus-within { border-color: #CCCCCC !important; box-shadow: 0 0 0 1px #CCCCCC !important; }
         input, textarea { caret-color: #CCCCCC !important; }
     }
@@ -346,10 +348,12 @@ st.markdown("""
         }
         .stButton > button:hover, .stDownloadButton > button:hover { background-color: #333333 !important; }
         
+        /* Cor das Abas e da ANIMAÇÃO (Tab Highlight) */
         button[data-baseweb="tab"] { color: #888 !important; }
         button[aria-selected="true"] { color: #1A1A1A !important; }
         div[data-baseweb="tab-highlight"] { background-color: #1A1A1A !important; }
         
+        /* Inputs e Foco */
         div[data-baseweb="input"]:focus-within { border-color: #1A1A1A !important; box-shadow: 0 0 0 1px #1A1A1A !important; }
         input, textarea { caret-color: #1A1A1A !important; }
     }
@@ -372,16 +376,19 @@ st.markdown("""
         .block-container { padding-top: 1.5rem !important; padding-left: 1rem !important; padding-right: 1rem !important; }
         .stButton > button { min-height: 50px !important; }
         
-        /* Centraliza o container da imagem no mobile */
-        [data-testid="stImage"] {
+        /* O Streamlit cria várias divs em volta da imagem. 
+           Isso força o contêiner e o conteúdo a se alinharem no centro. */
+        div[data-testid="stImage"], div[data-testid="stImage"] > div {
             display: flex !important;
             justify-content: center !important;
             width: 100% !important;
         }
 
-        /* Limita a largura da imagem */
-        [data-testid="stImage"] img {
-            max-width: 150px !important;
+        /* Aplica o tamanho e garante que as margens empurrem a imagem pro meio */
+        div[data-testid="stImage"] img {
+            max-width: 130px !important;
+            margin: 0 auto !important;
+            display: block !important;
         }
     }
     </style>
