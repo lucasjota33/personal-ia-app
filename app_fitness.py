@@ -11,7 +11,7 @@ import base64
 import re
 import time
 import pandas as pd
-import plotly.express as px  # 🟢 NOVA BIBLIOTECA PARA O GRÁFICO DE DONUT
+import plotly.express as px  # NOVA BIBLIOTECA PARA O GRÁFICO DE DONUT
 from fpdf import FPDF 
 
 # Configurações iniciais
@@ -117,12 +117,13 @@ def exibir_mensagem(texto, tipo="info"):
         </div>
     """, unsafe_allow_html=True)
 
-# 🟢 NOVA FUNÇÃO: EFEITO DIGITANDO
 def gerador_de_texto(texto):
     for palavra in texto.split(" "):
         yield palavra + " "
-        time.sleep(0.03) # Velocidade da digitação
+        time.sleep(0.03)
 
+# 🟢 CACHE ATIVADO: A extração do JSON agora é guardada na memória!
+@st.cache_data(show_spinner=False)
 def extrair_json_da_ia(texto):
     match = re.search(r'```json\n(.*?)\n```', texto, re.DOTALL)
     if match:
@@ -132,6 +133,8 @@ def extrair_json_da_ia(texto):
             pass
     return None
 
+# 🟢 CACHE ATIVADO: A criação de DataFrames Pandas agora é instantânea após a 1ª vez!
+@st.cache_data(show_spinner=False)
 def extrair_tabelas_do_markdown(texto):
     tabelas = []
     linhas = texto.split('\n')
@@ -164,7 +167,6 @@ def extrair_tabelas_do_markdown(texto):
             dfs.append(df)
     return dfs
 
-# 🟢 CLASSE DO PDF ELITE
 class PDF_Elite(FPDF):
     def __init__(self, nome_atleta):
         super().__init__()
@@ -787,18 +789,14 @@ elif st.session_state.etapa == 2:
         prompt_duvida = st.chat_input("Ex: Troque meu jantar por uma opção vegana...")
         comando_final = acao_rapida if acao_rapida else prompt_duvida
         
-        # 🟢 AQUI ESTÁ A CORREÇÃO DE ESTABILIDADE: O IF "SEPARADO" 🟢
         if comando_final:
             st.session_state.mensagens.append({"role": "user", "content": comando_final})
-            # Salva no banco de dados para não perder se houver pico de internet
             st.session_state.banco[usuario]["perfis"][nome]["mensagens"] = st.session_state.mensagens
             salvar_banco(st.session_state.banco)
-            st.rerun() # 🟢 FORÇA O RECARREGAMENTO IMEDIATO PARA MOSTRAR A PERGUNTA
+            st.rerun() 
 
-        # 🟢 LÓGICA DE RESPOSTA DA IA (Rodará após a página recarregar a pergunta do usuário)
         if st.session_state.mensagens and st.session_state.mensagens[-1]["role"] == "user":
             
-            # Mostra a bolinha de "pensando" embaixo de todas as mensagens
             with st.spinner("O Treinador está reformulando seu planejamento..."):
                 comando_usuario = st.session_state.mensagens[-1]["content"]
                 
@@ -816,7 +814,6 @@ Se for APENAS uma dúvida, responda normalmente de forma curta, sem reescrever o
                 payload = {"contents": [{"parts": [{"text": prompt_duvida_completo}]}]}
                 
                 try:
-                    # 🟢 Aumentado o timeout para 45 segundos para dar folga ao Google
                     resposta = requests.post(url, json=payload, timeout=45) 
                     
                     if resposta.status_code == 200:
@@ -825,18 +822,16 @@ Se for APENAS uma dúvida, responda normalmente de forma curta, sem reescrever o
                         texto_ia_duvida = limpar_none(texto_ia_duvida)
                         
                         if "## 🧬" not in texto_ia_duvida:
-                            # Se for só uma dica curta, mostra o efeito digitando
                             st.write_stream(gerador_de_texto(texto_ia_duvida))
                         else:
-                            # Se reescreveu o plano inteiro, avisa que o dashboard foi atualizado
                             st.success("✨ Plano atualizado com sucesso! Confira o Dashboard.")
-                            time.sleep(1.5) # Dá um tempinho para o usuário ler o aviso
+                            time.sleep(1.5) 
                             
                         st.session_state.mensagens.append({"role": "assistant", "content": texto_ia_duvida})
                         st.session_state.banco[usuario]["perfis"][nome]["mensagens"] = st.session_state.mensagens
                         salvar_banco(st.session_state.banco)
                         
-                        st.rerun() # Atualiza a tela para exibir a mensagem da IA e o novo Dash
+                        st.rerun() 
                     else:
                         st.error(f"O Google recusou a conexão (Erro {resposta.status_code}). Tente novamente em alguns segundos.")
                 except Exception as e:
