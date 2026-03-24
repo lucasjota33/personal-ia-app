@@ -372,19 +372,16 @@ st.markdown("""
         .block-container { padding-top: 1.5rem !important; padding-left: 1rem !important; padding-right: 1rem !important; }
         .stButton > button { min-height: 50px !important; }
         
-        /* Centraliza perfeitamente forçando a caixa interna do Streamlit */
-        div[data-testid="stImage"] {
-            width: 100% !important;
-        }
-        div[data-testid="stImage"] > div {
-            width: 100% !important;
+        /* Centraliza o container da imagem no mobile */
+        [data-testid="stImage"] {
             display: flex !important;
             justify-content: center !important;
+            width: 100% !important;
         }
-        div[data-testid="stImage"] img {
+
+        /* Limita a largura da imagem */
+        [data-testid="stImage"] img {
             max-width: 150px !important;
-            margin: 0 auto !important;
-            display: block !important;
         }
     }
     </style>
