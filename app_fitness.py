@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 
 # 🟢 OBRIGATÓRIO: Este comando DEVE ser o primeiro do Streamlit na página!
 st.set_page_config(page_title="Treinador Digital Elite", page_icon="logo.png", layout="wide")
@@ -376,6 +377,23 @@ if "banco" not in st.session_state:
     st.session_state.banco = carregar_banco() 
 if "usuario_logado" not in st.session_state:
     st.session_state.usuario_logado = None
+if "scroll_top" not in st.session_state:
+    st.session_state.scroll_top = False
+
+# 🟢 MOTOR DE SCROLL INTELIGENTE (Injeta JS invisível quando precisa subir a tela)
+if st.session_state.scroll_top:
+    components.html(
+        """
+        <script>
+            // Força o container principal e a janela inteira a rolarem pro topo
+            var body = window.parent.document.querySelector(".main");
+            if (body) { body.scrollTo(0, 0); }
+            window.parent.scrollTo(0, 0);
+        </script>
+        """,
+        height=0
+    )
+    st.session_state.scroll_top = False
 
 # 🟢 AUTO-LOGIN
 if st.session_state.usuario_logado is None:
@@ -446,6 +464,7 @@ if st.session_state.etapa == 0:
                     if usuario_encontrado:
                         st.session_state.usuario_logado = usuario_encontrado
                         st.session_state.etapa = 1
+                        st.session_state.scroll_top = True # 🟢 Aciona o scroll
                         
                         if manter_conectado:
                             novo_token = gerar_token_sessao()
@@ -519,6 +538,7 @@ elif st.session_state.etapa == 1:
                         st.session_state.dados_usuario = perfis_do_usuario[nome_salvo]["dados"]
                         st.session_state.mensagens = perfis_do_usuario[nome_salvo]["mensagens"]
                         st.session_state.etapa = 2
+                        st.session_state.scroll_top = True # 🟢 Aciona o scroll
                         st.rerun()
                 with c_del:
                     if st.button("Excluir", key=f"del_{nome_salvo}", use_container_width=True):
@@ -598,7 +618,7 @@ elif st.session_state.etapa == 1:
                     payload = {"contents": [{"parts": [{"text": prompt_mestre}]}]}
                     
                     try:
-                        resposta = requests.post(url, json=payload, timeout=20)
+                        resposta = requests.post(url, json=payload, timeout=40)
                         if resposta.status_code == 200:
                             resposta_data = resposta.json()
                             texto_ia = resposta_data.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', '')
@@ -612,6 +632,7 @@ elif st.session_state.etapa == 1:
                             salvar_banco(st.session_state.banco)
                             
                             st.session_state.etapa = 2
+                            st.session_state.scroll_top = True # 🟢 Aciona o scroll
                             st.rerun()
                         else:
                             exibir_mensagem("Erro no Servidor. Tente novamente.", "error")
@@ -629,6 +650,7 @@ elif st.session_state.etapa == 1:
                 st.query_params.clear()
                 st.session_state.usuario_logado = None
                 st.session_state.etapa = 0
+                st.session_state.scroll_top = True # 🟢 Aciona o scroll
                 st.rerun()
 
 # ==========================================================
@@ -649,6 +671,7 @@ elif st.session_state.etapa == 2:
         if st.button("Voltar ao Painel"):
             st.session_state.etapa = 1
             st.session_state.mensagens = []
+            st.session_state.scroll_top = True # 🟢 Aciona o scroll
             st.rerun()
 
     exibir_mensagem(f"<strong>Análise concluída, {nome}!</strong> Confira seu protocolo abaixo.", "success")
