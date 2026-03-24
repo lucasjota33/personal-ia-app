@@ -573,7 +573,7 @@ elif st.session_state.etapa == 1:
                 with st.spinner("Processando dados e estruturando planejamento..."):
                     prompt_mestre = f"""
                     Atue como um Nutricionista Esportivo Clínico e Personal Trainer de extrema qualidade. 
-                    Crie um planejamento irretocável para o(a) {nome}.
+                    Crie um planejamento irretocável e personalizado para o(a) {nome} Leve em consideração suas características.
                     Peso: {peso}kg | Altura: {altura}cm | Nível: {nivel_atividade} | Objetivo: {objetivo}
 
                     # PLANEJAMENTO: {nome.upper()}
