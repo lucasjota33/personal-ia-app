@@ -280,7 +280,7 @@ def gerar_pdf(texto_md, nome_atleta):
 # Configuração da Página
 st.set_page_config(page_title="Treinador Digital Elite", page_icon="⚡", layout="wide")
 
-# --- CSS CUSTOMIZADO (LAYOUT CHATGPT + SCROLL TABELAS + ZERO VERMELHO COM ANIMAÇÃO) ---
+# --- CSS COMPLETO ATUALIZADO (LAYOUT CHATGPT + SCROLL TABELAS + DESIGN ELITE + LOGO RESPONSIVA) ---
 st.markdown("""
     <style>
     /* 1. Reset e Limpeza de Interface */
@@ -289,7 +289,7 @@ st.markdown("""
     #MainMenu, footer { display: none !important; }
     [data-testid="collapsedControl"] { display: none !important; }
     
-    .block-container { padding-top: 2rem !important; margin-top: 1rem !important; }
+    .block-container { padding-top: 1rem !important; margin-top: 0.5rem !important; }
 
     /* 2. LAYOUT DE CHAT (ESTILO CHATGPT - NÃO FLUTUANTE) */
     .stMarkdown p, .stMarkdown li {
@@ -371,9 +371,41 @@ st.markdown("""
 
     .stApp { overflow-x: hidden; }
 
+    /* --- NOVO: CSS RESPONSIVO PARA LOGO E TEXTO HERO --- */
+    /* Container da Logo (centralizado) */
+    .td-logo-container {
+        text-align: center;
+        margin-top: 1rem;
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    /* Configuração da imagem da logo */
+    .td-logo-image {
+        max-width: 150px; /* Tamanho controlado para desktop */
+        width: 100%;
+        height: auto;
+    }
+
+    /* Mobile media query para responsividade (telas menores que 768px) */
     @media (max-width: 768px) {
         .block-container { padding-top: 1.5rem !important; padding-left: 1rem !important; padding-right: 1rem !important; }
         .stButton > button { min-height: 50px !important; }
+        
+        /* Reduz ainda mais a logo em mobile */
+        .td-logo-image {
+            max-width: 100px; /* Tamanho controlado para mobile */
+        }
+        
+        /* Ajuste do Texto Hero para mobile, tornando-o menos agressivo */
+        .td-hero-section h1 {
+            font-size: 2rem !important; /* Scale down h1 slightly */
+        }
+        .td-hero-section p {
+            font-size: 1rem !important; /* Scale down subtitle p slightly */
+        }
     }
     </style>
 """, unsafe_allow_html=True)
@@ -404,13 +436,13 @@ if st.session_state.usuario_logado is None:
 # ETAPA 0: TELA DE LOGIN, CADASTRO E LANDING PAGE
 # ==========================================================
 if st.session_state.etapa == 0:
-    # --- HERO SECTION (Estilo Plataforma de Alta Conversão) ---
+    # --- HERO SECTION (Estilo Plataforma de Alta Conversão, com tamanhos mais refinados) ---
     st.markdown("""
-        <div style="text-align: center; margin-top: 1rem; margin-bottom: 3rem;">
+        <div class="td-hero-section" style="text-align: center; margin-top: 1rem; margin-bottom: 2rem;">
             <span style="background-color: rgba(128,128,128,0.1); border: 1px solid rgba(128,128,128,0.2); padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; letter-spacing: 1px;">
                 ⚡ O FUTURO DA ALTA PERFORMANCE
             </span>
-            <h1 style="font-size: 3.5rem; font-weight: 800; margin-top: 1.5rem; line-height: 1.1; letter-spacing: -1px;">
+            <h1 style="font-size: 2.5rem; font-weight: 800; margin-top: 1.5rem; line-height: 1.1; letter-spacing: -1px;">
                 Transforme seu corpo com um <br>
                 <span style="background: -webkit-linear-gradient(45deg, #1A1A1A, #888888); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">protocolo de elite</span>
             </h1>
@@ -421,18 +453,26 @@ if st.session_state.etapa == 0:
         </div>
     """, unsafe_allow_html=True)
 
+    # --- NOVO: Logo centralizada elegantemente acima do formulário, com tamanho responsivo controlado por CSS ---
+    try:
+        # Verifica se o arquivo existe antes de renderizar, usando o st.image para carregar, mas HTML/CSS para exibir de forma controlada
+        st.image("logo.png", width=0) # Carrega para garantir que existe, mas com largura 0 para não exibir via Streamlit native
+
+        # Exibe a logo centralizada e com tamanho controlado via HTML/CSS responsivo
+        st.markdown("""
+            <div class="td-logo-container">
+                <img src="logo.png" class="td-logo-image" alt="Treinador Digital Logo">
+            </div>
+        """, unsafe_allow_html=True)
+    except:
+        # Fallback simples em caso de imagem não encontrada, para evitar erros de renderização
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        pass 
+    
     # --- ÁREA DE LOGIN CENTRALIZADA ---
     col1, col2, col3 = st.columns([1, 1.5, 1])
     with col2:
-        # A Logo centralizada elegantemente acima do formulário
-        c_img1, c_img2, c_img3 = st.columns([1, 1, 1])
-        with c_img2:
-            try:
-                st.image("logo.png", use_container_width=True)
-            except:
-                pass # Não quebra se a logo não for encontrada
-        
-        st.markdown("<br>", unsafe_allow_html=True)
+        # st.markdown("<br>", unsafe_allow_html=True) # Espaçamento removido, pois a logo centralizada já o faz elegantemente
         
         tab1, tab2 = st.tabs(["Entrar", "Criar Conta Nova"])
         
