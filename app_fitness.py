@@ -325,9 +325,10 @@ div[data-testid="stMarkdownContainer"] {
 /* Substituindo a cor de seleção */
 ::selection { background: rgba(128,128,128,0.3) !important; color: inherit !important; }
 
-/* 🟢 Ajuste exato para o texto das abas não sumir 🟢 */
+/* 🟢 Ajuste geral para o texto das abas não sumir 🟢 */
 button[data-baseweb="tab"] p, button[data-baseweb="tab"] span { 
     color: #888888 !important; 
+    transition: color 0.2s ease;
 }
 div[data-baseweb="tab-highlight"] { background-color: #555555 !important; }
 
@@ -347,7 +348,13 @@ div[data-baseweb="tab-highlight"] { background-color: #555555 !important; }
     div[data-baseweb="input"]:focus-within, div[data-baseweb="select"]:focus-within {
         border-color: #1A1A1A !important; box-shadow: 0 0 0 1px #1A1A1A !important;
     }
-    /* Texto Selecionado Light Mode */
+    
+    /* 🟢 FIX DE TEXTO BRANCO AO CLICAR (MODO CLARO) 🟢 */
+    /* Forçamos a cor escura durante hover, foco, e clique (active) para os filhos do botão */
+    button[data-baseweb="tab"]:hover p, button[data-baseweb="tab"]:hover span,
+    button[data-baseweb="tab"]:focus p, button[data-baseweb="tab"]:focus span,
+    button[data-baseweb="tab"]:active p, button[data-baseweb="tab"]:active span,
+    /* E para o estado já selecionado */
     button[data-baseweb="tab"][aria-selected="true"] p, 
     button[data-baseweb="tab"][aria-selected="true"] span { 
         color: #1A1A1A !important; 
@@ -591,7 +598,7 @@ elif st.session_state.etapa == 1:
                     payload = {"contents": [{"parts": [{"text": prompt_mestre}]}]}
                     
                     try:
-                        resposta = requests.post(url, json=payload, timeout=40)
+                        resposta = requests.post(url, json=payload, timeout=20)
                         if resposta.status_code == 200:
                             resposta_data = resposta.json()
                             texto_ia = resposta_data.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', '')
