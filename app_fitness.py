@@ -322,22 +322,26 @@ div[data-testid="stMarkdownContainer"] {
     .stButton > button { min-height: 50px !important; }
 }
 
-/* Substituindo a cor de seleção e abas por CSS (O vermelho dos Checkboxes requer o arquivo config.toml) */
+/* Substituindo a cor de seleção e abas por CSS */
 ::selection { background: rgba(128,128,128,0.3) !important; color: inherit !important; }
-button[data-baseweb="tab"] { color: #888888 !important; }
+
+/* Força TODOS os elementos de texto dentro da aba inativa a ficarem cinza */
+button[data-baseweb="tab"] * { color: #888888 !important; }
 
 @media (prefers-color-scheme: dark) {
     div[data-baseweb="input"]:focus-within, div[data-baseweb="select"]:focus-within {
         border-color: #CCCCCC !important; box-shadow: 0 0 0 1px #CCCCCC !important;
     }
-    button[aria-selected="true"] { color: #FFFFFF !important; }
+    /* Força TODOS os textos dentro da aba ativa a ficarem BRANCOS no modo escuro */
+    button[aria-selected="true"] * { color: #FFFFFF !important; }
     div[data-baseweb="tab-highlight"] { background-color: #FFFFFF !important; }
 }
 @media (prefers-color-scheme: light) {
     div[data-baseweb="input"]:focus-within, div[data-baseweb="select"]:focus-within {
         border-color: #1A1A1A !important; box-shadow: 0 0 0 1px #1A1A1A !important;
     }
-    button[aria-selected="true"] { color: #1A1A1A !important; }
+    /* Força TODOS os textos dentro da aba ativa a ficarem PRETOS/GRAFITE no modo claro */
+    button[aria-selected="true"] * { color: #1A1A1A !important; }
     div[data-baseweb="tab-highlight"] { background-color: #1A1A1A !important; }
 }
 </style>
@@ -442,7 +446,8 @@ if st.session_state.etapa == 0:
                 novo_email = st.text_input("Digite seu E-mail")
                 nova_senha = st.text_input("Crie uma Senha", type="password")
                 confirma_senha = st.text_input("Confirme a Senha", type="password")
-                btn_cadastro = st.form_submit_button("Criar Conta", use_container_width=True)
+                # 🟢 Ajuste: Inserido type="primary" no botão de cadastro!
+                btn_cadastro = st.form_submit_button("Criar Conta", type="primary", use_container_width=True)
                 
                 if btn_cadastro:
                     email_em_uso = any(dados.get("email") == novo_email for dados in st.session_state.banco.values())
@@ -476,7 +481,6 @@ elif st.session_state.etapa == 1:
     col_esquerda, col_centro, col_direita = st.columns([1, 1.5, 1])
     
     with col_centro:
-        # 🟢 O topo agora fica limpo só com a saudação
         st.markdown(f"""
             <div style="text-align: center; margin-top: 1rem; margin-bottom: 2rem;">
                 <p style="color: #888; font-size: 0.9rem; font-weight: 600; letter-spacing: 1px; margin-bottom: 0;">PAINEL DE CONTROLE</p>
@@ -598,7 +602,6 @@ elif st.session_state.etapa == 1:
                     except Exception as e:
                         exibir_mensagem("Erro de conexão.", "error")
 
-        # 🟢 BOTÃO DE SAIR NO FINAL DA PÁGINA
         st.markdown("<br><br>", unsafe_allow_html=True)
         st.divider()
         c_vazia1, c_botao_sair, c_vazia2 = st.columns([3, 4, 3])
