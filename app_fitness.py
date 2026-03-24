@@ -619,7 +619,7 @@ elif st.session_state.etapa == 1:
                 
                 with st.spinner("Analisando dados e estruturando planejamento Power BI..."):
                     
-                    # 🟢 Prompt atualizado com instrução de gerar o JSON no final
+                    # Prompt atualizado com instrução de gerar o JSON no final
                     prompt_mestre = f"""
                     Atue como um Nutricionista Esportivo Clínico e Personal Trainer de extrema qualidade. 
                     Crie um planejamento irretocável e personalizado para o(a) {nome}. Leve em consideração suas características.
@@ -720,7 +720,7 @@ elif st.session_state.etapa == 2:
             st.session_state.mensagens = []
             st.rerun()
 
-    # 🟢 Resgatando o plano atual mais recente gerado pela IA
+    # Resgatando o plano atual mais recente gerado pela IA
     plano_atual = ""
     for msg in reversed(st.session_state.mensagens):
         if msg["role"] == "assistant" and "## 🧬" in msg.get("content", ""):
@@ -733,7 +733,7 @@ elif st.session_state.etapa == 2:
     tabelas_extraidas = extrair_tabelas_do_markdown(plano_atual)
     dados_json = extrair_json_da_ia(plano_atual)
 
-    # 🟢 DUAS ABAS: DASHBOARD VISUAL (sem texto) e CHAT
+    # DUAS ABAS: DASHBOARD VISUAL (sem texto) e CHAT
     tab_dash, tab_chat = st.tabs(["📊 DASHBOARD DE ESTATÍSTICAS", "💬 CHAT DO TREINADOR & TEXTO"])
 
     # ==========================================================
@@ -790,9 +790,14 @@ elif st.session_state.etapa == 2:
         
         with col_treino:
             st.markdown("#### Planilha de Treinamento")
-            df_treino = next((df for df in tabelas_extraidas if any("exercício" in c.lower() or "séries" in c.lower() for c in df.columns)), None)
-            if df_treino is not None:
-                st.dataframe(df_treino, use_container_width=True, hide_index=True)
+            
+            # 🟢 MUDANÇA AQUI: Extrai TODAS as tabelas de treino
+            dfs_treino = [df for df in tabelas_extraidas if any("exercício" in c.lower() or "séries" in c.lower() for c in df.columns)]
+            
+            if dfs_treino:
+                for i, df in enumerate(dfs_treino):
+                    st.markdown(f"**Treino {i+1}**")
+                    st.dataframe(df, use_container_width=True, hide_index=True)
             else:
                 st.info("Visualização de treino indisponível.")
 
@@ -870,7 +875,7 @@ elif st.session_state.etapa == 2:
                 
             with st.spinner("Sincronizando Dashboard com a nova requisição..."):
                 
-                # 🟢 INSTRUÇÃO MESTRA PARA O CHAT 🟢
+                # INSTRUÇÃO MESTRA PARA O CHAT
                 prompt_duvida_completo = f"""Plano Atual do Atleta:
 {plano_atual}
 
