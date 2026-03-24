@@ -577,6 +577,7 @@ elif st.session_state.etapa == 1:
                     Peso: {peso}kg | Altura: {altura}cm | Nível: {nivel_atividade} | Objetivo: {objetivo}
 
                     # PLANEJAMENTO: {nome.upper()}
+                    
                     ## 🧬 1. ANÁLISE METABÓLICA
                     Crie uma tabela em Markdown seguindo EXATAMENTE as colunas abaixo:
                     | Taxa Metabólica Basal (Mifflin-St Jeor)| Gasto Energético Total | Meta Calórica Alvo |
