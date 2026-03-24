@@ -476,20 +476,9 @@ elif st.session_state.etapa == 1:
     col_esquerda, col_centro, col_direita = st.columns([1, 1.5, 1])
     
     with col_centro:
-        c_vazia, c_botao_sair = st.columns([7, 3])
-        with c_botao_sair:
-            st.markdown("<br>", unsafe_allow_html=True)
-            if st.button("Sair da Conta", use_container_width=True):
-                if "token" in st.session_state.banco[usuario]:
-                    st.session_state.banco[usuario]["token"] = ""
-                    salvar_banco(st.session_state.banco)
-                st.query_params.clear()
-                st.session_state.usuario_logado = None
-                st.session_state.etapa = 0
-                st.rerun()
-        
+        # 🟢 O topo agora fica limpo só com a saudação
         st.markdown(f"""
-            <div style="text-align: center; margin-top: -1rem; margin-bottom: 2rem;">
+            <div style="text-align: center; margin-top: 1rem; margin-bottom: 2rem;">
                 <p style="color: #888; font-size: 0.9rem; font-weight: 600; letter-spacing: 1px; margin-bottom: 0;">PAINEL DE CONTROLE</p>
                 <h1 style="font-size: 2.2rem; font-weight: 800; margin-top: 0;">Bem-vindo, {usuario}!</h1>
             </div>
@@ -608,6 +597,20 @@ elif st.session_state.etapa == 1:
                             exibir_mensagem("Erro no Servidor. Tente novamente.", "error")
                     except Exception as e:
                         exibir_mensagem("Erro de conexão.", "error")
+
+        # 🟢 BOTÃO DE SAIR NO FINAL DA PÁGINA
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        st.divider()
+        c_vazia1, c_botao_sair, c_vazia2 = st.columns([3, 4, 3])
+        with c_botao_sair:
+            if st.button("Sair da Conta 🚪", use_container_width=True):
+                if "token" in st.session_state.banco[usuario]:
+                    st.session_state.banco[usuario]["token"] = ""
+                    salvar_banco(st.session_state.banco)
+                st.query_params.clear()
+                st.session_state.usuario_logado = None
+                st.session_state.etapa = 0
+                st.rerun()
 
 # ==========================================================
 # ETAPA 2: PÁGINA DO PLANO GERADO E CHAT DA IA
