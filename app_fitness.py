@@ -420,8 +420,8 @@ if st.session_state.etapa == 0:
                 ⚡ O FUTURO DO TREINAMENTO ESPORTIVO
             </span>
             <h1 style="font-size: 3.5rem; font-weight: 800; margin-top: 1.5rem; line-height: 1.1; letter-spacing: -1px;">
-                Transforme seu corpo com apenas um <br>
-                <span style="background: -webkit-linear-gradient(45deg, #1A1A1A, #888888); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">prompt</span>
+                Transforme seu corpo com<br>
+                <span style="background: -webkit-linear-gradient(45deg, #1A1A1A, #888888); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">apenas um prompt</span>
             </h1>
             <p style="font-size: 1.2rem; color: #888; max-width: 600px; margin: 1.5rem auto; line-height: 1.6;">
                 Treinos, dieta e suplementação milimetricamente calculados por IA. 
