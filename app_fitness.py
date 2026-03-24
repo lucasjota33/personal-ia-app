@@ -579,9 +579,10 @@ elif st.session_state.etapa == 1:
                     # PLANEJAMENTO: {nome.upper()}
                     ## 🧬 1. ANÁLISE METABÓLICA
                     Crie uma tabela em Markdown seguindo EXATAMENTE as colunas abaixo:
-                    Taxa Metabólica Basal (Mifflin-St Jeor)| Gasto Energético Total | Meta Calórica Alvo
+                    | Taxa Metabólica Basal (Mifflin-St Jeor)| Gasto Energético Total | Meta Calórica Alvo |
 
                     ## 🥗 2. PLANO ALIMENTAR
+                    Crie uma tabela em Markdown seguindo EXATAMENTE as colunas abaixo:
                     | Refeição(Almoço, janta, etc) | Alimento Principal | Macronutrientes | Substituição |
                     
                     ## ⚡ 3. PLANILHA DE TREINAMENTO
