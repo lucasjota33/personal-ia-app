@@ -104,22 +104,29 @@ def limpar_none(texto):
         texto = texto.replace(token, "")
     return texto.strip()
 
-# 🟢 CLASSE DO PDF ELITE (Cabeçalhos, Rodapés e Design Premium)
+# 🟢 CLASSE DO PDF ELITE (Cabeçalhos com Logo, Rodapés e Design Premium)
 class PDF_Elite(FPDF):
     def __init__(self, nome_atleta):
         super().__init__()
         self.nome_atleta = nome_atleta
 
     def header(self):
+        # Tenta inserir a logo no canto superior esquerdo do PDF
+        try:
+            self.image("logo.png", 10, 8, 15)
+            self.set_x(30) # Desloca o texto para a direita para não ficar em cima da imagem
+        except:
+            pass
+            
         # Linha no topo de toda página
         self.set_font("Arial", "B", 10)
         self.set_text_color(150, 150, 150)
         self.cell(0, 10, "PROTOCOLO DE ELITE", 0, 0, "L")
         self.cell(0, 10, f"Atleta: {self.nome_atleta}", 0, 1, "R")
-        self.set_draw_color(28, 131, 225)
+        self.set_draw_color(30, 30, 30) # Linha cinza chumbo
         self.set_line_width(0.5)
-        self.line(10, 18, 200, 18)
-        self.ln(5)
+        self.line(10, 20, 200, 20)
+        self.ln(8)
 
     def footer(self):
         # Rodapé com numeração
@@ -137,7 +144,7 @@ def gerar_pdf(texto_md, nome_atleta):
     
     # Capa Principal
     _ = pdf.set_font("Arial", "B", 20)
-    _ = pdf.set_text_color(28, 131, 225) 
+    _ = pdf.set_text_color(30, 30, 30) # Preto Premium 
     _ = pdf.ln(10)
     _ = pdf.multi_cell(0, 10, limpar_para_pdf(f"PLANEJAMENTO ESTRATÉGICO\n{nome_atleta.upper()}"), 0, "C")
     _ = pdf.ln(15)
@@ -193,8 +200,8 @@ def gerar_pdf(texto_md, nome_atleta):
                             y_ini = pdf.get_y()
                             
                             if eh_cabecalho:
-                                _ = pdf.set_fill_color(28, 131, 225)
-                                _ = pdf.set_text_color(255, 255, 255)
+                                _ = pdf.set_fill_color(30, 30, 30) # Fundo do cabeçalho em grafite
+                                _ = pdf.set_text_color(255, 255, 255) # Letra Branca
                             else:
                                 _ = pdf.set_text_color(40, 40, 40)
                                 if zebra:
@@ -244,14 +251,14 @@ def gerar_pdf(texto_md, nome_atleta):
         elif l_strip.startswith('## '):
             _ = pdf.ln(4)
             _ = pdf.set_font("Arial", "B", 14)
-            _ = pdf.set_text_color(28, 131, 225)
+            _ = pdf.set_text_color(30, 30, 30) # Titulo 2 em grafite escuro
             _ = pdf.multi_cell(0, 8, limpar_para_pdf(l_limpa.replace('## ', '')))
         elif l_strip.startswith('# '):
             _ = pdf.ln(6)
             _ = pdf.set_font("Arial", "B", 18)
-            _ = pdf.set_text_color(28, 131, 225)
+            _ = pdf.set_text_color(30, 30, 30) # Titulo 1 em grafite escuro
             _ = pdf.multi_cell(0, 10, limpar_para_pdf(l_limpa.replace('# ', '')))
-            _ = pdf.set_draw_color(28, 131, 225)
+            _ = pdf.set_draw_color(30, 30, 30)
             _ = pdf.line(10, pdf.get_y(), 200, pdf.get_y())
             _ = pdf.ln(2)
         else:
@@ -271,7 +278,7 @@ def gerar_pdf(texto_md, nome_atleta):
     return bytes(resultado)
 
 # Configuração da Página
-st.set_page_config(page_title="Fitness AI", page_icon="⚡", layout="wide")
+st.set_page_config(page_title="Treinador Digital Elite", page_icon="⚡", layout="wide")
 
 # --- CSS CUSTOMIZADO (LAYOUT CHATGPT + SCROLL TABELAS + ZERO VERMELHO COM ANIMAÇÃO) ---
 st.markdown("""
@@ -282,7 +289,7 @@ st.markdown("""
     #MainMenu, footer { display: none !important; }
     [data-testid="collapsedControl"] { display: none !important; }
     
-    .block-container { padding-top: 4rem !important; margin-top: 2rem !important; }
+    .block-container { padding-top: 2rem !important; margin-top: 1rem !important; }
 
     /* 2. LAYOUT DE CHAT (ESTILO CHATGPT - NÃO FLUTUANTE) */
     .stMarkdown p, .stMarkdown li {
@@ -394,13 +401,38 @@ if st.session_state.usuario_logado is None:
                 break
 
 # ==========================================================
-# ETAPA 0: TELA DE LOGIN E CADASTRO
+# ETAPA 0: TELA DE LOGIN, CADASTRO E LANDING PAGE
 # ==========================================================
 if st.session_state.etapa == 0:
+    # --- HERO SECTION (Estilo Plataforma de Alta Conversão) ---
+    st.markdown("""
+        <div style="text-align: center; margin-top: 1rem; margin-bottom: 3rem;">
+            <span style="background-color: rgba(128,128,128,0.1); border: 1px solid rgba(128,128,128,0.2); padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; letter-spacing: 1px;">
+                ⚡ O FUTURO DA ALTA PERFORMANCE
+            </span>
+            <h1 style="font-size: 3.5rem; font-weight: 800; margin-top: 1.5rem; line-height: 1.1; letter-spacing: -1px;">
+                Transforme seu corpo com um <br>
+                <span style="background: -webkit-linear-gradient(45deg, #1A1A1A, #888888); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">protocolo de elite</span>
+            </h1>
+            <p style="font-size: 1.2rem; color: #888; max-width: 600px; margin: 1.5rem auto; line-height: 1.6;">
+                Treinos, dieta e suplementação milimetricamente calculados por IA. 
+                Sem achismos. Sem treinos genéricos. Apenas resultados.
+            </p>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # --- ÁREA DE LOGIN CENTRALIZADA ---
     col1, col2, col3 = st.columns([1, 1.5, 1])
     with col2:
-        st.title("⚡ Treinador Digital")
-        st.markdown("Bem-vindo à plataforma de elite. Faça login ou crie sua conta.")
+        # A Logo centralizada elegantemente acima do formulário
+        c_img1, c_img2, c_img3 = st.columns([1, 1, 1])
+        with c_img2:
+            try:
+                st.image("logo.png", use_container_width=True)
+            except:
+                pass # Não quebra se a logo não for encontrada
+        
+        st.markdown("<br>", unsafe_allow_html=True)
         
         tab1, tab2 = st.tabs(["Entrar", "Criar Conta Nova"])
         
@@ -409,7 +441,7 @@ if st.session_state.etapa == 0:
                 usuario_login = st.text_input("Usuário ou E-mail")
                 senha_login = st.text_input("Senha", type="password")
                 manter_conectado = st.checkbox("Mantenha-me conectado") 
-                btn_login = st.form_submit_button("Entrar", type="primary", use_container_width=True)
+                btn_login = st.form_submit_button("Acessar Plataforma", type="primary", use_container_width=True)
                 
                 if btn_login:
                     banco = st.session_state.banco
