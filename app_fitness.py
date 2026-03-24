@@ -577,7 +577,7 @@ elif st.session_state.etapa == 1:
                     Peso: {peso}kg | Altura: {altura}cm | Nível: {nivel_atividade} | Objetivo: {objetivo}
 
                     # PLANEJAMENTO: {nome.upper()}
-                    
+
                     ## 🧬 1. ANÁLISE METABÓLICA
                     Crie uma tabela em Markdown seguindo EXATAMENTE as colunas abaixo:
                     | Taxa Metabólica Basal (Mifflin-St Jeor)| Gasto Energético Total | Meta Calórica Alvo |
@@ -625,7 +625,7 @@ elif st.session_state.etapa == 1:
         st.divider()
         c_vazia1, c_botao_sair, c_vazia2 = st.columns([3, 4, 3])
         with c_botao_sair:
-            if st.button("Sair da Conta 🚪", use_container_width=True):
+            if st.button("Sair", use_container_width=True):
                 if "token" in st.session_state.banco[usuario]:
                     st.session_state.banco[usuario]["token"] = ""
                     salvar_banco(st.session_state.banco)
