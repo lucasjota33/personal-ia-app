@@ -3,6 +3,7 @@ import requests
 import json
 import hashlib
 import secrets
+import base64
 from fpdf import FPDF 
 
 # Configurações iniciais
@@ -280,7 +281,7 @@ def gerar_pdf(texto_md, nome_atleta):
 # Configuração da Página 
 st.set_page_config(page_title="Treinador Digital Elite", page_icon="logo.png", layout="wide")
 
-# --- CSS CUSTOMIZADO (LAYOUT CHATGPT + SCROLL TABELAS + ZERO VERMELHO COM ANIMAÇÃO) ---
+# --- CSS CUSTOMIZADO ---
 st.markdown("""
     <style>
     /* 1. Reset e Limpeza de Interface */
@@ -291,7 +292,7 @@ st.markdown("""
     
     .block-container { padding-top: 2rem !important; margin-top: 1rem !important; }
 
-    /* 2. LAYOUT DE CHAT (ESTILO CHATGPT - NÃO FLUTUANTE) */
+    /* 2. LAYOUT DE CHAT */
     .stMarkdown p, .stMarkdown li {
         word-wrap: break-word !important;
         overflow-wrap: break-word !important;
@@ -324,11 +325,9 @@ st.markdown("""
             background-color: #FFFFFF !important;
             box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.2) !important;
         }
-        
         button[data-baseweb="tab"] { color: #888 !important; }
         button[aria-selected="true"] { color: #CCCCCC !important; }
         div[data-baseweb="tab-highlight"] { background-color: #CCCCCC !important; }
-        
         div[data-baseweb="input"]:focus-within { border-color: #CCCCCC !important; box-shadow: 0 0 0 1px #CCCCCC !important; }
         input, textarea { caret-color: #CCCCCC !important; }
     }
@@ -345,11 +344,9 @@ st.markdown("""
             width: 100%;
         }
         .stButton > button:hover, .stDownloadButton > button:hover { background-color: #333333 !important; }
-        
         button[data-baseweb="tab"] { color: #888 !important; }
         button[aria-selected="true"] { color: #1A1A1A !important; }
         div[data-baseweb="tab-highlight"] { background-color: #1A1A1A !important; }
-        
         div[data-baseweb="input"]:focus-within { border-color: #1A1A1A !important; box-shadow: 0 0 0 1px #1A1A1A !important; }
         input, textarea { caret-color: #1A1A1A !important; }
     }
@@ -367,22 +364,10 @@ st.markdown("""
 
     .stApp { overflow-x: hidden; }
 
-    /* --- LIMITA O TAMANHO DA LOGO E CENTRALIZA NO MOBILE --- */
+    /* Ajustes específicos para celular */
     @media (max-width: 768px) {
         .block-container { padding-top: 1.5rem !important; padding-left: 1rem !important; padding-right: 1rem !important; }
         .stButton > button { min-height: 50px !important; }
-        
-        /* Centraliza o container da imagem no mobile */
-        [data-testid="stImage"] {
-            display: flex !important;
-            justify-content: center !important;
-            width: 100% !important;
-        }
-
-        /* Limita a largura da imagem */
-        [data-testid="stImage"] img {
-            max-width: 150px !important;
-        }
     }
     </style>
 """, unsafe_allow_html=True)
@@ -433,15 +418,18 @@ if st.session_state.etapa == 0:
     # --- ÁREA DE LOGIN CENTRALIZADA ---
     col1, col2, col3 = st.columns([1, 1.5, 1])
     with col2:
-        # A Logo centralizada elegantemente acima do formulário
-        c_img1, c_img2, c_img3 = st.columns([1, 1, 1])
-        with c_img2:
-            try:
-                st.image("logo.png", use_container_width=True)
-            except:
-                pass # Não quebra se a logo não for encontrada
-        
-        st.markdown("<br>", unsafe_allow_html=True)
+        # 🟢 A Logo centralizada à prova de falhas (HTML Nativo) 🟢
+        try:
+            with open("logo.png", "rb") as img_file:
+                img_b64 = base64.b64encode(img_file.read()).decode()
+            st.markdown(
+                f'<div style="display: flex; justify-content: center; margin-bottom: 20px;">'
+                f'<img src="data:image/png;base64,{img_b64}" width="140">'
+                f'</div>', 
+                unsafe_allow_html=True
+            )
+        except:
+            pass
         
         tab1, tab2 = st.tabs(["Entrar", "Criar Conta Nova"])
         
