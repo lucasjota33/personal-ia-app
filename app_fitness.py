@@ -285,11 +285,20 @@ st.markdown("""
 /* Importando a fonte via CSS nativo */
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined');
 
-/* Reset base da interface (Ocultando itens desnecessários do Streamlit) */
-[data-testid="stToolbar"], [data-testid="stToolbarActions"], .stDeployButton { display: none !important; visibility: hidden !important; }
+/* 1. Ocultar o Header invisível do Streamlit que ocupa espaço no topo */
+header[data-testid="stHeader"] {
+    display: none !important;
+}
+
+/* 2. Ocultar elementos padrão do Streamlit (menu hamburguer, botão deploy) */
+[data-testid="stToolbar"], [data-testid="stToolbarActions"], .stDeployButton { display: none !important; }
 #MainMenu, footer { display: none !important; }
-[data-testid="collapsedControl"] { display: none !important; }
-div[data-testid="stNotification"] { display: none !important; }
+
+/* 3. Ajuste fino do container principal para usar todo o espaço sem cortar botões */
+.block-container {
+    padding-top: 2rem !important; /* Espaço seguro para não cortar elementos superiores */
+    padding-bottom: 2rem !important;
+}
 
 /* 🟢 FORÇANDO O SCROLL HORIZONTAL NAS TABELAS 🟢 */
 .stMarkdown table {
