@@ -11,7 +11,7 @@ import base64
 import re
 import time
 import pandas as pd
-import plotly.express as px  # NOVA BIBLIOTECA PARA O GRÁFICO DE DONUT
+import plotly.express as px  
 from fpdf import FPDF 
 
 # Configurações iniciais
@@ -122,7 +122,6 @@ def gerador_de_texto(texto):
         yield palavra + " "
         time.sleep(0.03)
 
-# 🟢 CACHE ATIVADO: A extração do JSON agora é guardada na memória!
 @st.cache_data(show_spinner=False)
 def extrair_json_da_ia(texto):
     match = re.search(r'```json\n(.*?)\n```', texto, re.DOTALL)
@@ -133,7 +132,6 @@ def extrair_json_da_ia(texto):
             pass
     return None
 
-# 🟢 CACHE ATIVADO: A criação de DataFrames Pandas agora é instantânea após a 1ª vez!
 @st.cache_data(show_spinner=False)
 def extrair_tabelas_do_markdown(texto):
     tabelas = []
@@ -493,21 +491,54 @@ elif st.session_state.etapa == 1:
         """, unsafe_allow_html=True)
         
         if perfis_do_usuario:
-            st.markdown("""<div style='display: flex; align-items: center; gap: 8px; color: #888; margin-bottom: 10px;'><span class='material-symbols-outlined'>group</span><h4 style='margin: 0;'>Planejamentos Salvos</h4></div>""", unsafe_allow_html=True)
+            st.markdown("""<div style='display: flex; align-items: center; gap: 8px; color: #888; margin-bottom: 10px;'><span class='material-symbols-outlined'>group</span><h4 style='margin: 0;'>Atletas Ativos</h4></div>""", unsafe_allow_html=True)
             
-            for nome_salvo in list(perfis_do_usuario.keys()):
-                c_btn, c_del = st.columns([7.5, 2.5])
-                with c_btn:
-                    if st.button(f"Acessar: {nome_salvo.upper()}", key=f"btn_{nome_salvo}", use_container_width=True):
-                        st.session_state.dados_usuario = perfis_do_usuario[nome_salvo]["dados"]
-                        st.session_state.mensagens = perfis_do_usuario[nome_salvo]["mensagens"]
-                        st.session_state.etapa = 2
-                        st.rerun()
-                with c_del:
-                    if st.button("Excluir", key=f"del_{nome_salvo}", use_container_width=True):
-                        del st.session_state.banco[usuario]["perfis"][nome_salvo]
-                        salvar_banco(st.session_state.banco)
-                        st.rerun()
+            # 🟢 NOVO: Criação de Grid (2 colunas) para os Cards
+            colunas_grid = st.columns(2)
+            
+            for i, nome_salvo in enumerate(list(perfis_do_usuario.keys())):
+                # Alterna entre a coluna da esquerda (0) e da direita (1)
+                col_atual = colunas_grid[i % 2] 
+                
+                with col_atual:
+                    with st.container(border=True): # Cria o Card com borda
+                        
+                        # Resgata as infos para mostrar no resumo do Card
+                        dados_salvos = perfis_do_usuario[nome_salvo].get("dados", {})
+                        obj_salvo = dados_salvos.get("objetivo", "Não definido").split("(")[0].strip()
+                        peso_salvo = dados_salvos.get("peso", "-")
+                        
+                        imc_salvo = "-"
+                        if "peso" in dados_salvos and "altura" in dados_salvos:
+                            try:
+                                imc_calc = dados_salvos["peso"] / ((dados_salvos["altura"] / 100) ** 2)
+                                imc_salvo = f"{imc_calc:.1f}"
+                            except:
+                                pass
+
+                        # Título e Informações do Card
+                        st.markdown(f"<h4 style='margin-bottom: 5px; color: #1A1A1A; font-weight: 700;'>👤 {nome_salvo.upper()}</h4>", unsafe_allow_html=True)
+                        st.markdown(f"""
+                        <div style="color: #666; font-size: 0.85rem; margin-bottom: 15px; line-height: 1.5;">
+                            <b>🎯 Objetivo:</b> {obj_salvo}<br>
+                            <b>⚖️ Peso:</b> {peso_salvo}kg &nbsp;|&nbsp; <b>📊 IMC:</b> {imc_salvo}
+                        </div>
+                        """, unsafe_allow_html=True)
+                        
+                        # Botões de Ação dentro do Card
+                        c_btn, c_del = st.columns([4, 1]) 
+                        with c_btn:
+                            if st.button("Abrir Painel", key=f"btn_{nome_salvo}", type="primary", use_container_width=True):
+                                st.session_state.dados_usuario = perfis_do_usuario[nome_salvo]["dados"]
+                                st.session_state.mensagens = perfis_do_usuario[nome_salvo]["mensagens"]
+                                st.session_state.etapa = 2
+                                st.rerun()
+                        with c_del:
+                            # O botão de excluir agora é apenas uma lixeira discreta
+                            if st.button("🗑️", key=f"del_{nome_salvo}", use_container_width=True):
+                                del st.session_state.banco[usuario]["perfis"][nome_salvo]
+                                salvar_banco(st.session_state.banco)
+                                st.rerun()
             
             st.markdown("<br>", unsafe_allow_html=True)
             st.markdown("""<div style='display: flex; align-items: center; gap: 8px; color: #888; margin-bottom: 10px;'><span class='material-symbols-outlined'>add_box</span><h4 style='margin: 0;'>Novo Planejamento</h4></div>""", unsafe_allow_html=True)
