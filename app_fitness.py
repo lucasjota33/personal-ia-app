@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 
 # 🟢 OBRIGATÓRIO: Este comando DEVE ser o primeiro do Streamlit na página!
 st.set_page_config(page_title="Treinador Digital Elite", page_icon="logo.png", layout="wide")
@@ -40,6 +41,7 @@ def conversor_para_firestore(valor):
         return {"stringValue": str(valor)}
 
 def conversor_para_python(valor):
+    if not valor: return None
     if "mapValue" in valor:
         return {k: conversor_para_python(v) for k, v in valor["mapValue"].get("fields", {}).items()}
     elif "arrayValue" in valor:
@@ -58,7 +60,7 @@ def conversor_para_python(valor):
 
 def carregar_banco():
     try:
-        resposta = requests.get(URL_FIRESTORE)
+        resposta = requests.get(URL_FIRESTORE, timeout=15)
         if resposta.status_code == 200:
             dados = resposta.json()
             if "fields" in dados:
@@ -71,7 +73,7 @@ def salvar_banco(dados):
     try:
         campos = {str(k): conversor_para_firestore(v) for k, v in dados.items()}
         payload = {"fields": campos}
-        requests.patch(URL_FIRESTORE, json=payload)
+        requests.patch(URL_FIRESTORE, json=payload, timeout=15)
     except Exception:
         pass
 
@@ -279,103 +281,60 @@ def gerar_pdf(texto_md, nome_atleta):
     return bytes(resultado)
 
 
-# 🟢 CSS CUSTOMIZADO LIMPO E PRECISO
+# 🟢 CSS CUSTOMIZADO
 st.markdown("""
 <style>
-/* MATANDO O QUADRADO FANTASMA: Importando a fonte via CSS nativo (@import) ao invés de usar a tag <link> */
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined');
-
-/* Reset base da interface */
 [data-testid="stToolbar"], [data-testid="stToolbarActions"], .stDeployButton { display: none !important; visibility: hidden !important; }
 header { background-color: transparent !important; box-shadow: none !important; }
 #MainMenu, footer { display: none !important; }
 [data-testid="collapsedControl"] { display: none !important; }
 .block-container { padding-top: 2rem !important; margin-top: 1rem !important; }
 div[data-testid="stNotification"] { display: none !important; }
-
-/* 🟢 FORÇANDO O SCROLL HORIZONTAL NAS TABELAS 🟢 */
 .stMarkdown table {
-    display: block !important; 
-    overflow-x: auto !important;
-    white-space: nowrap !important; 
-    max-width: 100% !important; 
-    width: 100% !important;
-    border-radius: 8px; 
-    margin-bottom: 20px;
+    display: block !important; overflow-x: auto !important; white-space: nowrap !important; 
+    max-width: 100% !important; width: 100% !important; border-radius: 8px; margin-bottom: 20px;
     -webkit-overflow-scrolling: touch;
 }
-div[data-testid="stMarkdownContainer"] {
-    overflow-x: auto !important;
-}
-
-/* Botões Premium */
+div[data-testid="stMarkdownContainer"] { overflow-x: auto !important; }
 .stButton > button, div[data-testid="stFormSubmitButton"] > button, .stDownloadButton > button {
-    border-radius: 8px !important;
-    transition: all 0.3s ease;
-    min-height: 45px;
+    border-radius: 8px !important; transition: all 0.3s ease; min-height: 45px;
 }
-
-/* Ajustes Responsivos */
 .stApp { overflow-x: hidden; }
 @media (max-width: 768px) {
     .block-container { padding-top: 1.5rem !important; padding-left: 1rem !important; padding-right: 1rem !important; }
     .stButton > button { min-height: 50px !important; }
 }
-
-/* Substituindo a cor de seleção */
 ::selection { background: rgba(128,128,128,0.3) !important; color: inherit !important; }
-
-/* 🟢 Ajuste geral para o texto das abas não sumir 🟢 */
-button[data-baseweb="tab"] p, button[data-baseweb="tab"] span { 
-    color: #888888 !important; 
-    transition: color 0.2s ease;
-}
+button[data-baseweb="tab"] p, button[data-baseweb="tab"] span { color: #888888 !important; transition: color 0.2s ease; }
 div[data-baseweb="tab-highlight"] { background-color: #555555 !important; }
-
 @media (prefers-color-scheme: dark) {
-    div[data-baseweb="input"]:focus-within, div[data-baseweb="select"]:focus-within {
-        border-color: #CCCCCC !important; box-shadow: 0 0 0 1px #CCCCCC !important;
-    }
-    /* Texto Selecionado Dark Mode */
-    button[data-baseweb="tab"][aria-selected="true"] p, 
-    button[data-baseweb="tab"][aria-selected="true"] span { 
-        color: #FFFFFF !important; 
-        font-weight: 600 !important;
-    }
+    div[data-baseweb="input"]:focus-within, div[data-baseweb="select"]:focus-within { border-color: #CCCCCC !important; box-shadow: 0 0 0 1px #CCCCCC !important; }
+    button[data-baseweb="tab"][aria-selected="true"] p, button[data-baseweb="tab"][aria-selected="true"] span { color: #FFFFFF !important; font-weight: 600 !important; }
 }
-
 @media (prefers-color-scheme: light) {
-    div[data-baseweb="input"]:focus-within, div[data-baseweb="select"]:focus-within {
-        border-color: #1A1A1A !important; box-shadow: 0 0 0 1px #1A1A1A !important;
-    }
-    
-    /* 🟢 FIX DE TEXTO BRANCO AO CLICAR (MODO CLARO) 🟢 */
-    /* Forçamos a cor escura durante hover, foco, e clique (active) para os filhos do botão */
+    div[data-baseweb="input"]:focus-within, div[data-baseweb="select"]:focus-within { border-color: #1A1A1A !important; box-shadow: 0 0 0 1px #1A1A1A !important; }
     button[data-baseweb="tab"]:hover p, button[data-baseweb="tab"]:hover span,
     button[data-baseweb="tab"]:focus p, button[data-baseweb="tab"]:focus span,
     button[data-baseweb="tab"]:active p, button[data-baseweb="tab"]:active span,
-    /* E para o estado já selecionado */
-    button[data-baseweb="tab"][aria-selected="true"] p, 
-    button[data-baseweb="tab"][aria-selected="true"] span { 
-        color: #1A1A1A !important; 
-        font-weight: 600 !important;
-    }
+    button[data-baseweb="tab"][aria-selected="true"] p, button[data-baseweb="tab"][aria-selected="true"] span { color: #1A1A1A !important; font-weight: 600 !important; }
 }
 </style>
 """, unsafe_allow_html=True)
 
 
-# --- GERENCIADOR DE ESTADO (MEMÓRIA DO APP) ---
-if "etapa" not in st.session_state:
-    st.session_state.etapa = 0 
-if "mensagens" not in st.session_state:
-    st.session_state.mensagens = []
-if "dados_usuario" not in st.session_state:
-    st.session_state.dados_usuario = {}
-if "banco" not in st.session_state:
-    st.session_state.banco = carregar_banco() 
-if "usuario_logado" not in st.session_state:
-    st.session_state.usuario_logado = None
+# --- GERENCIADOR DE ESTADO ---
+if "etapa" not in st.session_state: st.session_state.etapa = 0 
+if "mensagens" not in st.session_state: st.session_state.mensagens = []
+if "dados_usuario" not in st.session_state: st.session_state.dados_usuario = {}
+if "banco" not in st.session_state: st.session_state.banco = carregar_banco() 
+if "usuario_logado" not in st.session_state: st.session_state.usuario_logado = None
+if "scroll_top" not in st.session_state: st.session_state.scroll_top = False
+
+# 🟢 MOTOR DE SCROLL
+if st.session_state.scroll_top:
+    components.html("<script>var body = window.parent.document.querySelector('.main'); if (body) { body.scrollTo(0, 0); } window.parent.scrollTo(0, 0);</script>", height=0)
+    st.session_state.scroll_top = False
 
 # 🟢 AUTO-LOGIN
 if st.session_state.usuario_logado is None:
@@ -388,7 +347,7 @@ if st.session_state.usuario_logado is None:
                 break
 
 # ==========================================================
-# ETAPA 0: TELA DE LOGIN, CADASTRO E LANDING PAGE
+# ETAPA 0: LOGIN / CADASTRO
 # ==========================================================
 if st.session_state.etapa == 0:
     st.markdown("""
@@ -396,348 +355,145 @@ if st.session_state.etapa == 0:
             <span style="display: inline-flex; align-items: center; gap: 6px; background-color: rgba(128,128,128,0.1); border: 1px solid rgba(128,128,128,0.2); padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; letter-spacing: 1px;">
                 <span class="material-symbols-outlined" style="font-size: 16px;">bolt</span> O FUTURO DO TREINAMENTO ESPORTIVO
             </span>
-            <h1 style="font-size: 3.5rem; font-weight: 800; margin-top: 1.5rem; line-height: 1.1; letter-spacing: -1px;">
-                Transforme seu corpo com<br>
-                <span style="background: -webkit-linear-gradient(45deg, #1A1A1A, #888888); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">apenas um prompt</span>
-            </h1>
-            <p style="font-size: 1.2rem; color: #888; max-width: 600px; margin: 1.5rem auto; line-height: 1.6;">
-                Treinos, dieta e suplementação milimetricamente calculados por IA. 
-                Sem achismos. Sem treinos genéricos. Apenas resultados.
-            </p>
+            <h1 style="font-size: 3.5rem; font-weight: 800; margin-top: 1.5rem; line-height: 1.1; letter-spacing: -1px;">Transforme seu corpo com<br><span style="background: -webkit-linear-gradient(45deg, #1A1A1A, #888888); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">apenas um prompt</span></h1>
+            <p style="font-size: 1.2rem; color: #888; max-width: 600px; margin: 1.5rem auto; line-height: 1.6;">Treinos, dieta e suplementação milimetricamente calculados por IA. Apenas resultados.</p>
         </div>
     """, unsafe_allow_html=True)
-
     col1, col2, col3 = st.columns([1, 1.5, 1])
     with col2:
         try:
-            with open("logo.png", "rb") as img_file:
-                img_b64 = base64.b64encode(img_file.read()).decode()
-            st.markdown(
-                f'<div style="display: flex; justify-content: center; margin-bottom: 20px;">'
-                f'<img src="data:image/png;base64,{img_b64}" width="140">'
-                f'</div>', 
-                unsafe_allow_html=True
-            )
-        except:
-            pass
-        
+            with open("logo.png", "rb") as f: img_b64 = base64.b64encode(f.read()).decode()
+            st.markdown(f'<div style="display: flex; justify-content: center; margin-bottom: 20px;"><img src="data:image/png;base64,{img_b64}" width="140"></div>', unsafe_allow_html=True)
+        except: pass
         tab1, tab2 = st.tabs(["Entrar", "Criar Conta Nova"])
-        
         with tab1:
             with st.form("form_login"):
-                usuario_login = st.text_input("Usuário ou E-mail")
-                senha_login = st.text_input("Senha", type="password")
-                manter_conectado = st.checkbox("Mantenha-me conectado") 
-                btn_login = st.form_submit_button("Acessar Plataforma", type="primary", use_container_width=True)
-                
-                if btn_login:
-                    banco = st.session_state.banco
-                    senha_hash = criptografar_senha(senha_login)
-                    usuario_encontrado = None
-                    
-                    if usuario_login in banco and banco[usuario_login]["senha"] == senha_hash:
-                        usuario_encontrado = usuario_login
+                u_login = st.text_input("Usuário ou E-mail")
+                s_login = st.text_input("Senha", type="password")
+                manter = st.checkbox("Mantenha-me conectado") 
+                if st.form_submit_button("Acessar Plataforma", type="primary", use_container_width=True):
+                    senha_hash = criptografar_senha(s_login)
+                    u_encontrado = None
+                    if u_login in st.session_state.banco and st.session_state.banco[u_login].get("senha") == senha_hash: u_encontrado = u_login
                     else:
-                        for user_key, user_data in banco.items():
-                            if user_data.get("email") == usuario_login and user_data.get("senha") == senha_hash:
-                                usuario_encontrado = user_key
+                        for k, v in st.session_state.banco.items():
+                            if v.get("email") == u_login and v.get("senha") == senha_hash:
+                                u_encontrado = k
                                 break
-                    
-                    if usuario_encontrado:
-                        st.session_state.usuario_logado = usuario_encontrado
+                    if u_encontrado:
+                        st.session_state.usuario_logado = u_encontrado
                         st.session_state.etapa = 1
-                        
-                        if manter_conectado:
-                            novo_token = gerar_token_sessao()
-                            st.session_state.banco[usuario_encontrado]["token"] = novo_token
+                        st.session_state.scroll_top = True
+                        if manter:
+                            token = gerar_token_sessao()
+                            st.session_state.banco[u_encontrado]["token"] = token
                             salvar_banco(st.session_state.banco)
-                            st.query_params["session"] = novo_token
-                            
+                            st.query_params["session"] = token
                         st.rerun()
-                    else:
-                        exibir_mensagem("Credenciais incorretas. Verifique seu usuário/e-mail e senha.", "error")
-                        
+                    else: exibir_mensagem("Credenciais incorretas.", "error")
         with tab2:
             with st.form("form_cadastro"):
-                novo_usuario = st.text_input("Escolha um Nome de Usuário")
-                novo_email = st.text_input("Digite seu E-mail")
-                nova_senha = st.text_input("Crie uma Senha", type="password")
-                confirma_senha = st.text_input("Confirme a Senha", type="password")
-                btn_cadastro = st.form_submit_button("Criar Conta", type="primary", use_container_width=True)
-                
-                if btn_cadastro:
-                    email_em_uso = any(dados.get("email") == novo_email for dados in st.session_state.banco.values())
-                    
-                    if not novo_usuario or not novo_email or not nova_senha or not confirma_senha:
-                        exibir_mensagem("Preencha todos os campos!", "warning")
-                    elif nova_senha != confirma_senha:
-                        exibir_mensagem("As senhas não coincidem. Tente novamente.", "warning")
-                    elif novo_usuario in st.session_state.banco:
-                        exibir_mensagem("Este nome de usuário já está em uso! Escolha outro.", "warning")
-                    elif email_em_uso:
-                        exibir_mensagem("Este e-mail já está cadastrado no sistema!", "warning")
+                novo_u = st.text_input("Usuário")
+                novo_e = st.text_input("E-mail")
+                nova_s = st.text_input("Senha", type="password")
+                conf_s = st.text_input("Confirme a Senha", type="password")
+                if st.form_submit_button("Criar Conta", type="primary", use_container_width=True):
+                    if not novo_u or not novo_e or not nova_s: exibir_mensagem("Preencha tudo!", "warning")
+                    elif nova_s != conf_s: exibir_mensagem("Senhas não coincidem.", "warning")
+                    elif novo_u in st.session_state.banco: exibir_mensagem("Usuário já existe.", "warning")
                     else:
-                        st.session_state.banco[novo_usuario] = {
-                            "email": novo_email,
-                            "senha": criptografar_senha(nova_senha),
-                            "token": "", 
-                            "perfis": {}
-                        }
+                        st.session_state.banco[novo_u] = {"email": novo_e, "senha": criptografar_senha(nova_s), "token": "", "perfis": {}}
                         salvar_banco(st.session_state.banco)
-                        exibir_mensagem("Conta criada com sucesso! Vá para a aba 'Entrar' para acessar.", "success")
+                        exibir_mensagem("Conta criada! Acesse na aba Entrar.", "success")
 
 # ==========================================================
-# ETAPA 1: PAINEL DO USUÁRIO (PERFIS + NOVO)
+# ETAPA 1: PAINEL (VERIFICAÇÃO DE CHAVES)
 # ==========================================================
 elif st.session_state.etapa == 1:
-    
     usuario = st.session_state.usuario_logado
-    perfis_do_usuario = st.session_state.banco[usuario]["perfis"]
     
-    col_esquerda, col_centro, col_direita = st.columns([1, 1.5, 1])
-    
-    with col_centro:
-        st.markdown(f"""
-            <div style="text-align: center; margin-top: 1rem; margin-bottom: 2rem;">
-                <p style="color: #888; font-size: 0.9rem; font-weight: 600; letter-spacing: 1px; margin-bottom: 0;">PAINEL DE CONTROLE</p>
-                <h1 style="font-size: 2.2rem; font-weight: 800; margin-top: 0;">Bem-vindo, {usuario}!</h1>
-            </div>
-        """, unsafe_allow_html=True)
+    # 🟢 VACINA DEFINITIVA: Se o usuário logado por algum motivo for None no banco, ou não tiver a chave perfis
+    if not st.session_state.banco.get(usuario): 
+        st.session_state.banco = carregar_banco()
         
-        if perfis_do_usuario:
-            st.markdown("""
-                <div style='display: flex; align-items: center; gap: 8px; color: #888; margin-bottom: 10px;'>
-                    <span class='material-symbols-outlined'>group</span> 
-                    <h4 style='margin: 0;'>Atletas Salvos</h4>
-                </div>
-            """, unsafe_allow_html=True)
-            
-            for nome_salvo in list(perfis_do_usuario.keys()):
-                c_btn, c_del = st.columns([7.5, 2.5])
-                with c_btn:
-                    if st.button(f"Acessar: {nome_salvo.upper()}", key=f"btn_{nome_salvo}", use_container_width=True):
-                        st.session_state.dados_usuario = perfis_do_usuario[nome_salvo]["dados"]
-                        st.session_state.mensagens = perfis_do_usuario[nome_salvo]["mensagens"]
-                        st.session_state.etapa = 2
-                        st.rerun()
-                with c_del:
-                    if st.button("Excluir", key=f"del_{nome_salvo}", use_container_width=True):
-                        del st.session_state.banco[usuario]["perfis"][nome_salvo]
-                        salvar_banco(st.session_state.banco)
-                        st.rerun()
-            
-            st.markdown("<br>", unsafe_allow_html=True)
-            st.markdown("""
-                <div style='display: flex; align-items: center; gap: 8px; color: #888; margin-bottom: 10px;'>
-                    <span class='material-symbols-outlined'>add_box</span> 
-                    <h4 style='margin: 0;'>Novo Protocolo</h4>
-                </div>
-            """, unsafe_allow_html=True)
+    if "perfis" not in st.session_state.banco.get(usuario, {}):
+        if usuario in st.session_state.banco:
+            st.session_state.banco[usuario]["perfis"] = {}
+            salvar_banco(st.session_state.banco)
         else:
-            exibir_mensagem("Nenhum atleta cadastrado ainda. Preencha os dados abaixo para gerar seu primeiro protocolo de elite.", "info")
-        
-        with st.form("perfil_usuario"):
-            nome = st.text_input("Nome Completo do Atleta", placeholder="Ex: Lucas Barbosa")
-            
-            c_peso, c_altura = st.columns(2)
-            with c_peso: peso = st.number_input("Peso (kg)", min_value=30.0, max_value=250.0, value=75.0, step=0.1)
-            with c_altura: altura = st.number_input("Altura (cm)", min_value=100, max_value=230, value=175, step=1)
-                
-            objetivo = st.selectbox("Objetivo Principal", [
-                "Ganhar Massa Muscular (Hipertrofia)", 
-                "Perder Peso (Déficit Calórico)", 
-                "Melhorar Performance (Força/Resistência)", 
-                "Definição Corporal", 
-                "Manutenção da Saúde"
-            ])
-            
-            nivel_atividade = st.selectbox("Nível de Atividade Diária", [
-                "Sedentário (Trabalho de escritório, sem exercícios)", 
-                "Levemente Ativo (1 a 3 dias de exercício/semana)", 
-                "Moderadamente Ativo (3 a 5 dias de exercício/semana)", 
-                "Muito Ativo (6 a 7 dias de exercício intenso/semana)", 
-                "Extremamente Ativo (Atleta profissional, treinos duplos)"
-            ])
-
-            st.markdown("<br>", unsafe_allow_html=True)
-            submit_button = st.form_submit_button(label="GERAR PROTOCOLO ELITE", type="primary", use_container_width=True)
-
-        if submit_button:
-            if not nome:
-                exibir_mensagem("Identificação necessária.", "warning")
-            elif nome in perfis_do_usuario:
-                exibir_mensagem(f"O atleta '{nome}' já existe! Exclua-o ou escolha outro nome.", "warning")
-            else:
-                st.session_state.dados_usuario = {"nome": nome, "peso": peso, "altura": altura, "objetivo": objetivo, "nivel": nivel_atividade}
-                
-                with st.spinner("Processando dados e estruturando planejamento..."):
-                    prompt_mestre = f"""
-                    Atue como um Nutricionista Esportivo Clínico e Personal Trainer de Atletas de Elite. 
-                    Crie um planejamento irretocável para o(a) {nome}.
-                    Peso: {peso}kg | Altura: {altura}cm | Nível: {nivel_atividade} | Objetivo: {objetivo}
-
-                    # PROTOCOLO DE ELITE: {nome.upper()}
-                    ## 1. ANÁLISE METABÓLICA
-                    Crie uma tabela em Markdown seguindo EXATAMENTE as colunas abaixo:
-                    Taxa Metabólica Basal (Mifflin-St Jeor)| Gasto Energético Total | Meta Calórica Alvo
-
-                    ## 2. PLANO ALIMENTAR
-                    | Refeição(Almoço, janta, etc) | Alimento Principal | Macronutrientes | Substituição |
-                    
-                    ## 3. PLANILHA DE TREINAMENTO
-                    Defina uma divisão semanal inteligente (ex:ABCDE, ABC, AB, Fullbody) com base no objetivo.
-                    Para CADA DIA de treino, crie uma tabela em Markdown seguindo EXATAMENTE as colunas abaixo:
-
-                    | Exercício | Séries | Repetições | Descanso |
-
-                    ## 4. SUPLEMENTAÇÃO
-                    | Suplemento | Dosagem Diária | Horário |
-                    """
-
-                    url = f"https://generativelanguage.googleapis.com/v1beta/{MODELO}:generateContent?key={CHAVE}"
-                    payload = {"contents": [{"parts": [{"text": prompt_mestre}]}]}
-                    
-                    try:
-                        resposta = requests.post(url, json=payload, timeout=20)
-                        if resposta.status_code == 200:
-                            resposta_data = resposta.json()
-                            texto_ia = resposta_data.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', '')
-                            texto_ia = limpar_none(texto_ia)
-                            st.session_state.mensagens = [{"role": "assistant", "content": texto_ia}]
-                            
-                            st.session_state.banco[usuario]["perfis"][nome] = {
-                                "dados": st.session_state.dados_usuario,
-                                "mensagens": st.session_state.mensagens
-                            }
-                            salvar_banco(st.session_state.banco)
-                            
-                            st.session_state.etapa = 2
-                            st.rerun()
-                        else:
-                            exibir_mensagem("Erro no Servidor. Tente novamente.", "error")
-                    except Exception as e:
-                        exibir_mensagem("Erro de conexão.", "error")
-
-        st.markdown("<br><br>", unsafe_allow_html=True)
-        st.divider()
-        c_vazia1, c_botao_sair, c_vazia2 = st.columns([3, 4, 3])
-        with c_botao_sair:
-            if st.button("Sair da Conta 🚪", use_container_width=True):
-                if "token" in st.session_state.banco[usuario]:
-                    st.session_state.banco[usuario]["token"] = ""
-                    salvar_banco(st.session_state.banco)
-                st.query_params.clear()
-                st.session_state.usuario_logado = None
-                st.session_state.etapa = 0
-                st.rerun()
-
-# ==========================================================
-# ETAPA 2: PÁGINA DO PLANO GERADO E CHAT DA IA
-# ==========================================================
-elif st.session_state.etapa == 2:
-    
-    usuario = st.session_state.usuario_logado
-    dados = st.session_state.dados_usuario
-    nome = dados["nome"]
-    peso = dados["peso"]
-    altura = dados["altura"]
-    objetivo_curto = dados["objetivo"].split("(")[0].strip()
-    imc = peso / ((altura / 100) ** 2)
-
-    col_voltar, col_vazia = st.columns([4, 6])
-    with col_voltar:
-        if st.button("Voltar ao Painel"):
-            st.session_state.etapa = 1
-            st.session_state.mensagens = []
+            st.session_state.etapa = 0
             st.rerun()
 
-    exibir_mensagem(f"<strong>Análise concluída, {nome}!</strong> Confira seu protocolo abaixo.", "success")
+    perfis = st.session_state.banco[usuario]["perfis"]
     
-    c1, c2 = st.columns(2)
-    c1.metric("Atleta", nome)
-    c2.metric("Objetivo", objetivo_curto)
-    
-    c3, c4 = st.columns(2)
-    c3.metric("Peso Atual", f"{peso} kg")
-    c4.metric("IMC Inicial", f"{imc:.1f}")
-    
-    st.divider()
-    
-    for msg in st.session_state.mensagens:
-        conteudo = limpar_none(msg.get("content"))
-        role = msg.get("role")
+    col_l, col_c, col_r = st.columns([1, 1.5, 1])
+    with col_c:
+        st.markdown(f"<div style='text-align: center; margin-bottom: 2rem;'><p style='color: #888; font-size: 0.9rem; font-weight: 600;'>PAINEL DE CONTROLE</p><h1 style='font-size: 2.2rem; margin-top: 0;'>Bem-vindo, {usuario}!</h1></div>", unsafe_allow_html=True)
+        if perfis:
+            st.markdown("<div style='display: flex; align-items: center; gap: 8px; color: #888; margin-bottom: 10px;'><span class='material-symbols-outlined'>group</span><h4>Atletas Salvos</h4></div>", unsafe_allow_html=True)
+            for n_salvo in list(perfis.keys()):
+                c_b, c_d = st.columns([7.5, 2.5])
+                with c_b:
+                    if st.button(f"Acessar: {n_salvo.upper()}", key=f"b_{n_salvo}", use_container_width=True):
+                        st.session_state.dados_usuario = perfis[n_salvo]["dados"]
+                        st.session_state.mensagens = perfis[n_salvo]["mensagens"]
+                        st.session_state.etapa = 2
+                        st.session_state.scroll_top = True
+                        st.rerun()
+                with c_d:
+                    if st.button("Excluir", key=f"d_{n_salvo}", use_container_width=True):
+                        del st.session_state.banco[usuario]["perfis"][n_salvo]
+                        salvar_banco(st.session_state.banco)
+                        st.rerun()
+            st.markdown("<br>", unsafe_allow_html=True)
         
-        if role == "user":
-            st.markdown(f"""
-                <div style='display: flex; justify-content: flex-end; margin-bottom: 25px;'>
-                    <div style='background-color: #f4f4f4; color: #0d0d0d; padding: 12px 18px; border-radius: 18px 18px 0px 18px; max-width: 85%; font-family: sans-serif; box-shadow: 1px 1px 3px rgba(0,0,0,0.05);'>
-                        {conteudo}
-                    </div>
-                </div>
-            """, unsafe_allow_html=True)
-        else:
-            st.markdown(f"<div style='margin-bottom: 25px;'>", unsafe_allow_html=True)
-            st.markdown(conteudo)
-            st.markdown("</div>", unsafe_allow_html=True)
-    
-    st.divider()
-    plano_principal = limpar_none(st.session_state.mensagens[0].get("content")) if st.session_state.mensagens else ""
-    
-    pdf_final = gerar_pdf(plano_principal, nome)
-    
-    st.download_button(
-        label="Baixar Protocolo Completo em PDF",
-        data=pdf_final,
-        file_name=f"Protocolo_{nome.replace(' ', '_')}.pdf",
-        mime="application/pdf",
-        type="primary",
-        use_container_width=True
-    )
-            
-    st.divider()
-    
-    st.markdown("""
-        <div style='display: flex; align-items: center; gap: 8px; margin-bottom: 15px;'>
-            <span class='material-symbols-outlined'>forum</span> 
-            <h3 style='margin: 0;'>Central de Dúvidas</h3>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    if prompt_duvida := st.chat_input("Pergunte sobre exercícios ou substituições de alimentos..."):
-        
-        st.session_state.mensagens.append({"role": "user", "content": prompt_duvida})
-        
-        st.markdown(f"""
-            <div style='display: flex; justify-content: flex-end; margin-bottom: 25px;'>
-                <div style='background-color: #f4f4f4; color: #0d0d0d; padding: 12px 18px; border-radius: 18px 18px 0px 18px; max-width: 85%; font-family: sans-serif; box-shadow: 1px 1px 3px rgba(0,0,0,0.05);'>
-                    {prompt_duvida}
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
-            
-        with st.spinner("Analisando protocolo..."):
-            plano_contexto = st.session_state.mensagens[0]["content"]
-            prompt_duvida_completo = f"Plano:\n{plano_contexto}\n\nDúvida: {prompt_duvida}"
-            
-            url = f"https://generativelanguage.googleapis.com/v1beta/{MODELO}:generateContent?key={CHAVE}"
-            payload = {"contents": [{"parts": [{"text": prompt_duvida_completo}]}]}
-            
-            try:
-                resposta = requests.post(url, json=payload, timeout=20)
-                if resposta.status_code == 200:
-                    resposta_data = resposta.json()
-                    texto_ia_duvida = resposta_data.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', '')
-                    texto_ia_duvida = limpar_none(texto_ia_duvida)
-                    
-                    st.markdown(f"<div style='margin-bottom: 25px;'>", unsafe_allow_html=True)
-                    st.markdown(texto_ia_duvida)
-                    st.markdown("</div>", unsafe_allow_html=True)
-                    
-                    st.session_state.mensagens.append({"role": "assistant", "content": texto_ia_duvida})
-                    
-                    st.session_state.banco[usuario]["perfis"][nome]["mensagens"] = st.session_state.mensagens
-                    salvar_banco(st.session_state.banco)
+        st.markdown("<div style='display: flex; align-items: center; gap: 8px; color: #888; margin-bottom: 10px;'><span class='material-symbols-outlined'>add_box</span><h4>Novo Protocolo</h4></div>", unsafe_allow_html=True)
+        with st.form("perfil_usuario"):
+            nome = st.text_input("Nome do Atleta", placeholder="Ex: Lucas Barbosa")
+            cp, ca = st.columns(2)
+            peso = cp.number_input("Peso (kg)", 30.0, 250.0, 75.0)
+            altura = ca.number_input("Altura (cm)", 100, 230, 175)
+            objetivo = st.selectbox("Objetivo", ["Ganhar Massa Muscular (Hipertrofia)", "Perder Peso (Déficit Calórico)", "Melhorar Performance (Força/Resistência)", "Definição Corporal", "Manutenção da Saúde"])
+            nivel = st.selectbox("Nível de Atividade", ["Sedentário", "Levemente Ativo", "Moderadamente Ativo", "Muito Ativo", "Extremamente Ativo"])
+            if st.form_submit_button("GERAR PROTOCOLO ELITE", type="primary", use_container_width=True):
+                if not nome: exibir_mensagem("Nome necessário.", "warning")
                 else:
-                    exibir_mensagem("Servidor ocupado. Tente perguntar em alguns instantes.", "warning")
-            except:
-                exibir_mensagem("Erro ao conectar.", "error")
+                    st.session_state.dados_usuario = {"nome": nome, "peso": peso, "altura": altura, "objetivo": objetivo, "nivel": nivel}
+                    with st.spinner("Gerando..."):
+                        p_mestre = f"Atue como Nutricionista e Personal de Elite. Crie plano para {nome} ({peso}kg, {altura}cm, {nivel}, {objetivo}). # PROTOCOLO: {nome.upper()} ## 1. ANÁLISE METABÓLICA | TMB | GET | Meta | ## 2. PLANO ALIMENTAR | Refeição | Alimento | Macros | Subs | ## 3. TREINO | Exercício | Séries | Reps | Descanso | ## 4. SUPLEMENTAÇÃO | Suplemento | Dose | Hora |"
+                        try:
+                            res = requests.post(f"https://generativelanguage.googleapis.com/v1beta/{MODELO}:generateContent?key={CHAVE}", json={"contents": [{"parts": [{"text": p_mestre}]}]}, timeout=40)
+                            if res.status_code == 200:
+                                txt = res.json()['candidates'][0]['content']['parts'][0]['text']
+                                st.session_state.mensagens = [{"role": "assistant", "content": limpar_none(txt)}]
+                                # 🟢 GARANTIA DE ESTRUTURA NA GRAVAÇÃO
+                                if "perfis" not in st.session_state.banco[usuario]: st.session_state.banco[usuario]["perfis"] = {}
+                                st.session_state.banco[usuario]["perfis"][nome] = {"dados": st.session_state.dados_usuario, "mensagens": st.session_state.mensagens}
+                                salvar_banco(st.session_state.banco)
+                                st.session_state.etapa = 2
+                                st.session_state.scroll_top = True
+                                st.rerun()
+                        except: exibir_mensagem("Erro de conexão.", "error")
+        st.markdown("<br><br>", unsafe_allow_html=True); st.divider()
+        if st.button("Sair da Conta 🚪", use_container_width=True):
+            st.session_state.banco[usuario]["token"] = ""; salvar_banco(st.session_state.banco); st.query_params.clear(); st.session_state.usuario_logado = None; st.session_state.etapa = 0; st.session_state.scroll_top = True; st.rerun()
+
+# ==========================================================
+# ETAPA 2: PROTOCOLO E CHAT
+# ==========================================================
+elif st.session_state.etapa == 2:
+    dados = st.session_state.dados_usuario
+    nome, usuario = dados["nome"], st.session_state.usuario_logado
+    if st.button("Voltar ao Painel"): st.session_state.etapa = 1; st.session_state.mensagens = []; st.session_state.scroll_top = True; st.rerun()
+    exibir_mensagem(f"Protocolo de {nome} pronto!", "success")
+    c1, c2 = st.columns(2); c1.metric("Atleta", nome); c2.metric("Objetivo", dados["objetivo"].split("(")[0])
+    st.divider()
+    for m in st.session_state.mensagens:
+        if m["role"] == "user": st.markdown(f"<div style='display: flex; justify-content: flex-end; margin-bottom: 25px;'><div style='background-color: #f4f4f4; color: #0d0d0d; padding: 12px 18px; border-radius: 18px 18px 0px 18px; max-width: 85%;'>{m['content']}</div></div>", unsafe_allow_html=True)
+        else: st.markdown(f"<div style='margin-bottom: 25px;'>{m['content']}</div>", unsafe_allow_html=True)
+    st.divider()
+    st.download_button("Baixar PDF", gerar_pdf(st.session_state.mensagens[0]["content"], nome), f"Protocolo_{nome}.pdf", "application/pdf", type="primary", use_container_width=True)
+    st.markdown("<br><h3>Central de Dúvidas</h3>", unsafe_allow_html=True)
+    if p_duvida := st.chat_input("Dúvida..."):
+        st.session_state.mensagens.append({"role": "user", "content": p_duvida})
+        st.rerun() # Rerun para mostrar a pergunta e processar a resposta
