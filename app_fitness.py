@@ -577,20 +577,20 @@ elif st.session_state.etapa == 1:
                     Peso: {peso}kg | Altura: {altura}cm | Nível: {nivel_atividade} | Objetivo: {objetivo}
 
                     # PROTOCOLO DE ELITE: {nome.upper()}
-                    ## 1. ANÁLISE METABÓLICA
+                    ## 🧬 1. ANÁLISE METABÓLICA
                     Crie uma tabela em Markdown seguindo EXATAMENTE as colunas abaixo:
                     Taxa Metabólica Basal (Mifflin-St Jeor)| Gasto Energético Total | Meta Calórica Alvo
 
-                    ## 2. PLANO ALIMENTAR
+                    ## 🥗 2. PLANO ALIMENTAR
                     | Refeição(Almoço, janta, etc) | Alimento Principal | Macronutrientes | Substituição |
                     
-                    ## 3. PLANILHA DE TREINAMENTO
+                    ## ⚡ 3. PLANILHA DE TREINAMENTO
                     Defina uma divisão semanal inteligente (ex:ABCDE, ABC, AB, Fullbody) com base no objetivo.
                     Para CADA DIA de treino, crie uma tabela em Markdown seguindo EXATAMENTE as colunas abaixo:
 
                     | Exercício | Séries | Repetições | Descanso |
 
-                    ## 4. SUPLEMENTAÇÃO
+                    ## 💊 4. SUPLEMENTAÇÃO
                     | Suplemento | Dosagem Diária | Horário |
                     """
 
