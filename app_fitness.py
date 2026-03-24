@@ -371,18 +371,9 @@ st.markdown("""
 
     .stApp { overflow-x: hidden; }
 
-    /* --- NOVO: LIMITA O TAMANHO DA LOGO NO MOBILE --- */
     @media (max-width: 768px) {
         .block-container { padding-top: 1.5rem !important; padding-left: 1rem !important; padding-right: 1rem !important; }
         .stButton > button { min-height: 50px !important; }
-        
-        /* Força a imagem a não passar de 150px de largura e a se manter centralizada */
-        [data-testid="stImage"] img {
-            max-width: 150px !important;
-            margin-left: auto !important;
-            margin-right: auto !important;
-            display: block !important;
-        }
     }
     </style>
 """, unsafe_allow_html=True)
@@ -413,6 +404,24 @@ if st.session_state.usuario_logado is None:
 # ETAPA 0: TELA DE LOGIN, CADASTRO E LANDING PAGE
 # ==========================================================
 if st.session_state.etapa == 0:
+    # --- HERO SECTION (Estilo Plataforma de Alta Conversão) ---
+    st.markdown("""
+        <div style="text-align: center; margin-top: 1rem; margin-bottom: 3rem;">
+            <span style="background-color: rgba(128,128,128,0.1); border: 1px solid rgba(128,128,128,0.2); padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; letter-spacing: 1px;">
+                ⚡ O FUTURO DA ALTA PERFORMANCE
+            </span>
+            <h1 style="font-size: 3.5rem; font-weight: 800; margin-top: 1.5rem; line-height: 1.1; letter-spacing: -1px;">
+                Transforme seu corpo com um <br>
+                <span style="background: -webkit-linear-gradient(45deg, #1A1A1A, #888888); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">protocolo de elite</span>
+            </h1>
+            <p style="font-size: 1.2rem; color: #888; max-width: 600px; margin: 1.5rem auto; line-height: 1.6;">
+                Treinos, dieta e suplementação milimetricamente calculados por IA. 
+                Sem achismos. Sem treinos genéricos. Apenas resultados.
+            </p>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # --- ÁREA DE LOGIN CENTRALIZADA ---
     col1, col2, col3 = st.columns([1, 1.5, 1])
     with col2:
         # A Logo centralizada elegantemente acima do formulário
@@ -422,9 +431,6 @@ if st.session_state.etapa == 0:
                 st.image("logo.png", use_container_width=True)
             except:
                 pass # Não quebra se a logo não for encontrada
-        
-        st.markdown("<h1 style='text-align: center;'>⚡ Treinador Digital</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center;'>Bem-vindo à plataforma de elite. Faça login ou crie sua conta.</p>", unsafe_allow_html=True)
         
         st.markdown("<br>", unsafe_allow_html=True)
         
