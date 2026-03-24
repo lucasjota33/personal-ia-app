@@ -524,7 +524,6 @@ elif st.session_state.etapa == 1:
         with st.form("perfil_usuario"):
             nome = st.text_input("Nome Completo do Atleta", placeholder="Ex: Lucas Barbosa")
             
-            # 🟢 NOVOS CAMPOS: Idade e Sexo
             c_idade, c_sexo = st.columns(2)
             with c_idade: idade = st.number_input("Idade", min_value=12, max_value=100, value=25, step=1)
             with c_sexo: sexo = st.selectbox("Sexo", ["Masculino", "Feminino", "Outro"])
@@ -533,7 +532,6 @@ elif st.session_state.etapa == 1:
             with c_peso: peso = st.number_input("Peso (kg)", min_value=30.0, max_value=250.0, value=75.0, step=0.1)
             with c_altura: altura = st.number_input("Altura (cm)", min_value=100, max_value=230, value=175, step=1)
             
-            # 🟢 NOVO CAMPO: Alergias Alimentares
             alergias = st.text_input("Alergias ou Restrições Alimentares", placeholder="Ex: Nenhuma, Intolerância a lactose, Alergia a amendoim")
 
             objetivo = st.selectbox("Objetivo Principal", [
@@ -561,7 +559,6 @@ elif st.session_state.etapa == 1:
             elif nome in perfis_do_usuario:
                 exibir_mensagem(f"O atleta '{nome}' já existe! Exclua-o ou escolha outro nome.", "warning")
             else:
-                # 🟢 Salvando os novos dados na sessão
                 st.session_state.dados_usuario = {
                     "nome": nome, 
                     "idade": idade, 
@@ -575,7 +572,6 @@ elif st.session_state.etapa == 1:
                 
                 with st.spinner("Processando dados e estruturando planejamento..."):
                     
-                    # 🟢 Atualizando o Prompt para incluir idade, sexo e alergias
                     prompt_mestre = f"""
                     Atue como um Nutricionista Esportivo Clínico e Personal Trainer de extrema qualidade. 
                     Crie um planejamento irretocável e personalizado para o(a) {nome}. Leve em consideração suas características.
@@ -647,7 +643,6 @@ elif st.session_state.etapa == 2:
     usuario = st.session_state.usuario_logado
     dados = st.session_state.dados_usuario
     
-    # 🟢 Resgatando os novos dados de forma segura (usando get para evitar erro em perfis antigos)
     nome = dados["nome"]
     idade = dados.get("idade", "-")
     sexo = dados.get("sexo", "-")
@@ -664,97 +659,128 @@ elif st.session_state.etapa == 2:
             st.session_state.mensagens = []
             st.rerun()
 
-    exibir_mensagem(f"<strong>Análise concluída, {nome}!</strong> Confira seu planejamento abaixo.", "success")
+    exibir_mensagem(f"<strong>Análise concluída, {nome}!</strong>", "success")
     
-    # 🟢 Exibindo as métricas atualizadas
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Atleta", f"{nome} ({idade}a)")
-    c2.metric("Objetivo", objetivo_curto)
-    c3.metric("IMC Inicial", f"{imc:.1f}")
+    # 🟢 DIVISÃO DA INTERFACE EM DUAS ABAS 🟢
+    tab_dash, tab_chat = st.tabs(["📊 DASHBOARD DO PLANO", "💬 CHAT E AJUSTES"])
     
-    c4, c5, c6 = st.columns(3)
-    c4.metric("Peso Atual", f"{peso} kg")
-    c5.metric("Altura", f"{altura} cm")
-    c6.metric("Restrições", alergias)
-    
-    st.divider()
-    
-    for msg in st.session_state.mensagens:
-        conteudo = limpar_none(msg.get("content"))
-        role = msg.get("role")
+    # 🟢 LÓGICA INTELIGENTE: Procurar o planejamento mais recente gerado pela IA 
+    plano_atual = ""
+    for msg in reversed(st.session_state.mensagens):
+        if msg["role"] == "assistant" and "## 🧬" in msg["content"]:
+            plano_atual = msg["content"]
+            break
+            
+    # Garantia caso não ache a tag específica
+    if not plano_atual and st.session_state.mensagens:
+        plano_atual = st.session_state.mensagens[0]["content"]
+
+    # ==========================================================
+    # ABA 1: DASHBOARD (Métricas + Tabelas do Plano)
+    # ==========================================================
+    with tab_dash:
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Atleta", f"{nome} ({idade}a)")
+        c2.metric("Objetivo", objetivo_curto)
+        c3.metric("IMC Atual", f"{imc:.1f}")
         
-        if role == "user":
+        c4, c5, c6 = st.columns(3)
+        c4.metric("Peso", f"{peso} kg")
+        c5.metric("Altura", f"{altura} cm")
+        c6.metric("Restrições", alergias)
+        
+        st.divider()
+        
+        # Exibe o planejamento limpo (apenas a última versão)
+        st.markdown(limpar_none(plano_atual))
+        
+        st.divider()
+        pdf_final = gerar_pdf(limpar_none(plano_atual), nome)
+        
+        st.download_button(
+            label="Baixar Planejamento em PDF",
+            data=pdf_final,
+            file_name=f"Planejamento_{nome.replace(' ', '_')}.pdf",
+            mime="application/pdf",
+            type="primary",
+            use_container_width=True
+        )
+        
+    # ==========================================================
+    # ABA 2: CHAT DO TREINADOR (Alterações e Dúvidas)
+    # ==========================================================
+    with tab_chat:
+        st.markdown("""
+            <div style='display: flex; align-items: center; gap: 8px; margin-bottom: 5px;'>
+                <span class='material-symbols-outlined'>forum</span> 
+                <h3 style='margin: 0;'>Treinador IA</h3>
+            </div>
+            <p style="color: #888; font-size: 0.9rem; margin-bottom: 25px;">
+                Dúvidas ou quer mudar algo na dieta/treino? Peça abaixo e o seu Dashboard será atualizado.
+            </p>
+        """, unsafe_allow_html=True)
+        
+        # Renderiza o histórico de conversas
+        for msg in st.session_state.mensagens:
+            conteudo = limpar_none(msg.get("content"))
+            role = msg.get("role")
+            
+            if role == "user":
+                st.markdown(f"""
+                    <div style='display: flex; justify-content: flex-end; margin-bottom: 25px;'>
+                        <div style='background-color: #f4f4f4; color: #0d0d0d; padding: 12px 18px; border-radius: 18px 18px 0px 18px; max-width: 85%; font-family: sans-serif; box-shadow: 1px 1px 3px rgba(0,0,0,0.05);'>
+                            {conteudo}
+                        </div>
+                    </div>
+                """, unsafe_allow_html=True)
+            else:
+                st.markdown(f"<div style='margin-bottom: 25px;'>", unsafe_allow_html=True)
+                st.markdown(conteudo)
+                st.markdown("</div>", unsafe_allow_html=True)
+        
+        if prompt_duvida := st.chat_input("Ex: Troque meu jantar por uma opção sem carne..."):
+            
+            st.session_state.mensagens.append({"role": "user", "content": prompt_duvida})
+            
+            # Exibe a pergunta do usuário na hora
             st.markdown(f"""
                 <div style='display: flex; justify-content: flex-end; margin-bottom: 25px;'>
                     <div style='background-color: #f4f4f4; color: #0d0d0d; padding: 12px 18px; border-radius: 18px 18px 0px 18px; max-width: 85%; font-family: sans-serif; box-shadow: 1px 1px 3px rgba(0,0,0,0.05);'>
-                        {conteudo}
+                        {prompt_duvida}
                     </div>
                 </div>
             """, unsafe_allow_html=True)
-        else:
-            st.markdown(f"<div style='margin-bottom: 25px;'>", unsafe_allow_html=True)
-            st.markdown(conteudo)
-            st.markdown("</div>", unsafe_allow_html=True)
-    
-    st.divider()
-    plano_principal = limpar_none(st.session_state.mensagens[0].get("content")) if st.session_state.mensagens else ""
-    
-    pdf_final = gerar_pdf(plano_principal, nome)
-    
-    st.download_button(
-        label="Baixar Planejamento Completo em PDF",
-        data=pdf_final,
-        file_name=f"Planejamento_{nome.replace(' ', '_')}.pdf",
-        mime="application/pdf",
-        type="primary",
-        use_container_width=True
-    )
-            
-    st.divider()
-    
-    st.markdown("""
-        <div style='display: flex; align-items: center; gap: 8px; margin-bottom: 15px;'>
-            <span class='material-symbols-outlined'>forum</span> 
-            <h3 style='margin: 0;'>Central de Dúvidas</h3>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    if prompt_duvida := st.chat_input("Pergunte sobre exercícios ou substituições de alimentos..."):
-        
-        st.session_state.mensagens.append({"role": "user", "content": prompt_duvida})
-        
-        st.markdown(f"""
-            <div style='display: flex; justify-content: flex-end; margin-bottom: 25px;'>
-                <div style='background-color: #f4f4f4; color: #0d0d0d; padding: 12px 18px; border-radius: 18px 18px 0px 18px; max-width: 85%; font-family: sans-serif; box-shadow: 1px 1px 3px rgba(0,0,0,0.05);'>
-                    {prompt_duvida}
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
-            
-        with st.spinner("Analisando planejamento..."):
-            plano_contexto = st.session_state.mensagens[0]["content"]
-            prompt_duvida_completo = f"Plano:\n{plano_contexto}\n\nDúvida: {prompt_duvida}"
-            
-            url = f"https://generativelanguage.googleapis.com/v1beta/{MODELO}:generateContent?key={CHAVE}"
-            payload = {"contents": [{"parts": [{"text": prompt_duvida_completo}]}]}
-            
-            try:
-                resposta = requests.post(url, json=payload, timeout=20)
-                if resposta.status_code == 200:
-                    resposta_data = resposta.json()
-                    texto_ia_duvida = resposta_data.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', '')
-                    texto_ia_duvida = limpar_none(texto_ia_duvida)
-                    
-                    st.markdown(f"<div style='margin-bottom: 25px;'>", unsafe_allow_html=True)
-                    st.markdown(texto_ia_duvida)
-                    st.markdown("</div>", unsafe_allow_html=True)
-                    
-                    st.session_state.mensagens.append({"role": "assistant", "content": texto_ia_duvida})
-                    
-                    st.session_state.banco[usuario]["perfis"][nome]["mensagens"] = st.session_state.mensagens
-                    salvar_banco(st.session_state.banco)
-                else:
-                    exibir_mensagem("Servidor ocupado. Tente perguntar em alguns instantes.", "warning")
-            except:
-                exibir_mensagem("Erro ao conectar.", "error")
                 
+            with st.spinner("Analisando e atualizando o planejamento..."):
+                
+                # 🟢 INSTRUÇÃO MESTRA PARA O CHAT
+                prompt_duvida_completo = f"""Plano Atual do Atleta:
+{plano_atual}
+
+Mensagem do Usuário: {prompt_duvida}
+
+REGRA DE ATUALIZAÇÃO DO DASHBOARD: 
+Se o usuário estiver pedindo QUALQUER ALTERAÇÃO na dieta, treino ou suplementos, VOCÊ DEVE REESCREVER O PLANO COMPLETO aplicando as mudanças solicitadas. Mantenha estritamente a mesma estrutura de marcação (## 🧬 1. ANÁLISE METABÓLICA, ## 🥗 2. PLANO ALIMENTAR, etc) para que o sistema consiga renderizar.
+Se for APENAS uma dúvida (ex: "como executo tal exercício?"), responda normalmente de forma curta, sem reescrever o plano."""
+                
+                url = f"https://generativelanguage.googleapis.com/v1beta/{MODELO}:generateContent?key={CHAVE}"
+                payload = {"contents": [{"parts": [{"text": prompt_duvida_completo}]}]}
+                
+                try:
+                    resposta = requests.post(url, json=payload, timeout=30)
+                    if resposta.status_code == 200:
+                        resposta_data = resposta.json()
+                        texto_ia_duvida = resposta_data.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', '')
+                        texto_ia_duvida = limpar_none(texto_ia_duvida)
+                        
+                        st.session_state.mensagens.append({"role": "assistant", "content": texto_ia_duvida})
+                        
+                        st.session_state.banco[usuario]["perfis"][nome]["mensagens"] = st.session_state.mensagens
+                        salvar_banco(st.session_state.banco)
+                        
+                        # Rerun atualiza toda a tela, trazendo o plano novo para o Dashboard
+                        st.rerun() 
+                    else:
+                        exibir_mensagem("Servidor ocupado. Tente perguntar em alguns instantes.", "warning")
+                except:
+                    exibir_mensagem("Erro ao conectar.", "error")
