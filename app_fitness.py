@@ -277,10 +277,10 @@ def gerar_pdf(texto_md, nome_atleta):
         return resultado.encode("latin-1", "ignore")
     return bytes(resultado)
 
-# Configuração da Página 
+# Configuração da Página - ATUALIZADO AQUI
 st.set_page_config(page_title="Treinador Digital Elite", page_icon="logo.png", layout="wide")
 
-# --- CSS CUSTOMIZADO (LAYOUT CHATGPT + SCROLL TABELAS + DESTAQUE DE LOGO) ---
+# --- CSS CUSTOMIZADO (LAYOUT CHATGPT + SCROLL TABELAS + ZERO VERMELHO COM ANIMAÇÃO) ---
 st.markdown("""
     <style>
     /* 1. Reset e Limpeza de Interface */
@@ -325,10 +325,12 @@ st.markdown("""
             box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.2) !important;
         }
         
+        /* Cor das Abas e da ANIMAÇÃO (Tab Highlight) */
         button[data-baseweb="tab"] { color: #888 !important; }
         button[aria-selected="true"] { color: #CCCCCC !important; }
         div[data-baseweb="tab-highlight"] { background-color: #CCCCCC !important; }
         
+        /* Inputs e Foco */
         div[data-baseweb="input"]:focus-within { border-color: #CCCCCC !important; box-shadow: 0 0 0 1px #CCCCCC !important; }
         input, textarea { caret-color: #CCCCCC !important; }
     }
@@ -346,21 +348,14 @@ st.markdown("""
         }
         .stButton > button:hover, .stDownloadButton > button:hover { background-color: #333333 !important; }
         
+        /* Cor das Abas e da ANIMAÇÃO (Tab Highlight) */
         button[data-baseweb="tab"] { color: #888 !important; }
         button[aria-selected="true"] { color: #1A1A1A !important; }
         div[data-baseweb="tab-highlight"] { background-color: #1A1A1A !important; }
         
+        /* Inputs e Foco */
         div[data-baseweb="input"]:focus-within { border-color: #1A1A1A !important; box-shadow: 0 0 0 1px #1A1A1A !important; }
         input, textarea { caret-color: #1A1A1A !important; }
-
-        /* 🟢 DESTAQUE SUAVE PARA A LOGO NO MODO CLARO 🟢 */
-        [data-testid="stImage"] img {
-            background-color: #ffffff; /* Fundo branco garantido */
-            border: 1px solid rgba(0, 0, 0, 0.08); /* Borda super leve */
-            border-radius: 15px; /* Bordas arredondadas elegantes */
-            box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.06); /* Sombra suave de flutuação */
-            padding: 8px; /* Respiro interno para a imagem não colar na borda */
-        }
     }
 
     /* 6. Métrica e Notificação */
@@ -376,7 +371,7 @@ st.markdown("""
 
     .stApp { overflow-x: hidden; }
 
-    /* --- LIMITA O TAMANHO DA LOGO NO MOBILE --- */
+    /* --- LIMITA O TAMANHO DA LOGO NO MOBILE (COMO VOCÊ PEDIU) --- */
     @media (max-width: 768px) {
         .block-container { padding-top: 1.5rem !important; padding-left: 1rem !important; padding-right: 1rem !important; }
         .stButton > button { min-height: 50px !important; }
