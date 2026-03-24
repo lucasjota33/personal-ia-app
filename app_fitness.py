@@ -8,6 +8,8 @@ import json
 import hashlib
 import secrets
 import base64
+import re
+import pandas as pd
 from fpdf import FPDF 
 
 # Configurações iniciais
@@ -75,7 +77,7 @@ def salvar_banco(dados):
     except Exception:
         pass
 
-# --- FUNÇÕES DE SEGURANÇA E UTILIDADE ---
+# --- FUNÇÕES DE SEGURANÇA, UTILIDADE E PARSERS ---
 def criptografar_senha(senha):
     return hashlib.sha256(senha.encode()).hexdigest()
 
@@ -113,6 +115,48 @@ def exibir_mensagem(texto, tipo="info"):
         </div>
     """, unsafe_allow_html=True)
 
+# 🟢 NOVAS FUNÇÕES: EXTRAÇÃO DE DADOS PARA O DASHBOARD 🟢
+def extrair_json_da_ia(texto):
+    match = re.search(r'```json\n(.*?)\n```', texto, re.DOTALL)
+    if match:
+        try:
+            return json.loads(match.group(1))
+        except:
+            pass
+    return None
+
+def extrair_tabelas_do_markdown(texto):
+    tabelas = []
+    linhas = texto.split('\n')
+    em_tabela = False
+    tabela_atual = []
+    
+    for linha in linhas:
+        if linha.strip().startswith('|'):
+            em_tabela = True
+            tabela_atual.append(linha.strip())
+        elif em_tabela:
+            tabelas.append(tabela_atual)
+            tabela_atual = []
+            em_tabela = False
+    if em_tabela and tabela_atual:
+        tabelas.append(tabela_atual)
+        
+    dfs = []
+    for tab in tabelas:
+        if len(tab) > 2:
+            cols = [c.strip() for c in tab[0].strip('|').split('|')]
+            dados = []
+            for row in tab[2:]:
+                if '---' in row: continue
+                vals = [c.strip() for c in row.strip('|').split('|')]
+                if len(vals) < len(cols): vals.extend(['']*(len(cols)-len(vals)))
+                elif len(vals) > len(cols): vals = vals[:len(cols)]
+                dados.append(vals)
+            df = pd.DataFrame(dados, columns=cols)
+            dfs.append(df)
+    return dfs
+
 # 🟢 CLASSE DO PDF ELITE
 class PDF_Elite(FPDF):
     def __init__(self, nome_atleta):
@@ -142,6 +186,9 @@ class PDF_Elite(FPDF):
 
 @st.cache_data(show_spinner=False)
 def gerar_pdf(texto_md, nome_atleta):
+    # Removemos o bloco JSON do PDF para ficar limpo
+    texto_limpo = re.sub(r'```json\n.*?\n```', '', texto_md, flags=re.DOTALL)
+    
     pdf = PDF_Elite(nome_atleta)
     _ = pdf.add_page()
     _ = pdf.set_auto_page_break(True, margin=15) 
@@ -152,7 +199,7 @@ def gerar_pdf(texto_md, nome_atleta):
     _ = pdf.multi_cell(0, 10, limpar_para_pdf(f"PLANEJAMENTO ESTRATÉGICO\n{nome_atleta.upper()}"), 0, "C")
     _ = pdf.ln(15)
     
-    linhas = texto_md.split("\n") + [""] 
+    linhas = texto_limpo.split("\n") + [""] 
     buffer_tabela = []
     em_tabela = False
 
@@ -296,11 +343,11 @@ header[data-testid="stHeader"] {
 
 /* 3. Ajuste fino do container principal para usar todo o espaço sem cortar botões */
 .block-container {
-    padding-top: 2rem !important; /* Espaço seguro para não cortar elementos superiores */
+    padding-top: 2rem !important;
     padding-bottom: 2rem !important;
 }
 
-/* 🟢 FORÇANDO O SCROLL HORIZONTAL NAS TABELAS 🟢 */
+/* 🟢 FORÇANDO O SCROLL HORIZONTAL NAS TABELAS (Chat) 🟢 */
 .stMarkdown table {
     display: block !important; 
     overflow-x: auto !important;
@@ -322,22 +369,13 @@ div[data-testid="stMarkdownContainer"] {
     min-height: 45px;
 }
 
-/* Substituindo a cor de seleção */
 ::selection { background: rgba(128,128,128,0.3) !important; color: inherit !important; }
-
-/* 🟢 Ajuste geral para o texto das abas não sumir 🟢 */
-button[data-baseweb="tab"] p, button[data-baseweb="tab"] span { 
-    color: #888888 !important; 
-    transition: color 0.2s ease;
-}
-div[data-baseweb="tab-highlight"] { background-color: #555555 !important; }
 
 /* 🟢 ESTILOS PADRÃO (Forçando visual do Modo Claro globalmente) 🟢 */
 div[data-baseweb="input"]:focus-within, div[data-baseweb="select"]:focus-within {
     border-color: #1A1A1A !important; box-shadow: 0 0 0 1px #1A1A1A !important;
 }
 
-/* FIX DE TEXTO DAS ABAS: Forçamos a cor escura durante hover, foco, e clique (active) */
 button[data-baseweb="tab"]:hover p, button[data-baseweb="tab"]:hover span,
 button[data-baseweb="tab"]:focus p, button[data-baseweb="tab"]:focus span,
 button[data-baseweb="tab"]:active p, button[data-baseweb="tab"]:active span,
@@ -345,6 +383,15 @@ button[data-baseweb="tab"][aria-selected="true"] p,
 button[data-baseweb="tab"][aria-selected="true"] span { 
     color: #1A1A1A !important; 
     font-weight: 600 !important;
+}
+
+/* Melhorar a fonte das métricas no Dashboard */
+[data-testid="stMetricValue"] { font-size: 1.8rem !important; color: #1A1A1A !important; }
+div[data-testid="metric-container"] {
+    background-color: rgba(128,128,128,0.02);
+    border: 1px solid rgba(128,128,128,0.1);
+    padding: 10px 15px;
+    border-radius: 10px;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -570,8 +617,9 @@ elif st.session_state.etapa == 1:
                     "nivel": nivel_atividade
                 }
                 
-                with st.spinner("Processando dados e estruturando planejamento..."):
+                with st.spinner("Analisando dados e estruturando planejamento Power BI..."):
                     
+                    # 🟢 Prompt atualizado com instrução de gerar o JSON no final
                     prompt_mestre = f"""
                     Atue como um Nutricionista Esportivo Clínico e Personal Trainer de extrema qualidade. 
                     Crie um planejamento irretocável e personalizado para o(a) {nome}. Leve em consideração suas características.
@@ -597,6 +645,19 @@ elif st.session_state.etapa == 1:
 
                     ## 💊 4. SUPLEMENTAÇÃO
                     | Suplemento | Dosagem Diária | Horário |
+
+                    INSTRUÇÃO OBRIGATÓRIA PARA DASHBOARD: No final absoluto da sua resposta, insira APENAS UM bloco de código json contendo as metas financeiras numéricas diárias, seguindo estritamente esta estrutura:
+                    ```json
+                    {{
+                        "calorias": 0,
+                        "proteinas_g": 0,
+                        "carboidratos_g": 0,
+                        "gorduras_g": 0,
+                        "tmb": 0,
+                        "gasto_total": 0
+                    }}
+                    ```
+                    Substitua os zeros pelos valores calculados em números inteiros (apenas os números).
                     """
 
                     url = f"https://generativelanguage.googleapis.com/v1beta/{MODELO}:generateContent?key={CHAVE}"
@@ -659,73 +720,130 @@ elif st.session_state.etapa == 2:
             st.session_state.mensagens = []
             st.rerun()
 
-    exibir_mensagem(f"<strong>Análise concluída, {nome}!</strong>", "success")
-    
-    # 🟢 DIVISÃO DA INTERFACE EM DUAS ABAS 🟢
-    tab_dash, tab_chat = st.tabs(["📊 DASHBOARD DO PLANO", "💬 CHAT E AJUSTES"])
-    
-    # 🟢 LÓGICA INTELIGENTE: Procurar o planejamento mais recente gerado pela IA 
+    # 🟢 Resgatando o plano atual mais recente gerado pela IA
     plano_atual = ""
     for msg in reversed(st.session_state.mensagens):
-        if msg["role"] == "assistant" and "## 🧬" in msg["content"]:
+        if msg["role"] == "assistant" and "## 🧬" in msg.get("content", ""):
             plano_atual = msg["content"]
             break
-            
-    # Garantia caso não ache a tag específica
     if not plano_atual and st.session_state.mensagens:
         plano_atual = st.session_state.mensagens[0]["content"]
 
+    # Extraindo dados para os componentes do Power BI
+    tabelas_extraidas = extrair_tabelas_do_markdown(plano_atual)
+    dados_json = extrair_json_da_ia(plano_atual)
+
+    # 🟢 DUAS ABAS: DASHBOARD VISUAL (sem texto) e CHAT
+    tab_dash, tab_chat = st.tabs(["📊 DASHBOARD DE ESTATÍSTICAS", "💬 CHAT DO TREINADOR & TEXTO"])
+
     # ==========================================================
-    # ABA 1: DASHBOARD (Métricas + Tabelas do Plano)
+    # ABA 1: DASHBOARD ESTILO POWER BI
     # ==========================================================
     with tab_dash:
-        c1, c2, c3 = st.columns(3)
-        c1.metric("Atleta", f"{nome} ({idade}a)")
+        st.markdown(f"<h2>Painel de Performance: {nome.upper()}</h2>", unsafe_allow_html=True)
+        
+        # LINHA 1: MÉTRICAS (Power BI style Cards)
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("IMC Atual", f"{imc:.1f}")
         c2.metric("Objetivo", objetivo_curto)
-        c3.metric("IMC Atual", f"{imc:.1f}")
-        
-        c4, c5, c6 = st.columns(3)
-        c4.metric("Peso", f"{peso} kg")
-        c5.metric("Altura", f"{altura} cm")
-        c6.metric("Restrições", alergias)
-        
+        if dados_json:
+            c3.metric("Taxa Metab. Basal", f"{dados_json.get('tmb', '0')} kcal")
+            c4.metric("Meta Calórica Alvo", f"{dados_json.get('calorias', '0')} kcal")
+        else:
+            c3.metric("Peso", f"{peso} kg")
+            c4.metric("Altura", f"{altura} cm")
+            
         st.divider()
         
-        # Exibe o planejamento limpo (apenas a última versão)
-        st.markdown(limpar_none(plano_atual))
+        # LINHA 2: GRÁFICO E TABELA DE DIETA (Dataframes nativos)
+        col_grafico, col_dieta = st.columns([1, 2.5])
         
+        with col_grafico:
+            st.markdown("#### Distribuição de Macros")
+            if dados_json and "proteinas_g" in dados_json:
+                # Criando o DataFrame pro gráfico
+                df_macros = pd.DataFrame({
+                    "Gramas": [dados_json.get("proteinas_g", 0), dados_json.get("carboidratos_g", 0), dados_json.get("gorduras_g", 0)]
+                }, index=["Proteína", "Carboidrato", "Gordura"])
+                
+                st.bar_chart(df_macros, color="#1A1A1A")
+            else:
+                st.info("Gráfico numérico não disponível para este plano antigo.")
+
+        with col_dieta:
+            st.markdown("#### Plano Alimentar Completo")
+            # Localiza a tabela alimentar (geralmente tem a palavra Refeição ou Alimento nas colunas)
+            df_dieta = next((df for df in tabelas_extraidas if any("refeição" in c.lower() or "alimento" in c.lower() for c in df.columns)), None)
+            
+            if df_dieta is not None:
+                st.dataframe(df_dieta, use_container_width=True, hide_index=True)
+            elif len(tabelas_extraidas) > 1:
+                # Se não achar pelo nome, chuta que é a segunda tabela do markdown
+                st.dataframe(tabelas_extraidas[1], use_container_width=True, hide_index=True)
+            else:
+                st.warning("Gerando tabelas estruturadas...")
+
         st.divider()
-        pdf_final = gerar_pdf(limpar_none(plano_atual), nome)
+
+        # LINHA 3: TREINO E SUPLEMENTOS
+        col_treino, col_suple = st.columns([2, 1])
         
+        with col_treino:
+            st.markdown("#### Planilha de Treinamento")
+            df_treino = next((df for df in tabelas_extraidas if any("exercício" in c.lower() or "séries" in c.lower() for c in df.columns)), None)
+            if df_treino is not None:
+                st.dataframe(df_treino, use_container_width=True, hide_index=True)
+            else:
+                st.info("Visualização de treino indisponível.")
+
+        with col_suple:
+            st.markdown("#### Suplementação")
+            df_suple = next((df for df in tabelas_extraidas if any("suplemento" in c.lower() for c in df.columns)), None)
+            if df_suple is not None:
+                st.dataframe(df_suple, use_container_width=True, hide_index=True)
+            else:
+                st.info("Sem suplementos estruturados.")
+                
+        st.divider()
+        pdf_final = gerar_pdf(plano_atual, nome)
         st.download_button(
-            label="Baixar Planejamento em PDF",
+            label="Baixar Relatório em PDF",
             data=pdf_final,
-            file_name=f"Planejamento_{nome.replace(' ', '_')}.pdf",
+            file_name=f"Relatorio_Performance_{nome.replace(' ', '_')}.pdf",
             mime="application/pdf",
             type="primary",
             use_container_width=True
         )
-        
+
     # ==========================================================
-    # ABA 2: CHAT DO TREINADOR (Alterações e Dúvidas)
+    # ABA 2: CHAT DO TREINADOR E TEXTO RAW
     # ==========================================================
     with tab_chat:
+        
+        # O modelo de texto cru que o usuário queria tirar da frente
+        with st.expander("📄 VER PLANO COMPLETO EM TEXTO (MARKDOWN)", expanded=False):
+            # Limpa o JSON do texto para exibir bonitinho pro usuário
+            texto_exibicao = re.sub(r'```json\n.*?\n```', '', limpar_none(plano_atual), flags=re.DOTALL)
+            st.markdown(texto_exibicao)
+            
         st.markdown("""
-            <div style='display: flex; align-items: center; gap: 8px; margin-bottom: 5px;'>
+            <div style='display: flex; align-items: center; gap: 8px; margin-top: 15px; margin-bottom: 5px;'>
                 <span class='material-symbols-outlined'>forum</span> 
-                <h3 style='margin: 0;'>Treinador IA</h3>
+                <h3 style='margin: 0;'>Assistente de Ajustes</h3>
             </div>
             <p style="color: #888; font-size: 0.9rem; margin-bottom: 25px;">
-                Dúvidas ou quer mudar algo na dieta/treino? Peça abaixo e o seu Dashboard será atualizado.
+                Peça mudanças no treino ou dieta. O Dashboard <b>será atualizado automaticamente</b> com suas requisições.
             </p>
         """, unsafe_allow_html=True)
         
-        # Renderiza o histórico de conversas
+        # Histórico de Chat
         for msg in st.session_state.mensagens:
             conteudo = limpar_none(msg.get("content"))
-            role = msg.get("role")
+            # Só mostramos mensagens curtas do assistente no chat para não poluir
+            if msg.get("role") == "assistant" and "## 🧬" in conteudo:
+                continue 
             
-            if role == "user":
+            if msg.get("role") == "user":
                 st.markdown(f"""
                     <div style='display: flex; justify-content: flex-end; margin-bottom: 25px;'>
                         <div style='background-color: #f4f4f4; color: #0d0d0d; padding: 12px 18px; border-radius: 18px 18px 0px 18px; max-width: 85%; font-family: sans-serif; box-shadow: 1px 1px 3px rgba(0,0,0,0.05);'>
@@ -738,11 +856,10 @@ elif st.session_state.etapa == 2:
                 st.markdown(conteudo)
                 st.markdown("</div>", unsafe_allow_html=True)
         
-        if prompt_duvida := st.chat_input("Ex: Troque meu jantar por uma opção sem carne..."):
+        if prompt_duvida := st.chat_input("Ex: Troque meu jantar por uma opção vegana..."):
             
             st.session_state.mensagens.append({"role": "user", "content": prompt_duvida})
             
-            # Exibe a pergunta do usuário na hora
             st.markdown(f"""
                 <div style='display: flex; justify-content: flex-end; margin-bottom: 25px;'>
                     <div style='background-color: #f4f4f4; color: #0d0d0d; padding: 12px 18px; border-radius: 18px 18px 0px 18px; max-width: 85%; font-family: sans-serif; box-shadow: 1px 1px 3px rgba(0,0,0,0.05);'>
@@ -751,16 +868,17 @@ elif st.session_state.etapa == 2:
                 </div>
             """, unsafe_allow_html=True)
                 
-            with st.spinner("Analisando e atualizando o planejamento..."):
+            with st.spinner("Sincronizando Dashboard com a nova requisição..."):
                 
-                # 🟢 INSTRUÇÃO MESTRA PARA O CHAT
+                # 🟢 INSTRUÇÃO MESTRA PARA O CHAT 🟢
                 prompt_duvida_completo = f"""Plano Atual do Atleta:
 {plano_atual}
 
 Mensagem do Usuário: {prompt_duvida}
 
 REGRA DE ATUALIZAÇÃO DO DASHBOARD: 
-Se o usuário estiver pedindo QUALQUER ALTERAÇÃO na dieta, treino ou suplementos, VOCÊ DEVE REESCREVER O PLANO COMPLETO aplicando as mudanças solicitadas. Mantenha estritamente a mesma estrutura de marcação (## 🧬 1. ANÁLISE METABÓLICA, ## 🥗 2. PLANO ALIMENTAR, etc) para que o sistema consiga renderizar.
+Se o usuário estiver pedindo QUALQUER ALTERAÇÃO na dieta, treino ou suplementos, VOCÊ DEVE REESCREVER O PLANO COMPLETO aplicando as mudanças solicitadas. Mantenha estritamente a mesma estrutura de marcação (## 🧬, ## 🥗, etc) para que as tabelas sejam lidas.
+MUITO IMPORTANTE: Se você reescrever o plano, VOCÊ DEVE INCLUIR o bloco ```json``` no final com os dados numéricos atualizados para o sistema renderizar os gráficos.
 Se for APENAS uma dúvida (ex: "como executo tal exercício?"), responda normalmente de forma curta, sem reescrever o plano."""
                 
                 url = f"https://generativelanguage.googleapis.com/v1beta/{MODELO}:generateContent?key={CHAVE}"
@@ -778,7 +896,6 @@ Se for APENAS uma dúvida (ex: "como executo tal exercício?"), responda normalm
                         st.session_state.banco[usuario]["perfis"][nome]["mensagens"] = st.session_state.mensagens
                         salvar_banco(st.session_state.banco)
                         
-                        # Rerun atualiza toda a tela, trazendo o plano novo para o Dashboard
                         st.rerun() 
                     else:
                         exibir_mensagem("Servidor ocupado. Tente perguntar em alguns instantes.", "warning")
