@@ -281,25 +281,34 @@ def gerar_pdf(texto_md, nome_atleta):
 
 # 🟢 CSS CUSTOMIZADO LIMPO
 st.markdown("""
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
 <style>
+/* MATANDO O QUADRADO FANTASMA: Importando a fonte via CSS nativo (@import) ao invés de usar a tag <link> */
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined');
+
 /* Reset base da interface */
 [data-testid="stToolbar"], [data-testid="stToolbarActions"], .stDeployButton { display: none !important; visibility: hidden !important; }
 header { background-color: transparent !important; box-shadow: none !important; }
 #MainMenu, footer { display: none !important; }
 [data-testid="collapsedControl"] { display: none !important; }
 .block-container { padding-top: 2rem !important; margin-top: 1rem !important; }
-
-/* Remove a caixa de alerta nativa do Streamlit (já que criamos a nossa premium) */
 div[data-testid="stNotification"] { display: none !important; }
 
-/* Scroll horizontal em tabelas (Para celular) */
+/* 🟢 FORÇANDO O SCROLL HORIZONTAL NAS TABELAS 🟢 */
 .stMarkdown table {
-    display: block !important; vertical-align: middle !important; overflow-x: auto !important;
-    white-space: nowrap !important; max-width: 100% !important; border-radius: 8px; margin-bottom: 20px;
+    display: block !important; 
+    overflow-x: auto !important;
+    white-space: nowrap !important; 
+    max-width: 100% !important; 
+    width: 100% !important;
+    border-radius: 8px; 
+    margin-bottom: 20px;
+    -webkit-overflow-scrolling: touch;
+}
+div[data-testid="stMarkdownContainer"] {
+    overflow-x: auto !important;
 }
 
-/* Botões Premium e Arredondados */
+/* Botões Premium */
 .stButton > button, div[data-testid="stFormSubmitButton"] > button, .stDownloadButton > button {
     border-radius: 8px !important;
     transition: all 0.3s ease;
@@ -311,6 +320,25 @@ div[data-testid="stNotification"] { display: none !important; }
 @media (max-width: 768px) {
     .block-container { padding-top: 1.5rem !important; padding-left: 1rem !important; padding-right: 1rem !important; }
     .stButton > button { min-height: 50px !important; }
+}
+
+/* Substituindo a cor de seleção e abas por CSS (O vermelho dos Checkboxes requer o arquivo config.toml) */
+::selection { background: rgba(128,128,128,0.3) !important; color: inherit !important; }
+button[data-baseweb="tab"] { color: #888888 !important; }
+
+@media (prefers-color-scheme: dark) {
+    div[data-baseweb="input"]:focus-within, div[data-baseweb="select"]:focus-within {
+        border-color: #CCCCCC !important; box-shadow: 0 0 0 1px #CCCCCC !important;
+    }
+    button[aria-selected="true"] { color: #FFFFFF !important; }
+    div[data-baseweb="tab-highlight"] { background-color: #FFFFFF !important; }
+}
+@media (prefers-color-scheme: light) {
+    div[data-baseweb="input"]:focus-within, div[data-baseweb="select"]:focus-within {
+        border-color: #1A1A1A !important; box-shadow: 0 0 0 1px #1A1A1A !important;
+    }
+    button[aria-selected="true"] { color: #1A1A1A !important; }
+    div[data-baseweb="tab-highlight"] { background-color: #1A1A1A !important; }
 }
 </style>
 """, unsafe_allow_html=True)
