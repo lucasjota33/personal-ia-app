@@ -279,7 +279,7 @@ def gerar_pdf(texto_md, nome_atleta):
     return bytes(resultado)
 
 
-# 🟢 CSS CUSTOMIZADO LIMPO
+# 🟢 CSS CUSTOMIZADO LIMPO E PRECISO
 st.markdown("""
 <style>
 /* MATANDO O QUADRADO FANTASMA: Importando a fonte via CSS nativo (@import) ao invés de usar a tag <link> */
@@ -322,30 +322,37 @@ div[data-testid="stMarkdownContainer"] {
     .stButton > button { min-height: 50px !important; }
 }
 
-/* Substituindo a cor de seleção e abas por CSS */
+/* Substituindo a cor de seleção */
 ::selection { background: rgba(128,128,128,0.3) !important; color: inherit !important; }
 
-/* 🟢 Unselected tabs text globally (unchanged, light gray) 🟢 */
-button[data-baseweb="tab"] * { color: #888888 !important; }
-
-/* 🟢 Unify tab highlight globally to primaryColor ("#555555" from config.toml) 🟢 */
+/* 🟢 Ajuste exato para o texto das abas não sumir 🟢 */
+button[data-baseweb="tab"] p, button[data-baseweb="tab"] span { 
+    color: #888888 !important; 
+}
 div[data-baseweb="tab-highlight"] { background-color: #555555 !important; }
 
 @media (prefers-color-scheme: dark) {
     div[data-baseweb="input"]:focus-within, div[data-baseweb="select"]:focus-within {
         border-color: #CCCCCC !important; box-shadow: 0 0 0 1px #CCCCCC !important;
     }
-    /* 🟢 Dark Mode logic: white selected text for contrast on dark 🟢 */
-    button[aria-selected="true"] * { color: #FFFFFF !important; }
+    /* Texto Selecionado Dark Mode */
+    button[data-baseweb="tab"][aria-selected="true"] p, 
+    button[data-baseweb="tab"][aria-selected="true"] span { 
+        color: #FFFFFF !important; 
+        font-weight: 600 !important;
+    }
 }
+
 @media (prefers-color-scheme: light) {
     div[data-baseweb="input"]:focus-within, div[data-baseweb="select"]:focus-within {
         border-color: #1A1A1A !important; box-shadow: 0 0 0 1px #1A1A1A !important;
     }
-    /* 🟢 Light Mode logic: targeted dark gray selection for contrast on light 🟢 */
-    /* 🟢 This targets the selected text on light background specifically to prevent turning white on click 🟢 */
-    /* 🟢 We use the specific #555555 from config.toml 🟢 */
-    button[aria-selected="true"] * { color: #555555 !important; }
+    /* Texto Selecionado Light Mode */
+    button[data-baseweb="tab"][aria-selected="true"] p, 
+    button[data-baseweb="tab"][aria-selected="true"] span { 
+        color: #1A1A1A !important; 
+        font-weight: 600 !important;
+    }
 }
 </style>
 """, unsafe_allow_html=True)
@@ -449,7 +456,6 @@ if st.session_state.etapa == 0:
                 novo_email = st.text_input("Digite seu E-mail")
                 nova_senha = st.text_input("Crie uma Senha", type="password")
                 confirma_senha = st.text_input("Confirme a Senha", type="password")
-                # 🟢 Ajuste: Inserido type="primary" no botão de cadastro!
                 btn_cadastro = st.form_submit_button("Criar Conta", type="primary", use_container_width=True)
                 
                 if btn_cadastro:
