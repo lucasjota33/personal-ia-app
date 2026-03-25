@@ -788,7 +788,7 @@ elif st.session_state.etapa == 2:
                             <span class="material-symbols-outlined" style="font-size: 38px;">{icone_projecao}</span>
                         </div>
                         <div>
-                            <p style="margin: 0; font-size: 0.9rem; color: #888; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;">Projeção da Inteligência Artificial</p>
+                            <p style="margin: 0; font-size: 0.9rem; color: #888; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;">Projeção Halter AI</p>
                             <h3 style="margin: 5px 0 5px 0; font-size: 1.8rem; font-weight: 800; color: #1A1A1A;">
                                 {texto_destaque}
                             </h3>
