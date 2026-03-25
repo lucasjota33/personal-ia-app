@@ -153,11 +153,13 @@ def extrair_tabelas_do_markdown(texto):
         
     dfs = []
     for tab in tabelas:
-        if len(tab) > 2:
+        if len(tab) > 1:
             cols = [c.strip() for c in tab[0].strip('|').split('|')]
             dados = []
-            for row in tab[2:]:
-                if '---' in row: continue
+            for row in tab[1:]:
+                # 🟢 Filtro Absoluto: Remove as linhas de traços do markdown (ex: |:---:|---|)
+                if re.match(r'^[\s\|\-\:]+$', row):
+                    continue
                 vals = [c.strip() for c in row.strip('|').split('|')]
                 if len(vals) < len(cols): vals.extend(['']*(len(cols)-len(vals)))
                 elif len(vals) > len(cols): vals = vals[:len(cols)]
@@ -249,7 +251,6 @@ def gerar_pdf(texto_md, nome_atleta):
                         w_col = 190 / num_cols
                         
                         def draw_row(dados_linha, eh_cabecalho=False, zebra=False):
-                            # Tabela Maior e Mais Legível (Fonte 10 e 9)
                             pdf.set_font("Arial", "B" if eh_cabecalho else "", 10 if eh_cabecalho else 9)
                                 
                             max_l = 1
@@ -295,7 +296,8 @@ def gerar_pdf(texto_md, nome_atleta):
                         
                         zebra = False
                         for l_tab in buffer_tabela[1:]:
-                            if set(l_tab.strip().replace('|','').replace('-','').replace(' ','')) == set(): 
+                            # 🟢 Filtro Absoluto para o PDF: Ignora a linha de separação
+                            if re.match(r'^[\s\|\-\:]+$', l_tab):
                                 continue
                             
                             dados = extrair_celulas(l_tab)
