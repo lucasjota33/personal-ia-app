@@ -157,7 +157,7 @@ def extrair_tabelas_do_markdown(texto):
             cols = [c.strip() for c in tab[0].strip('|').split('|')]
             dados = []
             for row in tab[1:]:
-                # Filtro Absoluto: Remove as linhas de traços do markdown
+                # 🟢 Filtro Absoluto: Remove as linhas de traços do markdown (ex: |:---:|---|)
                 if re.match(r'^[\s\|\-\:]+$', row):
                     continue
                 vals = [c.strip() for c in row.strip('|').split('|')]
@@ -177,6 +177,7 @@ class PDF_Elite(FPDF):
         self.nome_atleta = nome_atleta
 
     def header(self):
+        # Cria uma faixa preta elegante no topo da página
         self.set_fill_color(22, 22, 22)
         self.rect(0, 0, 210, 24, 'F')
         
@@ -186,15 +187,17 @@ class PDF_Elite(FPDF):
         except:
             self.set_x(10)
             
+        # Título da Empresa/Plano em Branco
         self.set_font("Arial", "B", 13)
         self.set_text_color(255, 255, 255)
         self.cell(0, 14, "PLANEAMENTO ESTRATÉGICO", 0, 0, "L")
         
+        # Nome do Atleta em Cinza Claro (À Direita)
         self.set_font("Arial", "B", 10)
         self.set_text_color(180, 180, 180)
         self.cell(0, 14, f"ATLETA: {self.nome_atleta.upper()}", 0, 1, "R")
         
-        self.ln(12) 
+        self.ln(12) # Respiro antes do texto começar
 
     def footer(self):
         self.set_y(-15)
@@ -206,6 +209,7 @@ class PDF_Elite(FPDF):
 def gerar_pdf(texto_md, nome_atleta):
     texto_limpo = re.sub(r'```json\n.*?\n```', '', texto_md, flags=re.DOTALL)
     
+    # Corte Inteligente: Remove conversa da IA antes do plano real
     marcadores = ["## 🧬 1. ANÁLISE METABÓLICA", "## 🧬 1", "1. ANÁLISE METABÓLICA", "# PLANEJAMENTO", "# PLANEAMENTO"]
     for marcador in marcadores:
         if marcador in texto_limpo:
@@ -225,6 +229,7 @@ def gerar_pdf(texto_md, nome_atleta):
     for linha in linhas:
         l_strip = linha.strip()
 
+        # Deteta tabelas mesmo que falte o | inicial, desde que tenha pelo menos 2 pipes
         eh_linha_tabela = l_strip.startswith('|') or l_strip.count('|') >= 2
         
         if eh_linha_tabela:
@@ -252,13 +257,13 @@ def gerar_pdf(texto_md, nome_atleta):
                             for txt in dados_linha:
                                 txt_limpo = limpar_para_pdf(txt)
                                 cw = pdf.get_string_width(txt_limpo)
-                                w_seguro = w_col - 6 
+                                w_seguro = w_col - 6 # Mais padding interno
                                 if w_seguro <= 0: w_seguro = 1
                                 linhas_txt = int(cw / w_seguro) + 1 
                                 if linhas_txt > max_l: 
                                     max_l = linhas_txt
                                     
-                            alt_linha = (5 * max_l) + 8 
+                            alt_linha = (5 * max_l) + 8 # Linhas mais altas (Respiro)
                             
                             if pdf.get_y() + alt_linha > 270:
                                 pdf.add_page()
@@ -267,7 +272,7 @@ def gerar_pdf(texto_md, nome_atleta):
                             
                             pdf.set_draw_color(220, 220, 220) 
                             if eh_cabecalho:
-                                pdf.set_fill_color(35, 35, 35) 
+                                pdf.set_fill_color(35, 35, 35) # Cinza muito escuro
                                 pdf.set_text_color(255, 255, 255)
                             else:
                                 pdf.set_text_color(40, 40, 40)
@@ -281,7 +286,7 @@ def gerar_pdf(texto_md, nome_atleta):
                                 pdf.set_xy(x_ini, y_ini)
                                 pdf.cell(w_col, alt_linha, "", 1, 0, "", True)
                                 
-                                pdf.set_xy(x_ini, y_ini + 4) 
+                                pdf.set_xy(x_ini, y_ini + 4) # Centraliza melhor o texto
                                 txt_limpo = limpar_para_pdf(txt)
                                 pdf.multi_cell(w_col, 5, txt_limpo, 0, "C")
                                 
@@ -291,6 +296,7 @@ def gerar_pdf(texto_md, nome_atleta):
                         
                         zebra = False
                         for l_tab in buffer_tabela[1:]:
+                            # 🟢 Filtro Absoluto para o PDF: Ignora a linha de separação
                             if re.match(r'^[\s\|\-\:]+$', l_tab):
                                 continue
                             
@@ -329,6 +335,7 @@ def gerar_pdf(texto_md, nome_atleta):
             
             pdf.cell(0, 8, limpar_para_pdf(titulo_sem_emoji), 0, 1, "L")
             
+            # 🟢 Nova linha cinza sublinhando os títulos para maior organização visual
             pdf.set_draw_color(200, 200, 200)
             pdf.set_line_width(0.3)
             pdf.line(10, pdf.get_y(), 200, pdf.get_y())
@@ -336,6 +343,7 @@ def gerar_pdf(texto_md, nome_atleta):
         elif l_strip.startswith('# '):
             pass 
         else:
+            # Texto Normal da Dieta Maior e Mais Legível
             pdf.set_font("Arial", "", 10.5)
             pdf.set_text_color(50, 50, 50)
             
@@ -829,21 +837,17 @@ elif st.session_state.etapa == 2:
 
         st.divider()
 
-        # 🟢 CRIAMOS UM RECIPIENTE FIXO PARA O HISTÓRICO E RESPOSTAS
-        chat_container = st.container()
-
-        with chat_container:
-            for msg in st.session_state.mensagens:
-                conteudo = limpar_none(msg.get("content"))
-                if msg.get("role") == "assistant" and "## 🧬" in conteudo:
-                    continue 
-                
-                if msg.get("role") == "user":
-                    st.markdown(f"""<div style='display: flex; justify-content: flex-end; margin-bottom: 25px;'><div style='background-color: #f4f4f4; color: #0d0d0d; padding: 12px 18px; border-radius: 18px 18px 0px 18px; max-width: 85%; font-family: sans-serif; box-shadow: 1px 1px 3px rgba(0,0,0,0.05);'>{conteudo}</div></div>""", unsafe_allow_html=True)
-                else:
-                    st.markdown(f"<div style='margin-bottom: 25px;'>", unsafe_allow_html=True)
-                    st.markdown(conteudo)
-                    st.markdown("</div>", unsafe_allow_html=True)
+        for msg in st.session_state.mensagens:
+            conteudo = limpar_none(msg.get("content"))
+            if msg.get("role") == "assistant" and "## 🧬" in conteudo:
+                continue 
+            
+            if msg.get("role") == "user":
+                st.markdown(f"""<div style='display: flex; justify-content: flex-end; margin-bottom: 25px;'><div style='background-color: #f4f4f4; color: #0d0d0d; padding: 12px 18px; border-radius: 18px 18px 0px 18px; max-width: 85%; font-family: sans-serif; box-shadow: 1px 1px 3px rgba(0,0,0,0.05);'>{conteudo}</div></div>""", unsafe_allow_html=True)
+            else:
+                st.markdown(f"<div style='margin-bottom: 25px;'>", unsafe_allow_html=True)
+                st.markdown(conteudo)
+                st.markdown("</div>", unsafe_allow_html=True)
         
         prompt_duvida = st.chat_input("Ex: Troque o meu jantar por uma opção vegana...")
         comando_final = acao_rapida if acao_rapida else prompt_duvida
@@ -856,12 +860,10 @@ elif st.session_state.etapa == 2:
 
         if st.session_state.mensagens and st.session_state.mensagens[-1]["role"] == "user":
             
-            # 🟢 A REQUISIÇÃO E O TEXTO AGORA OCORREM DENTRO DO RECIPIENTE DO CHAT
-            with chat_container:
-                with st.spinner("O Treinador está a reformular o seu planeamento..."):
-                    comando_usuario = st.session_state.mensagens[-1]["content"]
-                    
-                    prompt_duvida_completo = f"""Plano Atual do Atleta:
+            with st.spinner("O Treinador está a reformular o seu planeamento..."):
+                comando_usuario = st.session_state.mensagens[-1]["content"]
+                
+                prompt_duvida_completo = f"""Plano Atual do Atleta:
 {plano_atual}
 
 Mensagem do Usuário: {comando_usuario}
@@ -870,30 +872,30 @@ REGRA DE ATUALIZAÇÃO DO DASHBOARD:
 Se o usuário estiver pedindo QUALQUER ALTERAÇÃO na dieta, treino ou suplementos, VOCÊ DEVE REESCREVER O PLANO COMPLETO aplicando as mudanças solicitadas. Mantenha estritamente a mesma estrutura de marcação (## 🧬, ## 🥗, etc) para que as tabelas sejam lidas.
 MUITO IMPORTANTE: Se você reescrever o plano, VOCÊ DEVE INCLUIR o bloco ```json``` no final com os dados numéricos atualizados para o sistema renderizar os gráficos (inclua metas de agua_ml e passos também).
 Se for APENAS uma dúvida, responda normalmente de forma curta, sem reescrever o plano."""
+                
+                url = f"https://generativelanguage.googleapis.com/v1beta/{MODELO}:generateContent?key={CHAVE}"
+                payload = {"contents": [{"parts": [{"text": prompt_duvida_completo}]}]}
+                
+                try:
+                    resposta = requests.post(url, json=payload, timeout=45) 
                     
-                    url = f"https://generativelanguage.googleapis.com/v1beta/{MODELO}:generateContent?key={CHAVE}"
-                    payload = {"contents": [{"parts": [{"text": prompt_duvida_completo}]}]}
-                    
-                    try:
-                        resposta = requests.post(url, json=payload, timeout=45) 
+                    if resposta.status_code == 200:
+                        resposta_data = resposta.json()
+                        texto_ia_duvida = resposta_data.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', '')
+                        texto_ia_duvida = limpar_none(texto_ia_duvida)
                         
-                        if resposta.status_code == 200:
-                            resposta_data = resposta.json()
-                            texto_ia_duvida = resposta_data.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', '')
-                            texto_ia_duvida = limpar_none(texto_ia_duvida)
-                            
-                            if "## 🧬" not in texto_ia_duvida:
-                                st.write_stream(gerador_de_texto(texto_ia_duvida))
-                            else:
-                                st.success("✨ Plano atualizado com sucesso! Confira o Dashboard.")
-                                time.sleep(1.5) 
-                                
-                            st.session_state.mensagens.append({"role": "assistant", "content": texto_ia_duvida})
-                            st.session_state.banco[usuario]["perfis"][nome]["mensagens"] = st.session_state.mensagens
-                            salvar_banco(st.session_state.banco)
-                            
-                            st.rerun() 
+                        if "## 🧬" not in texto_ia_duvida:
+                            st.write_stream(gerador_de_texto(texto_ia_duvida))
                         else:
-                            st.error(f"Erro {resposta.status_code}. Tente novamente.")
-                    except Exception as e:
-                        st.error("Erro de ligação.")
+                            st.success("✨ Plano atualizado com sucesso! Confira o Dashboard.")
+                            time.sleep(1.5) 
+                            
+                        st.session_state.mensagens.append({"role": "assistant", "content": texto_ia_duvida})
+                        st.session_state.banco[usuario]["perfis"][nome]["mensagens"] = st.session_state.mensagens
+                        salvar_banco(st.session_state.banco)
+                        
+                        st.rerun() 
+                    else:
+                        st.error(f"Erro {resposta.status_code}. Tente novamente.")
+                except Exception as e:
+                    st.error("Erro de ligação.")
