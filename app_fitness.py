@@ -10,7 +10,6 @@ import secrets
 import base64
 import re
 import time
-import urllib.parse
 import pandas as pd
 import plotly.express as px  
 from fpdf import FPDF 
@@ -168,31 +167,6 @@ def extrair_tabelas_do_markdown(texto):
             df = pd.DataFrame(dados, columns=cols)
             dfs.append(df)
     return dfs
-
-# ==========================================================
-# 🟢 FUNÇÃO PARA BUSCAR VÍDEO NO YOUTUBE (GRÁTIS)
-# ==========================================================
-@st.cache_data(show_spinner=False)
-def buscar_video_youtube(nome_exercicio):
-    """
-    Pesquisa o exercício no YouTube e captura o ID do primeiro vídeo.
-    Adicionamos 'exercicio execução' para filtrar tutoriais práticos.
-    """
-    query = urllib.parse.quote(f"{nome_exercicio} exercicio execução")
-    url = f"https://www.youtube.com/results?search_query={query}"
-    
-    try:
-        # Fazemos um pedido normal ao YouTube como se fôssemos um navegador
-        resposta = requests.get(url, timeout=10)
-        if resposta.status_code == 200:
-            # O YouTube moderno guarda os IDs dos vídeos num JSON embutido na página com a chave "videoId"
-            video_ids = re.findall(r'"videoId":"([^"]{11})"', resposta.text)
-            if video_ids:
-                # Retornamos o primeiro ID encontrado
-                return video_ids[0]
-    except Exception:
-        pass
-    return None
 
 # ==========================================================
 # 🟢 CLASSE PDF: DESIGN PREMIUM (BANNER SUPERIOR)
@@ -654,7 +628,7 @@ elif st.session_state.etapa == 1:
                     | Refeição(Almoço, janta, etc) | Alimento Principal | Macronutrientes | Substituição |
                     
                     ## ⚡ 3. PLANILHA DE TREINAMENTO
-                    Defina uma divisão semanal inteligente (ex:ABCDE, ABC, AB, Fullbody) com base no objetivo e sexo.
+                    Defina uma divisão semanal inteligente (ex:ABCDE, ABC, AB, Fullbody) com base no objetivo and sexo.
                     Para CADA DIA de treino, crie uma tabela em Markdown seguindo EXATAMENTE as colunas abaixo:
 
                     | Exercício | Séries | Repetições | Descanso |
@@ -878,49 +852,75 @@ elif st.session_state.etapa == 2:
             else:
                 st.info("Sem suplementos estruturados.")
                 
-            # 🟢 NOVO CARTÃO: INTEGRAÇÃO PROFISSIONAL COM YOUTUBE
-            st.markdown("#### Execução em Vídeo")
+            # 🟢 NOVO CARTÃO: ÍNDICE DE MASSA CORPORAL (IMC) PREMIUM
+            st.markdown("#### Índice de Massa Corporal (IMC)")
             
-            todos_exercicios = []
-            for df in dfs_treino:
-                col_ex = next((c for c in df.columns if "exercício" in c.lower() or "exercicio" in c.lower()), None)
-                if col_ex:
-                    todos_exercicios.extend(df[col_ex].dropna().tolist())
-            
-            todos_exercicios = sorted(list(set([ex.strip() for ex in todos_exercicios if str(ex).strip()])))
-            
-            if todos_exercicios:
-                ex_selecionado = st.selectbox("Selecione um exercício para ver a execução:", ["Escolher exercício..."] + todos_exercicios)
-                
-                if ex_selecionado != "Escolher exercício...":
-                    with st.spinner("A procurar o melhor vídeo explicativo..."):
-                        video_id = buscar_video_youtube(ex_selecionado)
-                        
-                        if video_id:
-                            # Frame de vídeo premium com cantos arredondados e sombra
-                            st.markdown(f"""
-                                <div style="
-                                    border-radius: 12px; 
-                                    overflow: hidden; 
-                                    box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
-                                    margin-top: 15px;
-                                    border: 1px solid rgba(0,0,0,0.05);
-                                ">
-                                    <iframe 
-                                        width="100%" 
-                                        height="260" 
-                                        src="https://www.youtube.com/embed/{video_id}" 
-                                        title="YouTube video player" 
-                                        frameborder="0" 
-                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                                        allowfullscreen>
-                                    </iframe>
-                                </div>
-                            """, unsafe_allow_html=True)
-                        else:
-                            st.info("Não foi possível encontrar um vídeo para este exercício.")
+            # Lógica de Classificação do IMC baseada na OMS
+            if imc < 18.5:
+                status_imc = "Baixo Peso"
+                cor_imc = "#f1c40f" # Amarelo
+                posicao_progresso = 10 # % na barra visual
+            elif 18.5 <= imc < 25:
+                status_imc = "Peso Normal (Saudável)"
+                cor_imc = "#2ecc71" # Verde
+                posicao_progresso = 40 # % na barra visual
+            elif 25 <= imc < 30:
+                status_imc = "Sobrepeso"
+                cor_imc = "#e67e22" # Laranja
+                posicao_progresso = 70 # % na barra visual
             else:
-                st.info("Sem exercícios carregados.")
+                status_imc = "Obesidade"
+                cor_imc = "#e74c3c" # Vermelho
+                posicao_progresso = 90 # % na barra visual
+
+            # Design Premium do Cartão IMC com barra de progresso visual
+            st.markdown(f"""
+                <div style="
+                    background: #ffffff; 
+                    padding: 20px; 
+                    border-radius: 12px; 
+                    border: 1px solid #eaeaea; 
+                    box-shadow: 0 4px 6px rgba(0,0,0,0.02); 
+                    text-align: center;
+                    margin-top: 15px;
+                ">
+                    <p style="margin: 0; font-size: 0.85rem; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Seu Resultado</p>
+                    <h2 style="margin: 5px 0 10px 0; font-size: 3rem; font-weight: 800; color: #1A1A1A;">{imc:.1f}</h2>
+                    
+                    <div style="
+                        width: 100%; 
+                        height: 12px; 
+                        background: linear-gradient(to right, #f1c40f 0%, #2ecc71 40%, #e67e22 70%, #e74c3c 100%); 
+                        border-radius: 6px; 
+                        position: relative;
+                        margin-bottom: 10px;
+                    ">
+                        <div style="
+                            width: 4px; 
+                            height: 20px; 
+                            background-color: #1A1A1A; 
+                            border-radius: 2px; 
+                            position: absolute; 
+                            left: calc({posicao_progresso}% - 2px); 
+                            top: -4px;
+                            border: 2px solid #fff;
+                        "></div>
+                    </div>
+                    
+                    <div style="
+                        display: inline-block;
+                        background-color: {cor_imc}; 
+                        color: #fff; 
+                        padding: 5px 12px; 
+                        border-radius: 20px; 
+                        font-size: 0.85rem; 
+                        font-weight: 700;
+                        margin-top: 5px;
+                    ">
+                        {status_imc.upper()}
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
                 
         st.divider()
         pdf_final = gerar_pdf(plano_atual, nome)
