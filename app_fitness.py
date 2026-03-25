@@ -444,7 +444,7 @@ if st.session_state.etapa == 0:
                 usuario_login = st.text_input("Utilizador ou E-mail")
                 senha_login = st.text_input("Palavra-passe", type="password")
                 manter_conectado = st.checkbox("Manter sessão iniciada") 
-                btn_login = st.form_submit_button("Aceder à Plataforma", type="primary", use_container_width=True)
+                btn_login = st.form_submit_button("Acessar a Plataforma", type="primary", use_container_width=True)
                 
                 if btn_login:
                     banco = st.session_state.banco
