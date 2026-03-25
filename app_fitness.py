@@ -742,17 +742,17 @@ elif st.session_state.etapa == 2:
         st.markdown(f"""
 <div style="background: #ffffff; border-radius: 16px; padding: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #eaeaea; margin-top: 25px; margin-bottom: 30px; display: flex; align-items: center; justify-content: space-around; flex-wrap: wrap; gap: 20px; text-align: center;">
     <div style="flex: 1; min-width: 150px;">
-        <p style="margin: 0 0 5px 0; font-size: 0.8rem; color: #888; font-weight: 700; text-transform: uppercase;"><span class="material-symbols-outlined" style="vertical-align: middle; font-size: 16px; margin-right: 5px;">flag</span>ObjetivoPrincipal</p>
+        <p style="margin: 0 0 5px 0; font-size: 0.8rem; color: #888; font-weight: 700; text-transform: uppercase;"><span class="material-symbols-outlined" style="vertical-align: middle; font-size: 16px; margin-right: 5px;">flag</span>Objetivo Principal</p>
         <p style="margin: 0; font-size: 1.3rem; font-weight: 800; color: #1A1A1A;">{objetivo_curto}</p>
     </div>
     <div style="width: 1px; height: 50px; background-color: #ddd; flex-shrink: 0;"></div>
     <div style="flex: 1; min-width: 150px;">
-        <p style="margin: 0 0 5px 0; font-size: 0.8rem; color: #888; font-weight: 700; text-transform: uppercase;"><span class="material-symbols-outlined" style="vertical-align: middle; font-size: 16px; margin-right: 5px;">local_fire_department</span>CaloriasDiárias</p>
+        <p style="margin: 0 0 5px 0; font-size: 0.8rem; color: #888; font-weight: 700; text-transform: uppercase;"><span class="material-symbols-outlined" style="vertical-align: middle; font-size: 16px; margin-right: 5px;">local_fire_department</span>Calorias Diárias</p>
         <p style="margin: 0; font-size: 1.3rem; font-weight: 800; color: #1A1A1A;">{dados_json.get('calorias', '0') if dados_json else '0'} kcal</p>
     </div>
     <div style="width: 1px; height: 50px; background-color: #ddd; flex-shrink: 0;"></div>
     <div style="flex: 1; min-width: 150px;">
-        <p style="margin: 0 0 5px 0; font-size: 0.8rem; color: #888; font-weight: 700; text-transform: uppercase;"><span class="material-symbols-outlined" style="vertical-align: middle; font-size: 16px; margin-right: 5px;">water_drop</span>HidrataçãoAlvo</p>
+        <p style="margin: 0 0 5px 0; font-size: 0.8rem; color: #888; font-weight: 700; text-transform: uppercase;"><span class="material-symbols-outlined" style="vertical-align: middle; font-size: 16px; margin-right: 5px;">water_drop</span>Hidratação Alvo</p>
         <p style="margin: 0; font-size: 1.3rem; font-weight: 800; color: #1A1A1A;">{dados_json.get('agua_ml', '0') if dados_json else '0'} ml</p>
     </div>
 </div>
