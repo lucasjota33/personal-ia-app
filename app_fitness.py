@@ -188,7 +188,7 @@ class PDF_Elite(FPDF):
             
         self.set_font("Arial", "B", 13)
         self.set_text_color(255, 255, 255)
-        self.cell(0, 14, "HALTER AI", 0, 0, "L")
+        self.cell(0, 14, "HALTER AI - PLANEJAMENTO ", 0, 0, "L")
         
         self.set_font("Arial", "B", 10)
         self.set_text_color(180, 180, 180)
