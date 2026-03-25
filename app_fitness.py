@@ -184,9 +184,9 @@ def extrair_tabelas_do_markdown(texto):
 # 🟢 CLASSE PDF: DESIGN PREMIUM (BANNER SUPERIOR)
 # ==========================================================
 class PDF_Elite(FPDF):
-    def __init__(self, nome_atleta):
+    def __init__(self, nome_perfil):
         super().__init__()
-        self.nome_atleta = nome_atleta
+        self.nome_perfil = nome_perfil
 
     def header(self):
         self.set_fill_color(22, 22, 22)
@@ -204,7 +204,7 @@ class PDF_Elite(FPDF):
         
         self.set_font("Arial", "B", 10)
         self.set_text_color(180, 180, 180)
-        self.cell(0, 14, f"ATLETA: {self.nome_atleta.upper()}", 0, 1, "R")
+        self.cell(0, 14, f"PERFIL: {self.nome_perfil.upper()}", 0, 1, "R")
         
         self.ln(12) 
 
@@ -215,7 +215,7 @@ class PDF_Elite(FPDF):
         self.cell(0, 10, f"Página {self.page_no()}", 0, 0, "C")
 
 @st.cache_data(show_spinner=False)
-def gerar_pdf(texto_md, nome_atleta):
+def gerar_pdf(texto_md, nome_perfil):
     texto_limpo = re.sub(r'```json\n.*?\n```', '', texto_md, flags=re.DOTALL)
     
     marcadores = ["## 🧬 1. ANÁLISE METABÓLICA", "## 🧬 1", "1. ANÁLISE METABÓLICA", "# PLANEJAMENTO", "# PLANEJAMENTO"]
@@ -224,9 +224,9 @@ def gerar_pdf(texto_md, nome_atleta):
             texto_limpo = marcador + texto_limpo.split(marcador, 1)[1]
             break
             
-    texto_limpo = re.sub(r'# PLANEJAMENTO:? ?' + re.escape(nome_atleta), '', texto_limpo, flags=re.IGNORECASE).strip()
+    texto_limpo = re.sub(r'# PLANEJAMENTO:? ?' + re.escape(nome_perfil), '', texto_limpo, flags=re.IGNORECASE).strip()
     
-    pdf = PDF_Elite(nome_atleta)
+    pdf = PDF_Elite(nome_perfil)
     pdf.set_auto_page_break(True, margin=20) 
     pdf.add_page()
     
@@ -588,10 +588,10 @@ elif st.session_state.etapa == 1:
             st.markdown("<br>", unsafe_allow_html=True)
             st.markdown("""<div style='display: flex; align-items: center; gap: 8px; color: #888; margin-bottom: 10px;'><span class='material-symbols-outlined'>add_box</span><h4 style='margin: 0;'>Novo Planejamento</h4></div>""", unsafe_allow_html=True)
         else:
-            exibir_mensagem("Nenhum atleta registado ainda.", "info")
+            exibir_mensagem("Nenhum perfil registado ainda.", "info")
         
         with st.form("perfil_usuario"):
-            nome = st.text_input("Nome Completo do Atleta", placeholder="Ex: Lucas Barbosa")
+            nome = st.text_input("Nome do Perfil", placeholder="Ex: Lucas Barbosa")
             
             c_idade, c_sexo = st.columns(2)
             with c_idade: idade = st.number_input("Idade", min_value=12, max_value=100, value=25, step=1)
@@ -613,7 +613,7 @@ elif st.session_state.etapa == 1:
             if not nome:
                 exibir_mensagem("Identificação necessária.", "warning")
             elif nome in perfis_do_usuario:
-                exibir_mensagem(f"O atleta '{nome}' já existe!", "warning")
+                exibir_mensagem(f"O perfil '{nome}' já existe!", "warning")
             else:
                 st.session_state.dados_usuario = {
                     "nome": nome, "idade": idade, "sexo": sexo, "peso": peso, "altura": altura, 
@@ -731,7 +731,6 @@ elif st.session_state.etapa == 2:
     if not plano_atual and st.session_state.mensagens:
         plano_atual = st.session_state.mensagens[0]["content"]
 
-    # 🟢 Agora extrai as tuplas (titulo, dataframe) corretamente!
     tabelas_extraidas = extrair_tabelas_do_markdown(plano_atual)
     dados_json = extrair_json_da_ia(plano_atual)
 
@@ -740,7 +739,6 @@ elif st.session_state.etapa == 2:
     with tab_dash:
         st.markdown(f"<h2>Painel de Performance: {nome.upper()}</h2>", unsafe_allow_html=True)
         
-        # 🟢 Cartão Premium Mantido (Sem passos)
         st.markdown(f"""
 <div style="background: #ffffff; border-radius: 16px; padding: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #eaeaea; margin-top: 25px; margin-bottom: 30px; display: flex; align-items: center; justify-content: space-around; flex-wrap: wrap; gap: 20px; text-align: center;">
     <div style="flex: 1; min-width: 150px;">
@@ -760,7 +758,6 @@ elif st.session_state.etapa == 2:
 </div>
         """, unsafe_allow_html=True)
             
-        # 🟢 LÓGICA DE PROJEÇÃO DE RESULTADOS
         if dados_json:
             calorias = int(dados_json.get('calorias', 0))
             gasto_total = int(dados_json.get('gasto_total', 0))
@@ -824,7 +821,6 @@ elif st.session_state.etapa == 2:
 
         with col_dieta:
             st.markdown("#### Plano Alimentar Completo")
-            # 🟢 Lê a dieta corretamente considerando as tuplas (titulo, df)
             df_dieta = next((df for titulo, df in tabelas_extraidas if any("refeição" in c.lower() or "alimento" in c.lower() for c in df.columns)), None)
             
             if df_dieta is not None:
@@ -840,17 +836,16 @@ elif st.session_state.etapa == 2:
         
         with col_treino:
             st.markdown("#### Planilha de Treinamento")
-            
-            # 🟢 O SELETOR DE TREINOS DE VOLTA!
             treinos_encontrados = [(titulo, df) for titulo, df in tabelas_extraidas if any("exercício" in c.lower() or "séries" in c.lower() for c in df.columns)]
             
             if treinos_encontrados:
                 nomes_opcoes = []
+                # 🟢 CORREÇÃO DO BUG: Utilizamos 'nome_opcao' para não reescrever a variável 'nome' do Utilizador
                 for i, (titulo, df) in enumerate(treinos_encontrados):
-                    nome = titulo if titulo else f"Treino {i+1}"
-                    if nomes_opcoes.count(nome) > 0:
-                        nome = f"{nome} ({i+1})"
-                    nomes_opcoes.append(nome)
+                    nome_opcao = titulo if titulo else f"Treino {i+1}"
+                    if nomes_opcoes.count(nome_opcao) > 0:
+                        nome_opcao = f"{nome_opcao} ({i+1})"
+                    nomes_opcoes.append(nome_opcao)
                 
                 treino_selecionado = st.selectbox("Selecione o Dia / Treino:", nomes_opcoes)
                 
@@ -863,14 +858,12 @@ elif st.session_state.etapa == 2:
 
         with col_suple:
             st.markdown("#### Suplementação")
-            # 🟢 Lê os suplementos corretamente considerando as tuplas (titulo, df)
             df_suple = next((df for titulo, df in tabelas_extraidas if any("suplemento" in c.lower() for c in df.columns)), None)
             if df_suple is not None:
                 st.dataframe(df_suple, use_container_width=True, hide_index=True)
             else:
                 st.info("Sem suplementos estruturados.")
                 
-            # 🟢 CARTÃO DE IMC PREMIUM MANTIDO
             st.markdown("#### Índice de Massa Corporal (IMC)")
             
             if imc < 18.5:
@@ -976,7 +969,7 @@ elif st.session_state.etapa == 2:
                 with st.spinner("O Treinador está a reformular o seu planejamento..."):
                     comando_usuario = st.session_state.mensagens[-1]["content"]
                     
-                    prompt_duvida_completo = f"""Plano Atual do Atleta:
+                    prompt_duvida_completo = f"""Plano Atual do Perfil:
 {plano_atual}
 
 Mensagem do Usuário: {comando_usuario}
