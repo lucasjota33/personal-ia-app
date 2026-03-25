@@ -157,7 +157,6 @@ def extrair_tabelas_do_markdown(texto):
             cols = [c.strip() for c in tab[0].strip('|').split('|')]
             dados = []
             for row in tab[1:]:
-                # 🟢 Filtro Absoluto: Remove as linhas de traços do markdown (ex: |:---:|---|)
                 if re.match(r'^[\s\|\-\:]+$', row):
                     continue
                 vals = [c.strip() for c in row.strip('|').split('|')]
@@ -177,7 +176,6 @@ class PDF_Elite(FPDF):
         self.nome_atleta = nome_atleta
 
     def header(self):
-        # Cria uma faixa preta elegante no topo da página
         self.set_fill_color(22, 22, 22)
         self.rect(0, 0, 210, 24, 'F')
         
@@ -187,17 +185,15 @@ class PDF_Elite(FPDF):
         except:
             self.set_x(10)
             
-        # Título da Empresa/Plano em Branco
         self.set_font("Arial", "B", 13)
         self.set_text_color(255, 255, 255)
         self.cell(0, 14, "PLANEAMENTO ESTRATÉGICO", 0, 0, "L")
         
-        # Nome do Atleta em Cinza Claro (À Direita)
         self.set_font("Arial", "B", 10)
         self.set_text_color(180, 180, 180)
         self.cell(0, 14, f"ATLETA: {self.nome_atleta.upper()}", 0, 1, "R")
         
-        self.ln(12) # Respiro antes do texto começar
+        self.ln(12) 
 
     def footer(self):
         self.set_y(-15)
@@ -209,7 +205,6 @@ class PDF_Elite(FPDF):
 def gerar_pdf(texto_md, nome_atleta):
     texto_limpo = re.sub(r'```json\n.*?\n```', '', texto_md, flags=re.DOTALL)
     
-    # Corte Inteligente: Remove conversa da IA antes do plano real
     marcadores = ["## 🧬 1. ANÁLISE METABÓLICA", "## 🧬 1", "1. ANÁLISE METABÓLICA", "# PLANEJAMENTO", "# PLANEAMENTO"]
     for marcador in marcadores:
         if marcador in texto_limpo:
@@ -229,7 +224,6 @@ def gerar_pdf(texto_md, nome_atleta):
     for linha in linhas:
         l_strip = linha.strip()
 
-        # Deteta tabelas mesmo que falte o | inicial, desde que tenha pelo menos 2 pipes
         eh_linha_tabela = l_strip.startswith('|') or l_strip.count('|') >= 2
         
         if eh_linha_tabela:
@@ -257,13 +251,13 @@ def gerar_pdf(texto_md, nome_atleta):
                             for txt in dados_linha:
                                 txt_limpo = limpar_para_pdf(txt)
                                 cw = pdf.get_string_width(txt_limpo)
-                                w_seguro = w_col - 6 # Mais padding interno
+                                w_seguro = w_col - 6 
                                 if w_seguro <= 0: w_seguro = 1
                                 linhas_txt = int(cw / w_seguro) + 1 
                                 if linhas_txt > max_l: 
                                     max_l = linhas_txt
                                     
-                            alt_linha = (5 * max_l) + 8 # Linhas mais altas (Respiro)
+                            alt_linha = (5 * max_l) + 8 
                             
                             if pdf.get_y() + alt_linha > 270:
                                 pdf.add_page()
@@ -272,7 +266,7 @@ def gerar_pdf(texto_md, nome_atleta):
                             
                             pdf.set_draw_color(220, 220, 220) 
                             if eh_cabecalho:
-                                pdf.set_fill_color(35, 35, 35) # Cinza muito escuro
+                                pdf.set_fill_color(35, 35, 35) 
                                 pdf.set_text_color(255, 255, 255)
                             else:
                                 pdf.set_text_color(40, 40, 40)
@@ -286,7 +280,7 @@ def gerar_pdf(texto_md, nome_atleta):
                                 pdf.set_xy(x_ini, y_ini)
                                 pdf.cell(w_col, alt_linha, "", 1, 0, "", True)
                                 
-                                pdf.set_xy(x_ini, y_ini + 4) # Centraliza melhor o texto
+                                pdf.set_xy(x_ini, y_ini + 4) 
                                 txt_limpo = limpar_para_pdf(txt)
                                 pdf.multi_cell(w_col, 5, txt_limpo, 0, "C")
                                 
@@ -296,7 +290,6 @@ def gerar_pdf(texto_md, nome_atleta):
                         
                         zebra = False
                         for l_tab in buffer_tabela[1:]:
-                            # 🟢 Filtro Absoluto para o PDF: Ignora a linha de separação
                             if re.match(r'^[\s\|\-\:]+$', l_tab):
                                 continue
                             
@@ -335,7 +328,6 @@ def gerar_pdf(texto_md, nome_atleta):
             
             pdf.cell(0, 8, limpar_para_pdf(titulo_sem_emoji), 0, 1, "L")
             
-            # 🟢 Nova linha cinza sublinhando os títulos para maior organização visual
             pdf.set_draw_color(200, 200, 200)
             pdf.set_line_width(0.3)
             pdf.line(10, pdf.get_y(), 200, pdf.get_y())
@@ -343,7 +335,6 @@ def gerar_pdf(texto_md, nome_atleta):
         elif l_strip.startswith('# '):
             pass 
         else:
-            # Texto Normal da Dieta Maior e Mais Legível
             pdf.set_font("Arial", "", 10.5)
             pdf.set_text_color(50, 50, 50)
             
@@ -837,6 +828,7 @@ elif st.session_state.etapa == 2:
 
         st.divider()
 
+        # 1. EXIBE TODAS AS MENSAGENS NO ECRÃ
         for msg in st.session_state.mensagens:
             conteudo = limpar_none(msg.get("content"))
             if msg.get("role") == "assistant" and "## 🧬" in conteudo:
@@ -849,17 +841,8 @@ elif st.session_state.etapa == 2:
                 st.markdown(conteudo)
                 st.markdown("</div>", unsafe_allow_html=True)
         
-        prompt_duvida = st.chat_input("Ex: Troque o meu jantar por uma opção vegana...")
-        comando_final = acao_rapida if acao_rapida else prompt_duvida
-        
-        if comando_final:
-            st.session_state.mensagens.append({"role": "user", "content": comando_final})
-            st.session_state.banco[usuario]["perfis"][nome]["mensagens"] = st.session_state.mensagens
-            salvar_banco(st.session_state.banco)
-            st.rerun() 
-
+        # 2. SE A ÚLTIMA MENSAGEM FOI SUA, A IA PENSA E ESCREVE AQUI
         if st.session_state.mensagens and st.session_state.mensagens[-1]["role"] == "user":
-            
             with st.spinner("O Treinador está a reformular o seu planeamento..."):
                 comando_usuario = st.session_state.mensagens[-1]["content"]
                 
@@ -899,3 +882,13 @@ Se for APENAS uma dúvida, responda normalmente de forma curta, sem reescrever o
                         st.error(f"Erro {resposta.status_code}. Tente novamente.")
                 except Exception as e:
                     st.error("Erro de ligação.")
+
+        # 3. POR FIM, RENDERIZA A CAIXA DE CHAT (SEMPRE PRESA NO FUNDO)
+        prompt_duvida = st.chat_input("Ex: Troque o meu jantar por uma opção vegana...")
+        comando_final = acao_rapida if acao_rapida else prompt_duvida
+        
+        if comando_final:
+            st.session_state.mensagens.append({"role": "user", "content": comando_final})
+            st.session_state.banco[usuario]["perfis"][nome]["mensagens"] = st.session_state.mensagens
+            salvar_banco(st.session_state.banco)
+            st.rerun()
