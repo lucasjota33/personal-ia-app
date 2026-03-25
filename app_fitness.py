@@ -733,6 +733,33 @@ elif st.session_state.etapa == 2:
         c3.metric("Meta de Água (Diária)", f"{dados_json.get('agua_ml', '0')} ml" if dados_json else "0 ml")
         c4.metric("Meta de Passos", f"{dados_json.get('passos', '0')}" if dados_json else "0")
             
+        # 🟢 LÓGICA DE PROJEÇÃO DE RESULTADOS
+        if dados_json:
+            calorias = int(dados_json.get('calorias', 0))
+            gasto_total = int(dados_json.get('gasto_total', 0))
+            
+            if calorias > 0 and gasto_total > 0:
+                diferenca = calorias - gasto_total
+                
+                if diferenca < -100:
+                    ritmo_perda = abs(diferenca) * 7 / 7700
+                    texto_projecao = f"📉 <b>Projeção IA:</b> Com o défice calórico estruturado, a estimativa média é de uma <b>perda de {ritmo_perda:.2f} kg por semana</b>."
+                    icone_projecao = "trending_down"
+                elif diferenca > 100:
+                    ritmo_ganho = diferenca * 7 / 7700
+                    texto_projecao = f"📈 <b>Projeção IA:</b> Com o superávit calórico estruturado, a estimativa é um ganho de volume focado em massa muscular de <b>{ritmo_ganho:.2f} kg por semana</b>."
+                    icone_projecao = "trending_up"
+                else:
+                    texto_projecao = f"⚖️ <b>Projeção IA:</b> O seu plano foca em calorias de manutenção. O peso deve estabilizar enquanto ocorre a <b>recomposição corporal</b> (trocar gordura por músculo)."
+                    icone_projecao = "balance"
+
+                st.markdown(f"""
+                    <div style="background-color: rgba(128,128,128,0.03); padding: 18px; border-radius: 8px; border-left: 4px solid #1A1A1A; color: #333; margin-top: 10px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
+                        <span class="material-symbols-outlined" style="color: #1A1A1A; font-size: 24px;">{icone_projecao}</span>
+                        <span style="font-size: 1.05rem;">{texto_projecao}</span>
+                    </div>
+                """, unsafe_allow_html=True)
+        
         st.divider()
         
         col_grafico, col_dieta = st.columns([1, 2.5])
