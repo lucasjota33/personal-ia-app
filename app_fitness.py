@@ -133,26 +133,38 @@ def extrair_json_da_ia(texto):
             pass
     return None
 
+# 🟢 Motor Aprimorado: Extrai o Título e a Tabela juntos
 @st.cache_data(show_spinner=False)
 def extrair_tabelas_do_markdown(texto):
     tabelas = []
     linhas = texto.split('\n')
     em_tabela = False
     tabela_atual = []
+    ultimo_titulo = ""
     
     for linha in linhas:
-        if linha.strip().startswith('|') or linha.strip().count('|') >= 2:
+        l_strip = linha.strip()
+        if l_strip.startswith('|') or l_strip.count('|') >= 2:
             em_tabela = True
-            tabela_atual.append(linha.strip())
-        elif em_tabela:
-            tabelas.append(tabela_atual)
-            tabela_atual = []
-            em_tabela = False
+            tabela_atual.append(l_strip)
+        else:
+            if em_tabela:
+                tabelas.append((ultimo_titulo, tabela_atual))
+                tabela_atual = []
+                em_tabela = False
+            
+            # Limpa formatações para extrair um título limpo
+            limpo = re.sub(r'^#+\s*', '', l_strip).replace('**', '').replace(':', ' -').strip()
+            # Garante que não é um item de lista, e que não é longo demais
+            if limpo and not limpo.startswith(('|', '-', '* ', '•')):
+                if len(limpo) < 70:
+                    ultimo_titulo = limpo
+                    
     if em_tabela and tabela_atual:
-        tabelas.append(tabela_atual)
+        tabelas.append((ultimo_titulo, tabela_atual))
         
     dfs = []
-    for tab in tabelas:
+    for titulo, tab in tabelas:
         if len(tab) > 1:
             cols = [c.strip() for c in tab[0].strip('|').split('|')]
             dados = []
@@ -165,7 +177,7 @@ def extrair_tabelas_do_markdown(texto):
                 elif len(vals) > len(cols): vals = vals[:len(cols)]
                 dados.append(vals)
             df = pd.DataFrame(dados, columns=cols)
-            dfs.append(df)
+            dfs.append((titulo, df))
     return dfs
 
 # ==========================================================
@@ -719,6 +731,7 @@ elif st.session_state.etapa == 2:
     if not plano_atual and st.session_state.mensagens:
         plano_atual = st.session_state.mensagens[0]["content"]
 
+    # 🟢 Agora extrai as tuplas (titulo, dataframe) corretamente!
     tabelas_extraidas = extrair_tabelas_do_markdown(plano_atual)
     dados_json = extrair_json_da_ia(plano_atual)
 
@@ -727,7 +740,7 @@ elif st.session_state.etapa == 2:
     with tab_dash:
         st.markdown(f"<h2>Painel de Performance: {nome.upper()}</h2>", unsafe_allow_html=True)
         
-        # 🟢 ATUALIZADO: Card Premium compila objetivo, calorias e água em visual de alta qualidade.
+        # 🟢 Cartão Premium Mantido (Sem passos)
         st.markdown(f"""
 <div style="background: #ffffff; border-radius: 16px; padding: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #eaeaea; margin-top: 25px; margin-bottom: 30px; display: flex; align-items: center; justify-content: space-around; flex-wrap: wrap; gap: 20px; text-align: center;">
     <div style="flex: 1; min-width: 150px;">
@@ -747,7 +760,7 @@ elif st.session_state.etapa == 2:
 </div>
         """, unsafe_allow_html=True)
             
-        # 🟢 LÓGICA DE PROJEÇÃO DE RESULTADOS COM CARTÃO PREMIUM
+        # 🟢 LÓGICA DE PROJEÇÃO DE RESULTADOS
         if dados_json:
             calorias = int(dados_json.get('calorias', 0))
             gasto_total = int(dados_json.get('gasto_total', 0))
@@ -773,7 +786,6 @@ elif st.session_state.etapa == 2:
                     icone_projecao = "balance"
                     cor_icone = "#f39c12" 
 
-                # Evitando problemas de formatação com o HTML alinhavando à esquerda
                 st.markdown(f"""
 <div style="background: linear-gradient(135deg, #ffffff 0%, #f7f9fa 100%); border-radius: 16px; padding: 25px; box-shadow: 0 8px 24px rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.04); margin-top: 25px; margin-bottom: 30px; display: flex; align-items: center; gap: 24px; transition: transform 0.3s ease;">
     <div style="background-color: #1A1A1A; color: {cor_icone}; border-radius: 50%; width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
@@ -812,12 +824,13 @@ elif st.session_state.etapa == 2:
 
         with col_dieta:
             st.markdown("#### Plano Alimentar Completo")
-            df_dieta = next((df for df in tabelas_extraidas if any("refeição" in c.lower() or "alimento" in c.lower() for c in df.columns)), None)
+            # 🟢 Lê a dieta corretamente considerando as tuplas (titulo, df)
+            df_dieta = next((df for titulo, df in tabelas_extraidas if any("refeição" in c.lower() or "alimento" in c.lower() for c in df.columns)), None)
             
             if df_dieta is not None:
                 st.dataframe(df_dieta, use_container_width=True, hide_index=True)
             elif len(tabelas_extraidas) > 1:
-                st.dataframe(tabelas_extraidas[1], use_container_width=True, hide_index=True)
+                st.dataframe(tabelas_extraidas[1][1], use_container_width=True, hide_index=True)
             else:
                 st.warning("A gerar tabelas estruturadas...")
 
@@ -827,45 +840,56 @@ elif st.session_state.etapa == 2:
         
         with col_treino:
             st.markdown("#### Planilha de Treinamento")
-            dfs_treino = [df for df in tabelas_extraidas if any("exercício" in c.lower() or "séries" in c.lower() for c in df.columns)]
             
-            if dfs_treino:
-                for i, df in enumerate(dfs_treino):
-                    st.markdown(f"**Treino {i+1}**")
-                    st.dataframe(df, use_container_width=True, hide_index=True)
+            # 🟢 O SELETOR DE TREINOS DE VOLTA!
+            treinos_encontrados = [(titulo, df) for titulo, df in tabelas_extraidas if any("exercício" in c.lower() or "séries" in c.lower() for c in df.columns)]
+            
+            if treinos_encontrados:
+                nomes_opcoes = []
+                for i, (titulo, df) in enumerate(treinos_encontrados):
+                    nome = titulo if titulo else f"Treino {i+1}"
+                    if nomes_opcoes.count(nome) > 0:
+                        nome = f"{nome} ({i+1})"
+                    nomes_opcoes.append(nome)
+                
+                treino_selecionado = st.selectbox("Selecione o Dia / Treino:", nomes_opcoes)
+                
+                idx_treino = nomes_opcoes.index(treino_selecionado)
+                df_exibir = treinos_encontrados[idx_treino][1]
+                
+                st.dataframe(df_exibir, use_container_width=True, hide_index=True)
             else:
                 st.info("Visualização de treino indisponível.")
 
         with col_suple:
             st.markdown("#### Suplementação")
-            df_suple = next((df for df in tabelas_extraidas if any("suplemento" in c.lower() for c in df.columns)), None)
+            # 🟢 Lê os suplementos corretamente considerando as tuplas (titulo, df)
+            df_suple = next((df for titulo, df in tabelas_extraidas if any("suplemento" in c.lower() for c in df.columns)), None)
             if df_suple is not None:
                 st.dataframe(df_suple, use_container_width=True, hide_index=True)
             else:
                 st.info("Sem suplementos estruturados.")
                 
-            # 🟢 NOVO CARTÃO: ÍNDICE DE MASSA CORPORAL (IMC) PREMIUM
+            # 🟢 CARTÃO DE IMC PREMIUM MANTIDO
             st.markdown("#### Índice de Massa Corporal (IMC)")
             
-            # Lógica de Classificação do IMC baseada na OMS
             if imc < 18.5:
                 status_imc = "Baixo Peso"
-                cor_imc = "#f1c40f" # Amarelo
-                posicao_progresso = 10 # % na barra visual
+                cor_imc = "#f1c40f"
+                posicao_progresso = 10
             elif 18.5 <= imc < 25:
                 status_imc = "Peso Normal (Saudável)"
-                cor_imc = "#2ecc71" # Verde
-                posicao_progresso = 40 # % na barra visual
+                cor_imc = "#2ecc71"
+                posicao_progresso = 40
             elif 25 <= imc < 30:
                 status_imc = "Sobrepeso"
-                cor_imc = "#e67e22" # Laranja
-                posicao_progresso = 70 # % na barra visual
+                cor_imc = "#e67e22"
+                posicao_progresso = 70
             else:
                 status_imc = "Obesidade"
-                cor_imc = "#e74c3c" # Vermelho
-                posicao_progresso = 90 # % na barra visual
+                cor_imc = "#e74c3c"
+                posicao_progresso = 90
 
-            # Design Premium do Cartão IMC (Sem indentação para evitar blocos de código markdown)
             st.markdown(f"""
 <div style="background: #ffffff; padding: 20px; border-radius: 12px; border: 1px solid #eaeaea; box-shadow: 0 4px 6px rgba(0,0,0,0.02); text-align: center; margin-top: 15px;">
     <p style="margin: 0; font-size: 0.85rem; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Seu Resultado</p>
@@ -922,7 +946,6 @@ elif st.session_state.etapa == 2:
 
         st.divider()
 
-        # 🟢 CRIAMOS UM RECIPIENTE FIXO PARA O HISTÓRICO E RESPOSTAS
         chat_container = st.container()
 
         with chat_container:
@@ -949,7 +972,6 @@ elif st.session_state.etapa == 2:
 
         if st.session_state.mensagens and st.session_state.mensagens[-1]["role"] == "user":
             
-            # 🟢 A REQUISIÇÃO E O TEXTO AGORA OCORREM DENTRO DO RECIPIENTE DO CHAT
             with chat_container:
                 with st.spinner("O Treinador está a reformular o seu planejamento..."):
                     comando_usuario = st.session_state.mensagens[-1]["content"]
