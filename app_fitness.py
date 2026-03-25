@@ -10,6 +10,7 @@ import secrets
 import base64
 import re
 import time
+import urllib.parse
 import pandas as pd
 import plotly.express as px  
 from fpdf import FPDF 
@@ -167,6 +168,31 @@ def extrair_tabelas_do_markdown(texto):
             df = pd.DataFrame(dados, columns=cols)
             dfs.append(df)
     return dfs
+
+# ==========================================================
+# 🟢 FUNÇÃO PARA BUSCAR VÍDEO NO YOUTUBE (GRÁTIS)
+# ==========================================================
+@st.cache_data(show_spinner=False)
+def buscar_video_youtube(nome_exercicio):
+    """
+    Pesquisa o exercício no YouTube e captura o ID do primeiro vídeo.
+    Adicionamos 'exercicio execução' para filtrar tutoriais práticos.
+    """
+    query = urllib.parse.quote(f"{nome_exercicio} exercicio execução")
+    url = f"https://www.youtube.com/results?search_query={query}"
+    
+    try:
+        # Fazemos um pedido normal ao YouTube como se fôssemos um navegador
+        resposta = requests.get(url, timeout=10)
+        if resposta.status_code == 200:
+            # O YouTube moderno guarda os IDs dos vídeos num JSON embutido na página com a chave "videoId"
+            video_ids = re.findall(r'"videoId":"([^"]{11})"', resposta.text)
+            if video_ids:
+                # Retornamos o primeiro ID encontrado
+                return video_ids[0]
+    except Exception:
+        pass
+    return None
 
 # ==========================================================
 # 🟢 CLASSE PDF: DESIGN PREMIUM (BANNER SUPERIOR)
@@ -851,6 +877,50 @@ elif st.session_state.etapa == 2:
                 st.dataframe(df_suple, use_container_width=True, hide_index=True)
             else:
                 st.info("Sem suplementos estruturados.")
+                
+            # 🟢 NOVO CARTÃO: INTEGRAÇÃO PROFISSIONAL COM YOUTUBE
+            st.markdown("#### Execução em Vídeo")
+            
+            todos_exercicios = []
+            for df in dfs_treino:
+                col_ex = next((c for c in df.columns if "exercício" in c.lower() or "exercicio" in c.lower()), None)
+                if col_ex:
+                    todos_exercicios.extend(df[col_ex].dropna().tolist())
+            
+            todos_exercicios = sorted(list(set([ex.strip() for ex in todos_exercicios if str(ex).strip()])))
+            
+            if todos_exercicios:
+                ex_selecionado = st.selectbox("Selecione um exercício para ver a execução:", ["Escolher exercício..."] + todos_exercicios)
+                
+                if ex_selecionado != "Escolher exercício...":
+                    with st.spinner("A procurar o melhor vídeo explicativo..."):
+                        video_id = buscar_video_youtube(ex_selecionado)
+                        
+                        if video_id:
+                            # Frame de vídeo premium com cantos arredondados e sombra
+                            st.markdown(f"""
+                                <div style="
+                                    border-radius: 12px; 
+                                    overflow: hidden; 
+                                    box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
+                                    margin-top: 15px;
+                                    border: 1px solid rgba(0,0,0,0.05);
+                                ">
+                                    <iframe 
+                                        width="100%" 
+                                        height="260" 
+                                        src="https://www.youtube.com/embed/{video_id}" 
+                                        title="YouTube video player" 
+                                        frameborder="0" 
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                        allowfullscreen>
+                                    </iframe>
+                                </div>
+                            """, unsafe_allow_html=True)
+                        else:
+                            st.info("Não foi possível encontrar um vídeo para este exercício.")
+            else:
+                st.info("Sem exercícios carregados.")
                 
         st.divider()
         pdf_final = gerar_pdf(plano_atual, nome)
