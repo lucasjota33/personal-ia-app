@@ -1,7 +1,7 @@
 import streamlit as st
 
 # 🟢 OBRIGATÓRIO: Este comando DEVE ser o primeiro do Streamlit na página!
-st.set_page_config(page_title="Halter AI | Inteligência de Performance", page_icon="logo.png", layout="wide")
+st.set_page_config(page_title="Halter AI", page_icon="logo.png", layout="wide")
 
 import requests
 import json
@@ -169,7 +169,7 @@ def extrair_tabelas_do_markdown(texto):
     return dfs
 
 # ==========================================================
-# 🟢 CLASSE PDF: DESIGN PREMIUM (HALTER AI)
+# 🟢 CLASSE PDF: DESIGN PREMIUM (BANNER SUPERIOR)
 # ==========================================================
 class PDF_Elite(FPDF):
     def __init__(self, nome_atleta):
@@ -188,7 +188,7 @@ class PDF_Elite(FPDF):
             
         self.set_font("Arial", "B", 13)
         self.set_text_color(255, 255, 255)
-        self.cell(0, 14, "HALTER AI - PLANEJAMENTO ESTRATÉGICO", 0, 0, "L")
+        self.cell(0, 14, "HALTER AI - PLANEJAMENTO ", 0, 0, "L")
         
         self.set_font("Arial", "B", 10)
         self.set_text_color(180, 180, 180)
@@ -415,14 +415,15 @@ if st.session_state.etapa == 0:
     st.markdown("""
         <div style="text-align: center; margin-top: 1rem; margin-bottom: 3rem;">
             <span style="display: inline-flex; align-items: center; gap: 6px; background-color: rgba(128,128,128,0.1); border: 1px solid rgba(128,128,128,0.2); padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; letter-spacing: 1px;">
-                <span class="material-symbols-outlined" style="font-size: 16px;">bolt</span> HALTER AI - PERFORMANCE INTELIGENTE
+                <span class="material-symbols-outlined" style="font-size: 16px;">bolt</span> O FUTURO DO TREINAMENTO ESPORTIVO
             </span>
-            <h1 style="font-size: 3.8rem; font-weight: 900; margin-top: 1.5rem; line-height: 1.0; letter-spacing: -2px;">
-                Treine com a força da<br>
-                <span style="background: -webkit-linear-gradient(45deg, #1A1A1A, #777777); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Inteligência Artificial</span>
+            <h1 style="font-size: 3.5rem; font-weight: 800; margin-top: 1.5rem; line-height: 1.1; letter-spacing: -1px;">
+                Transforme o seu corpo com<br>
+                <span style="background: -webkit-linear-gradient(45deg, #1A1A1A, #888888); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">apenas um prompt</span>
             </h1>
-            <p style="font-size: 1.25rem; color: #666; max-width: 650px; margin: 1.5rem auto; line-height: 1.6;">
-                O Halter AI cria o seu ecossistema de treinamento: dieta, suplementação e planilhas milimétricas para o seu objetivo.
+            <p style="font-size: 1.2rem; color: #888; max-width: 600px; margin: 1.5rem auto; line-height: 1.6;">
+                Treinos, dieta e suplementação milimetricamente calculados por IA. 
+                Sem achismos. Sem treinos genéricos. Apenas resultados.
             </p>
         </div>
     """, unsafe_allow_html=True)
@@ -607,11 +608,10 @@ elif st.session_state.etapa == 1:
                     "alergias": alergias if alergias else "Nenhuma", "objetivo": objetivo, "nivel": nivel_atividade
                 }
                 
-                with st.spinner("O Halter AI está analisando os dados e a estruturar o seu plano..."):
+                with st.spinner("A analisar dados e a estruturar planejamento Power BI..."):
                     
-                    # 🟢 MELHORIA NO PROMPT: ASSUMIR A IDENTIDADE HALTER AI
                     prompt_mestre = f"""
-                    Atue como o sistema HALTER AI, um Nutricionista Esportivo Clínico e Personal Trainer de elite. 
+                    Atue como um Nutricionista Esportivo Clínico e Personal Trainer de extrema qualidade. 
                     Crie um planejamento irretocável e personalizado para o(a) {nome}. Leve em consideração suas características.
                     Idade: {idade} anos | Sexo: {sexo}
                     Peso: {peso}kg | Altura: {altura}cm | Nível: {nivel_atividade} | Objetivo: {objetivo}
@@ -724,46 +724,17 @@ elif st.session_state.etapa == 2:
 
     tab_dash, tab_chat = st.tabs(["📊 DASHBOARD DE ESTATÍSTICAS", "💬 CHAT DO TREINADOR & TEXTO"])
 
-    # --- 🟢 NOVA ESTRUTURA DO DASHBOARD ---
     with tab_dash:
         st.markdown(f"<h2>Painel de Performance: {nome.upper()}</h2>", unsafe_allow_html=True)
         
-        # ANÁLISE RÁPIDA DE SAÚDE E IMC
-        classificacao_imc = "Normal"
-        if imc < 18.5: classificacao_imc = "Abaixo do peso"
-        elif imc >= 25 and imc < 30: classificacao_imc = "Sobrepeso"
-        elif imc >= 30: classificacao_imc = "Obesidade"
-
-        st.markdown(f"""
-            <div style="display: flex; gap: 15px; margin-bottom: 20px;">
-                <span style="background-color: rgba(128,128,128,0.05); padding: 5px 15px; border-radius: 15px; border: 1px solid rgba(128,128,128,0.2); font-size: 0.9rem; font-weight: bold; color: #888;">⚖️ IMC: {imc:.1f} ({classificacao_imc})</span>
-                <span style="background-color: rgba(128,128,128,0.05); padding: 5px 15px; border-radius: 15px; border: 1px solid rgba(128,128,128,0.2); font-size: 0.9rem; font-weight: bold; color: #888;">🎯 Foco: {objetivo_curto}</span>
-            </div>
-        """, unsafe_allow_html=True)
-
         c1, c2, c3, c4 = st.columns(4)
-        c1.metric("Meta Calórica Diária", f"{dados_json.get('calorias', '0')} kcal" if dados_json else "0 kcal")
-        c2.metric("Gasto Energético", f"{dados_json.get('gasto_total', '0')} kcal" if dados_json else "0 kcal")
-        c3.metric("Meta de Água", f"{dados_json.get('agua_ml', '0')} ml" if dados_json else "0 ml")
+        c1.metric("Objetivo", objetivo_curto)
+        c2.metric("Meta Calórica Alvo", f"{dados_json.get('calorias', '0')} kcal" if dados_json else "0 kcal")
+        c3.metric("Meta de Água (Diária)", f"{dados_json.get('agua_ml', '0')} ml" if dados_json else "0 ml")
         c4.metric("Meta de Passos", f"{dados_json.get('passos', '0')}" if dados_json else "0")
             
         st.divider()
-
-        # CHECK-IN DIÁRIO (GAMIFICAÇÃO)
-        st.markdown("#### 🎯 Check-in Diário")
-        chk1, chk2, chk3 = st.columns(3)
-        with chk1:
-            if st.checkbox(f"💧 Bebi {dados_json.get('agua_ml', '0')}ml de Água"):
-                st.success("Hidratação OK!")
-        with chk2:
-            if st.checkbox("🏋️ Concluí o Treino de Hoje"):
-                st.balloons() 
-        with chk3:
-            if st.checkbox(f"🚶 Bati a meta de Passos"):
-                st.info("Excelente trabalho! Continue em movimento.")
         
-        st.divider()
-
         col_grafico, col_dieta = st.columns([1, 2.5])
         
         with col_grafico:
@@ -779,7 +750,7 @@ elif st.session_state.etapa == 2:
                 fig.update_layout(showlegend=False, margin=dict(t=10, b=10, l=10, r=10), height=300)
                 st.plotly_chart(fig, use_container_width=True)
             else:
-                st.info("Gráfico numérico não disponível.")
+                st.info("Gráfico numérico não disponível para planos antigos.")
 
         with col_dieta:
             st.markdown("#### Plano Alimentar Completo")
@@ -801,13 +772,9 @@ elif st.session_state.etapa == 2:
             dfs_treino = [df for df in tabelas_extraidas if any("exercício" in c.lower() or "séries" in c.lower() for c in df.columns)]
             
             if dfs_treino:
-                # ABAS DINÂMICAS PARA OS TREINOS
-                nomes_abas = [f"Treino {chr(65+i)}" for i in range(len(dfs_treino))]
-                abas_treino = st.tabs(nomes_abas)
-                
-                for i, aba in enumerate(abas_treino):
-                    with aba:
-                        st.dataframe(dfs_treino[i], use_container_width=True, hide_index=True)
+                for i, df in enumerate(dfs_treino):
+                    st.markdown(f"**Treino {i+1}**")
+                    st.dataframe(df, use_container_width=True, hide_index=True)
             else:
                 st.info("Visualização de treino indisponível.")
 
@@ -824,7 +791,7 @@ elif st.session_state.etapa == 2:
         st.download_button(
             label="Baixar Relatório Completo (PDF Premium)",
             data=pdf_final,
-            file_name=f"Halter_AI_{nome.replace(' ', '_')}.pdf",
+            file_name=f"Relatorio_Performance_{nome.replace(' ', '_')}.pdf",
             mime="application/pdf",
             type="primary",
             use_container_width=True
@@ -891,7 +858,7 @@ elif st.session_state.etapa == 2:
             
             # 🟢 A REQUISIÇÃO E O TEXTO AGORA OCORREM DENTRO DO RECIPIENTE DO CHAT
             with chat_container:
-                with st.spinner("O Treinador Halter AI está reformulando o seu planejamento..."):
+                with st.spinner("O Treinador está a reformular o seu planejamento..."):
                     comando_usuario = st.session_state.mensagens[-1]["content"]
                     
                     prompt_duvida_completo = f"""Plano Atual do Atleta:
