@@ -188,7 +188,7 @@ class PDF_Elite(FPDF):
             
         self.set_font("Arial", "B", 13)
         self.set_text_color(255, 255, 255)
-        self.cell(0, 14, "PLANEAMENTO ESTRATÉGICO", 0, 0, "L")
+        self.cell(0, 14, "PLANEJAMENTO ESTRATÉGICO", 0, 0, "L")
         
         self.set_font("Arial", "B", 10)
         self.set_text_color(180, 180, 180)
@@ -206,7 +206,7 @@ class PDF_Elite(FPDF):
 def gerar_pdf(texto_md, nome_atleta):
     texto_limpo = re.sub(r'```json\n.*?\n```', '', texto_md, flags=re.DOTALL)
     
-    marcadores = ["## 🧬 1. ANÁLISE METABÓLICA", "## 🧬 1", "1. ANÁLISE METABÓLICA", "# PLANEJAMENTO", "# PLANEAMENTO"]
+    marcadores = ["## 🧬 1. ANÁLISE METABÓLICA", "## 🧬 1", "1. ANÁLISE METABÓLICA", "# PLANEJAMENTO", "# PLANEJAMENTO"]
     for marcador in marcadores:
         if marcador in texto_limpo:
             texto_limpo = marcador + texto_limpo.split(marcador, 1)[1]
@@ -518,7 +518,7 @@ elif st.session_state.etapa == 1:
         """, unsafe_allow_html=True)
         
         if perfis_do_usuario:
-            st.markdown("""<div style='display: flex; align-items: center; gap: 8px; color: #888; margin-bottom: 10px;'><span class='material-symbols-outlined'>group</span><h4 style='margin: 0;'>Planeamentos Criados</h4></div>""", unsafe_allow_html=True)
+            st.markdown("""<div style='display: flex; align-items: center; gap: 8px; color: #888; margin-bottom: 10px;'><span class='material-symbols-outlined'>group</span><h4 style='margin: 0;'>Planejamentos Criados</h4></div>""", unsafe_allow_html=True)
             
             colunas_grid = st.columns(2)
             
@@ -574,7 +574,7 @@ elif st.session_state.etapa == 1:
                                 st.rerun()
             
             st.markdown("<br>", unsafe_allow_html=True)
-            st.markdown("""<div style='display: flex; align-items: center; gap: 8px; color: #888; margin-bottom: 10px;'><span class='material-symbols-outlined'>add_box</span><h4 style='margin: 0;'>Novo Planeamento</h4></div>""", unsafe_allow_html=True)
+            st.markdown("""<div style='display: flex; align-items: center; gap: 8px; color: #888; margin-bottom: 10px;'><span class='material-symbols-outlined'>add_box</span><h4 style='margin: 0;'>Novo Planejamento</h4></div>""", unsafe_allow_html=True)
         else:
             exibir_mensagem("Nenhum atleta registado ainda.", "info")
         
@@ -595,7 +595,7 @@ elif st.session_state.etapa == 1:
             nivel_atividade = st.selectbox("Nível de Atividade Diária", ["Sedentário (Trabalho de escritório, sem exercícios)", "Levemente Ativo (1 a 3 dias de exercício/semana)", "Moderadamente Ativo (3 a 5 dias de exercício/semana)", "Muito Ativo (6 a 7 dias de exercício intenso/semana)", "Extremamente Ativo (Atleta profissional, treinos duplos)"])
 
             st.markdown("<br>", unsafe_allow_html=True)
-            submit_button = st.form_submit_button(label="GERAR PLANEAMENTO", type="primary", use_container_width=True)
+            submit_button = st.form_submit_button(label="GERAR PLANEJAMENTO", type="primary", use_container_width=True)
 
         if submit_button:
             if not nome:
@@ -608,7 +608,7 @@ elif st.session_state.etapa == 1:
                     "alergias": alergias if alergias else "Nenhuma", "objetivo": objetivo, "nivel": nivel_atividade
                 }
                 
-                with st.spinner("A analisar dados e a estruturar planeamento Power BI..."):
+                with st.spinner("A analisar dados e a estruturar planejamento Power BI..."):
                     
                     prompt_mestre = f"""
                     Atue como um Nutricionista Esportivo Clínico e Personal Trainer de extrema qualidade. 
@@ -858,7 +858,7 @@ elif st.session_state.etapa == 2:
             
             # 🟢 A REQUISIÇÃO E O TEXTO AGORA OCORREM DENTRO DO RECIPIENTE DO CHAT
             with chat_container:
-                with st.spinner("O Treinador está a reformular o seu planeamento..."):
+                with st.spinner("O Treinador está a reformular o seu planejamento..."):
                     comando_usuario = st.session_state.mensagens[-1]["content"]
                     
                     prompt_duvida_completo = f"""Plano Atual do Atleta:
