@@ -1,4 +1,5 @@
 import streamlit as st
+import urllib.parse # 🟢 NOVO: Necessário para criar links de pesquisa do YouTube corretamente
 
 # 🟢 OBRIGATÓRIO: Este comando DEVE ser o primeiro do Streamlit na página!
 st.set_page_config(page_title="Halter AI", page_icon="logo.png", layout="wide")
@@ -157,7 +158,6 @@ def extrair_tabelas_do_markdown(texto):
             cols = [c.strip() for c in tab[0].strip('|').split('|')]
             dados = []
             for row in tab[1:]:
-                # Filtro Absoluto: Remove as linhas de traços do markdown
                 if re.match(r'^[\s\|\-\:]+$', row):
                     continue
                 vals = [c.strip() for c in row.strip('|').split('|')]
@@ -835,12 +835,51 @@ elif st.session_state.etapa == 2:
         
         with col_treino:
             st.markdown("#### Planilha de Treinamento")
-            dfs_treino = [df for df in tabelas_extraidas if any("exercício" in c.lower() or "séries" in c.lower() for c in df.columns)]
+            # Procura todas as tabelas geradas que tenham "exercício" ou "exercicio"
+            dfs_treino = [df for df in tabelas_extraidas if any("exercício" in c.lower() or "exercicio" in c.lower() for c in df.columns)]
             
             if dfs_treino:
                 for i, df in enumerate(dfs_treino):
                     st.markdown(f"**Treino {i+1}**")
                     st.dataframe(df, use_container_width=True, hide_index=True)
+                    
+                # 🟢 NOVA FUNCIONALIDADE: GUIA DE EXECUÇÃO EM VÍDEO
+                st.markdown("<br>#### 🎬 Guia de Execução (Vídeo)", unsafe_allow_html=True)
+                
+                # Extrair todos os exercícios únicos do plano do utilizador
+                todos_exercicios = []
+                for df in dfs_treino:
+                    col_ex = next((c for c in df.columns if "exercício" in c.lower() or "exercicio" in c.lower()), None)
+                    if col_ex:
+                        todos_exercicios.extend(df[col_ex].dropna().tolist())
+                
+                # Limpar a lista (remover itens vazios e duplicados, além de ordenar alfabeticamente)
+                todos_exercicios = sorted(list(set([ex.strip() for ex in todos_exercicios if str(ex).strip()])))
+                
+                if todos_exercicios:
+                    ex_selecionado = st.selectbox("Escolha um exercício para aprender o movimento correto:", ["Selecione um exercício..."] + todos_exercicios)
+                    
+                    if ex_selecionado != "Selecione um exercício...":
+                        # Criar uma query segura para o YouTube (ex: "como+fazer+supino+reto")
+                        query = urllib.parse.quote_plus(f"como executar corretamente o exercicio {ex_selecionado}")
+                        link_youtube = f"https://www.youtube.com/results?search_query={query}"
+                        
+                        st.markdown(f"""
+                            <div style="background: #ffffff; padding: 20px; border-radius: 12px; border: 1px solid #eaeaea; margin-top: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                                    <span class="material-symbols-outlined" style="color: #ff0000; font-size: 28px;">play_circle</span>
+                                    <h4 style="margin: 0; color: #1A1A1A;">{ex_selecionado}</h4>
+                                </div>
+                                <p style="color: #666; font-size: 0.95rem; margin-bottom: 15px;">
+                                    A forma correta previne lesões e acelera os seus resultados. Assista a um tutorial prático e rápido.
+                                </p>
+                                <a href="{link_youtube}" target="_blank" style="text-decoration: none;">
+                                    <div style="background-color: #1A1A1A; color: white; padding: 12px; border-radius: 8px; text-align: center; font-weight: 600; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                        Ver Tutorial no YouTube <span class="material-symbols-outlined" style="font-size: 18px;">open_in_new</span>
+                                    </div>
+                                </a>
+                            </div>
+                        """, unsafe_allow_html=True)
             else:
                 st.info("Visualização de treino indisponível.")
 
