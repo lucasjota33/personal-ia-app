@@ -112,10 +112,10 @@ def exibir_mensagem(texto, tipo="info"):
     elif tipo == "warning": icone = "warning"
     
     st.markdown(f"""
-        <div style="background-color: rgba(128,128,128,0.05); padding: 15px; border-radius: 8px; border: 1px solid rgba(128,128,128,0.2); color: #888; display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
-            <span class="material-symbols-outlined">{icone}</span> 
-            <span>{texto}</span>
-        </div>
+<div style="background-color: rgba(128,128,128,0.05); padding: 15px; border-radius: 8px; border: 1px solid rgba(128,128,128,0.2); color: #888; display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+    <span class="material-symbols-outlined">{icone}</span> 
+    <span>{texto}</span>
+</div>
     """, unsafe_allow_html=True)
 
 def gerador_de_texto(texto):
@@ -413,19 +413,19 @@ if st.session_state.usuario_logado is None:
 # ==========================================================
 if st.session_state.etapa == 0:
     st.markdown("""
-        <div style="text-align: center; margin-top: 1rem; margin-bottom: 3rem;">
-            <span style="display: inline-flex; align-items: center; gap: 6px; background-color: rgba(128,128,128,0.1); border: 1px solid rgba(128,128,128,0.2); padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; letter-spacing: 1px;">
-                <span class="material-symbols-outlined" style="font-size: 16px;">bolt</span> O FUTURO DO TREINAMENTO ESPORTIVO
-            </span>
-            <h1 style="font-size: 3.5rem; font-weight: 800; margin-top: 1.5rem; line-height: 1.1; letter-spacing: -1px;">
-                Transforme o seu corpo com<br>
-                <span style="background: -webkit-linear-gradient(45deg, #1A1A1A, #888888); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">apenas um prompt</span>
-            </h1>
-            <p style="font-size: 1.2rem; color: #888; max-width: 600px; margin: 1.5rem auto; line-height: 1.6;">
-                Treinos, dieta e suplementação milimetricamente calculados por IA. 
-                Sem achismos. Sem treinos genéricos. Apenas resultados.
-            </p>
-        </div>
+<div style="text-align: center; margin-top: 1rem; margin-bottom: 3rem;">
+    <span style="display: inline-flex; align-items: center; gap: 6px; background-color: rgba(128,128,128,0.1); border: 1px solid rgba(128,128,128,0.2); padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; letter-spacing: 1px;">
+        <span class="material-symbols-outlined" style="font-size: 16px;">bolt</span> O FUTURO DO TREINAMENTO ESPORTIVO
+    </span>
+    <h1 style="font-size: 3.5rem; font-weight: 800; margin-top: 1.5rem; line-height: 1.1; letter-spacing: -1px;">
+        Transforme o seu corpo com<br>
+        <span style="background: -webkit-linear-gradient(45deg, #1A1A1A, #888888); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">apenas um prompt</span>
+    </h1>
+    <p style="font-size: 1.2rem; color: #888; max-width: 600px; margin: 1.5rem auto; line-height: 1.6;">
+        Treinos, dieta e suplementação milimetricamente calculados por IA. 
+        Sem achismos. Sem treinos genéricos. Apenas resultados.
+    </p>
+</div>
     """, unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns([1, 1.5, 1])
@@ -511,10 +511,10 @@ elif st.session_state.etapa == 1:
     
     with col_centro:
         st.markdown(f"""
-            <div style="text-align: center; margin-top: 1rem; margin-bottom: 2rem;">
-                <p style="color: #888; font-size: 0.9rem; font-weight: 600; letter-spacing: 1px; margin-bottom: 0;">PAINEL DE CONTROLO</p>
-                <h1 style="font-size: 2.2rem; font-weight: 800; margin-top: 0;">Bem-vindo, {usuario}!</h1>
-            </div>
+<div style="text-align: center; margin-top: 1rem; margin-bottom: 2rem;">
+    <p style="color: #888; font-size: 0.9rem; font-weight: 600; letter-spacing: 1px; margin-bottom: 0;">PAINEL DE CONTROLO</p>
+    <h1 style="font-size: 2.2rem; font-weight: 800; margin-top: 0;">Bem-vindo, {usuario}!</h1>
+</div>
         """, unsafe_allow_html=True)
         
         if perfis_do_usuario:
@@ -541,23 +541,23 @@ elif st.session_state.etapa == 1:
                                 pass
 
                         st.markdown(f"""
-                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                            <span class="material-symbols-outlined" style="color: #1A1A1A; font-size: 1.4rem;">person</span>
-                            <h4 style="margin: 0; color: #1A1A1A; font-weight: 700;">{nome_salvo.upper()}</h4>
-                        </div>
-                        <div style="color: #666; font-size: 0.85rem; margin-bottom: 15px; display: flex; flex-direction: column; gap: 6px;">
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <span class="material-symbols-outlined" style="font-size: 16px;">ads_click</span>
-                                <span><b>Objetivo:</b> {obj_salvo}</span>
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <span class="material-symbols-outlined" style="font-size: 16px;">monitor_weight</span>
-                                <span><b>Peso:</b> {peso_salvo}kg</span>
-                                <span style="margin: 0 4px; color: #ddd;">|</span>
-                                <span class="material-symbols-outlined" style="font-size: 16px;">analytics</span>
-                                <span><b>IMC:</b> {imc_salvo}</span>
-                            </div>
-                        </div>
+<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+    <span class="material-symbols-outlined" style="color: #1A1A1A; font-size: 1.4rem;">person</span>
+    <h4 style="margin: 0; color: #1A1A1A; font-weight: 700;">{nome_salvo.upper()}</h4>
+</div>
+<div style="color: #666; font-size: 0.85rem; margin-bottom: 15px; display: flex; flex-direction: column; gap: 6px;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+        <span class="material-symbols-outlined" style="font-size: 16px;">ads_click</span>
+        <span><b>Objetivo:</b> {obj_salvo}</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px;">
+        <span class="material-symbols-outlined" style="font-size: 16px;">monitor_weight</span>
+        <span><b>Peso:</b> {peso_salvo}kg</span>
+        <span style="margin: 0 4px; color: #ddd;">|</span>
+        <span class="material-symbols-outlined" style="font-size: 16px;">analytics</span>
+        <span><b>IMC:</b> {imc_salvo}</span>
+    </div>
+</div>
                         """, unsafe_allow_html=True)
                         
                         c_btn, c_del = st.columns([4, 1]) 
@@ -628,7 +628,7 @@ elif st.session_state.etapa == 1:
                     | Refeição(Almoço, janta, etc) | Alimento Principal | Macronutrientes | Substituição |
                     
                     ## ⚡ 3. PLANILHA DE TREINAMENTO
-                    Defina uma divisão semanal inteligente (ex:ABCDE, ABC, AB, Fullbody) com base no objetivo and sexo.
+                    Defina uma divisão semanal inteligente (ex:ABCDE, ABC, AB, Fullbody) com base no objetivo e sexo.
                     Para CADA DIA de treino, crie uma tabela em Markdown seguindo EXATAMENTE as colunas abaixo:
 
                     | Exercício | Séries | Repetições | Descanso |
@@ -759,44 +759,22 @@ elif st.session_state.etapa == 2:
                     icone_projecao = "balance"
                     cor_icone = "#f39c12" 
 
+                # Evitando problemas de formatação com o HTML alinhavando à esquerda
                 st.markdown(f"""
-                    <div style="
-                        background: linear-gradient(135deg, #ffffff 0%, #f7f9fa 100%);
-                        border-radius: 16px;
-                        padding: 25px;
-                        box-shadow: 0 8px 24px rgba(0,0,0,0.06);
-                        border: 1px solid rgba(0,0,0,0.04);
-                        margin-top: 25px;
-                        margin-bottom: 30px;
-                        display: flex;
-                        align-items: center;
-                        gap: 24px;
-                        transition: transform 0.3s ease;
-                    ">
-                        <div style="
-                            background-color: #1A1A1A;
-                            color: {cor_icone};
-                            border-radius: 50%;
-                            width: 70px;
-                            height: 70px;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            flex-shrink: 0;
-                            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-                        ">
-                            <span class="material-symbols-outlined" style="font-size: 38px;">{icone_projecao}</span>
-                        </div>
-                        <div>
-                            <p style="margin: 0; font-size: 0.9rem; color: #888; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;">Projeção Halter AI</p>
-                            <h3 style="margin: 5px 0 5px 0; font-size: 1.8rem; font-weight: 800; color: #1A1A1A;">
-                                {texto_destaque}
-                            </h3>
-                            <p style="margin: 0; font-size: 1rem; color: #666; line-height: 1.4;">
-                                {texto_secundario}
-                            </p>
-                        </div>
-                    </div>
+<div style="background: linear-gradient(135deg, #ffffff 0%, #f7f9fa 100%); border-radius: 16px; padding: 25px; box-shadow: 0 8px 24px rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.04); margin-top: 25px; margin-bottom: 30px; display: flex; align-items: center; gap: 24px; transition: transform 0.3s ease;">
+    <div style="background-color: #1A1A1A; color: {cor_icone}; border-radius: 50%; width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+        <span class="material-symbols-outlined" style="font-size: 38px;">{icone_projecao}</span>
+    </div>
+    <div>
+        <p style="margin: 0; font-size: 0.9rem; color: #888; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;">Projeção Halter AI</p>
+        <h3 style="margin: 5px 0 5px 0; font-size: 1.8rem; font-weight: 800; color: #1A1A1A;">
+            {texto_destaque}
+        </h3>
+        <p style="margin: 0; font-size: 1rem; color: #666; line-height: 1.4;">
+            {texto_secundario}
+        </p>
+    </div>
+</div>
                 """, unsafe_allow_html=True)
         
         st.divider()
@@ -873,54 +851,19 @@ elif st.session_state.etapa == 2:
                 cor_imc = "#e74c3c" # Vermelho
                 posicao_progresso = 90 # % na barra visual
 
-            # Design Premium do Cartão IMC com barra de progresso visual
+            # Design Premium do Cartão IMC (Sem indentação para evitar blocos de código markdown)
             st.markdown(f"""
-                <div style="
-                    background: #ffffff; 
-                    padding: 20px; 
-                    border-radius: 12px; 
-                    border: 1px solid #eaeaea; 
-                    box-shadow: 0 4px 6px rgba(0,0,0,0.02); 
-                    text-align: center;
-                    margin-top: 15px;
-                ">
-                    <p style="margin: 0; font-size: 0.85rem; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Seu Resultado</p>
-                    <h2 style="margin: 5px 0 10px 0; font-size: 3rem; font-weight: 800; color: #1A1A1A;">{imc:.1f}</h2>
-                    
-                    <div style="
-                        width: 100%; 
-                        height: 12px; 
-                        background: linear-gradient(to right, #f1c40f 0%, #2ecc71 40%, #e67e22 70%, #e74c3c 100%); 
-                        border-radius: 6px; 
-                        position: relative;
-                        margin-bottom: 10px;
-                    ">
-                        <div style="
-                            width: 4px; 
-                            height: 20px; 
-                            background-color: #1A1A1A; 
-                            border-radius: 2px; 
-                            position: absolute; 
-                            left: calc({posicao_progresso}% - 2px); 
-                            top: -4px;
-                            border: 2px solid #fff;
-                        "></div>
-                    </div>
-                    
-                    <div style="
-                        display: inline-block;
-                        background-color: {cor_imc}; 
-                        color: #fff; 
-                        padding: 5px 12px; 
-                        border-radius: 20px; 
-                        font-size: 0.85rem; 
-                        font-weight: 700;
-                        margin-top: 5px;
-                    ">
-                        {status_imc.upper()}
-                    </div>
-                </div>
-            """, unsafe_allow_html=True)
+<div style="background: #ffffff; padding: 20px; border-radius: 12px; border: 1px solid #eaeaea; box-shadow: 0 4px 6px rgba(0,0,0,0.02); text-align: center; margin-top: 15px;">
+    <p style="margin: 0; font-size: 0.85rem; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Seu Resultado</p>
+    <h2 style="margin: 5px 0 10px 0; font-size: 3rem; font-weight: 800; color: #1A1A1A;">{imc:.1f}</h2>
+    <div style="width: 100%; height: 12px; background: linear-gradient(to right, #f1c40f 0%, #2ecc71 40%, #e67e22 70%, #e74c3c 100%); border-radius: 6px; position: relative; margin-bottom: 10px;">
+        <div style="width: 4px; height: 20px; background-color: #1A1A1A; border-radius: 2px; position: absolute; left: calc({posicao_progresso}% - 2px); top: -4px; border: 2px solid #fff;"></div>
+    </div>
+    <div style="display: inline-block; background-color: {cor_imc}; color: #fff; padding: 5px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; margin-top: 5px;">
+        {status_imc.upper()}
+    </div>
+</div>
+""", unsafe_allow_html=True)
                 
         st.divider()
         pdf_final = gerar_pdf(plano_atual, nome)
@@ -940,13 +883,13 @@ elif st.session_state.etapa == 2:
             st.markdown(texto_exibicao)
             
         st.markdown("""
-            <div style='display: flex; align-items: center; gap: 8px; margin-top: 15px; margin-bottom: 5px;'>
-                <span class='material-symbols-outlined'>forum</span> 
-                <h3 style='margin: 0;'>Assistente de Ajustes</h3>
-            </div>
-            <p style="color: #888; font-size: 0.9rem; margin-bottom: 10px;">
-                Peça mudanças no treino ou dieta. O Dashboard <b>será atualizado automaticamente</b>.
-            </p>
+<div style='display: flex; align-items: center; gap: 8px; margin-top: 15px; margin-bottom: 5px;'>
+    <span class='material-symbols-outlined'>forum</span> 
+    <h3 style='margin: 0;'>Assistente de Ajustes</h3>
+</div>
+<p style="color: #888; font-size: 0.9rem; margin-bottom: 10px;">
+    Peça mudanças no treino ou dieta. O Dashboard <b>será atualizado automaticamente</b>.
+</p>
         """, unsafe_allow_html=True)
         
         c_btn1, c_btn2, c_btn3, c_btn_limpar = st.columns([1.5, 1.5, 1.5, 1])
