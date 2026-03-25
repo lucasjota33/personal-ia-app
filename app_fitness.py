@@ -88,6 +88,8 @@ def gerar_token_sessao():
 
 def limpar_para_pdf(texto):
     if not texto: return ""
+    # Remove aspas soltas, caracteres de controle ruins e duplos asteriscos
+    texto = texto.replace('"', '').replace('**', '').replace('\r', '')
     substituicoes = {
         '\u2013': '-', '\u2014': '-', '\u2018': "'", '\u2019': "'",
         '\u201c': '"', '\u201d': '"', '\u2022': '-', '\u2026': '...',
@@ -95,7 +97,7 @@ def limpar_para_pdf(texto):
     }
     for char, sub in substituicoes.items():
         texto = texto.replace(char, sub)
-    return texto.encode("latin-1", "ignore").decode("latin-1")
+    return texto.encode("latin-1", "ignore").decode("latin-1").strip()
 
 def limpar_none(texto):
     if texto is None: return ""
@@ -165,25 +167,37 @@ def extrair_tabelas_do_markdown(texto):
             dfs.append(df)
     return dfs
 
+# ==========================================================
+# 🟢 CLASSE PDF MELHORADA (DIRETO AO PONTO + HEADER AJUSTADO)
+# ==========================================================
 class PDF_Elite(FPDF):
     def __init__(self, nome_atleta):
         super().__init__()
         self.nome_atleta = nome_atleta
 
     def header(self):
+        # Tenta carregar a logo. Se existir, empurra o texto mais pra direita.
         try:
-            self.image("logo.png", 10, 8, 15)
-            self.set_x(30)
+            self.image("logo.png", 10, 8, 14)
+            self.set_x(28)
         except:
-            pass
+            self.set_x(10)
+            
+        # Título à esquerda
         self.set_font("Arial", "B", 10)
-        self.set_text_color(150, 150, 150)
-        self.cell(0, 10, "PLANEJAMENTO", 0, 0, "L")
-        self.cell(0, 10, f"Atleta: {self.nome_atleta}", 0, 1, "R")
+        self.set_text_color(40, 40, 40)
+        self.cell(0, 8, "PLANEJAMENTO ESTRATÉGICO", 0, 0, "L")
+        
+        # Nome do Atleta à direita
+        self.set_font("Arial", "B", 9)
+        self.set_text_color(120, 120, 120)
+        self.cell(0, 8, f"ATLETA: {self.nome_atleta.upper()}", 0, 1, "R")
+        
+        # Linha do topo elegante, escura e precisa
         self.set_draw_color(30, 30, 30)
         self.set_line_width(0.5)
-        self.line(10, 20, 200, 20)
-        self.ln(8)
+        self.line(10, 18, 200, 18)
+        self.ln(8) # Espaço de respiro antes de começar o texto
 
     def footer(self):
         self.set_y(-15)
@@ -196,14 +210,10 @@ def gerar_pdf(texto_md, nome_atleta):
     texto_limpo = re.sub(r'```json\n.*?\n```', '', texto_md, flags=re.DOTALL)
     
     pdf = PDF_Elite(nome_atleta)
-    _ = pdf.add_page()
-    _ = pdf.set_auto_page_break(True, margin=15) 
+    pdf.set_auto_page_break(True, margin=15) 
     
-    _ = pdf.set_font("Arial", "B", 20)
-    _ = pdf.set_text_color(30, 30, 30)
-    _ = pdf.ln(10)
-    _ = pdf.multi_cell(0, 10, limpar_para_pdf(f"PLANEJAMENTO ESTRATÉGICO\n{nome_atleta.upper()}"), 0, "C")
-    _ = pdf.ln(15)
+    # Adiciona a primeira página (agora o conteúdo começa imediatamente)
+    pdf.add_page()
     
     linhas = texto_limpo.split("\n") + [""] 
     buffer_tabela = []
@@ -222,7 +232,7 @@ def gerar_pdf(texto_md, nome_atleta):
                     s = linha_str.strip()
                     if s.startswith('|'): s = s[1:]
                     if s.endswith('|'): s = s[:-1]
-                    return [c.strip() for c in s.split('|')]
+                    return [c.strip().replace('"', '') for c in s.split('|')]
 
                 cols = extrair_celulas(buffer_tabela[0])
                 if cols:
@@ -231,10 +241,7 @@ def gerar_pdf(texto_md, nome_atleta):
                         w_col = 190 / num_cols
                         
                         def draw_row(dados_linha, eh_cabecalho=False, zebra=False):
-                            if eh_cabecalho:
-                                _ = pdf.set_font("Arial", "B", 9)
-                            else:
-                                _ = pdf.set_font("Arial", "", 8)
+                            pdf.set_font("Arial", "B" if eh_cabecalho else "", 9 if eh_cabecalho else 8)
                                 
                             max_l = 1
                             for txt in dados_linha:
@@ -246,41 +253,43 @@ def gerar_pdf(texto_md, nome_atleta):
                                 if linhas_txt > max_l: 
                                     max_l = linhas_txt
                                     
-                            alt_linha = (5 * max_l) + 4 
+                            alt_linha = (5 * max_l) + 6 
                             
-                            if pdf.get_y() + alt_linha > 275:
-                                _ = pdf.add_page()
+                            if pdf.get_y() + alt_linha > 270:
+                                pdf.add_page()
                                 
                             y_ini = pdf.get_y()
                             
+                            pdf.set_draw_color(220, 220, 220) 
                             if eh_cabecalho:
-                                _ = pdf.set_fill_color(30, 30, 30)
-                                _ = pdf.set_text_color(255, 255, 255)
+                                pdf.set_fill_color(30, 30, 30) 
+                                pdf.set_text_color(255, 255, 255)
                             else:
-                                _ = pdf.set_text_color(40, 40, 40)
+                                pdf.set_text_color(50, 50, 50)
                                 if zebra:
-                                    _ = pdf.set_fill_color(245, 245, 245)
+                                    pdf.set_fill_color(248, 248, 248)
                                 else:
-                                    _ = pdf.set_fill_color(255, 255, 255)
+                                    pdf.set_fill_color(255, 255, 255)
 
                             for i, txt in enumerate(dados_linha):
                                 x_ini = 10 + (i * w_col)
-                                _ = pdf.set_xy(x_ini, y_ini)
-                                _ = pdf.cell(w_col, alt_linha, "", 1, 0, "", True)
+                                pdf.set_xy(x_ini, y_ini)
+                                pdf.cell(w_col, alt_linha, "", 1, 0, "", True)
                                 
-                                _ = pdf.set_xy(x_ini, y_ini + 2) 
+                                pdf.set_xy(x_ini, y_ini + 3) 
                                 txt_limpo = limpar_para_pdf(txt)
-                                _ = pdf.multi_cell(w_col, 5, txt_limpo, 0, "C")
+                                pdf.multi_cell(w_col, 5, txt_limpo, 0, "C")
                                 
-                            _ = pdf.set_xy(10, y_ini + alt_linha)
+                            pdf.set_xy(10, y_ini + alt_linha)
 
                         draw_row(cols, eh_cabecalho=True)
                         
                         zebra = False
                         for l_tab in buffer_tabela[1:]:
-                            if '---' in l_tab: continue
-                            dados = extrair_celulas(l_tab)
+                            if set(l_tab.strip().replace('|','').replace('-','').replace(' ','')) == set(): 
+                                continue
                             
+                            dados = extrair_celulas(l_tab)
                             if len(dados) < num_cols:
                                 dados.extend([''] * (num_cols - len(dados)))
                             elif len(dados) > num_cols:
@@ -289,42 +298,46 @@ def gerar_pdf(texto_md, nome_atleta):
                             draw_row(dados, eh_cabecalho=False, zebra=zebra)
                             zebra = not zebra
                         
-            _ = pdf.ln(5)
+            pdf.ln(8)
             buffer_tabela = []
             em_tabela = False
 
-        if not l_strip: continue
+        if not l_strip: 
+            pdf.ln(3)
+            continue
 
-        l_limpa = l_strip.replace("**", "").replace("* ", "- ")
+        l_limpa = l_strip.replace("**", "").replace("* ", "• ")
 
         if l_strip.startswith('### '):
-            _ = pdf.ln(2)
-            _ = pdf.set_font("Arial", "B", 12)
-            _ = pdf.set_text_color(40, 40, 40)
-            _ = pdf.multi_cell(0, 7, limpar_para_pdf(l_limpa.replace('### ', '')))
+            pdf.ln(4)
+            pdf.set_font("Arial", "B", 12)
+            pdf.set_text_color(40, 40, 40)
+            pdf.multi_cell(0, 7, limpar_para_pdf(l_limpa.replace('### ', '')))
+            pdf.ln(1)
         elif l_strip.startswith('## '):
-            _ = pdf.ln(4)
-            _ = pdf.set_font("Arial", "B", 14)
-            _ = pdf.set_text_color(30, 30, 30)
-            _ = pdf.multi_cell(0, 8, limpar_para_pdf(l_limpa.replace('## ', '')))
+            pdf.ln(6)
+            pdf.set_font("Arial", "B", 14)
+            pdf.set_text_color(30, 30, 30)
+            pdf.multi_cell(0, 8, limpar_para_pdf(l_limpa.replace('## ', '')))
+            pdf.ln(2)
         elif l_strip.startswith('# '):
-            _ = pdf.ln(6)
-            _ = pdf.set_font("Arial", "B", 18)
-            _ = pdf.set_text_color(30, 30, 30)
-            _ = pdf.multi_cell(0, 10, limpar_para_pdf(l_limpa.replace('# ', '')))
-            _ = pdf.set_draw_color(30, 30, 30)
-            _ = pdf.line(10, pdf.get_y(), 200, pdf.get_y())
-            _ = pdf.ln(2)
+            if "PLANEJAMENTO:" not in l_strip.upper():
+                pdf.ln(8)
+                pdf.set_font("Arial", "B", 16)
+                pdf.set_text_color(20, 20, 20)
+                pdf.multi_cell(0, 10, limpar_para_pdf(l_limpa.replace('# ', '')))
+                pdf.set_draw_color(200, 200, 200)
+                pdf.line(10, pdf.get_y(), 50, pdf.get_y())
+                pdf.ln(3)
         else:
-            _ = pdf.set_font("Arial", "", 10)
-            _ = pdf.set_text_color(60, 60, 60)
+            pdf.set_font("Arial", "", 10)
+            pdf.set_text_color(60, 60, 60)
             
-            if l_limpa.startswith('- '):
-                _ = pdf.set_x(15)
-                _ = pdf.multi_cell(0, 6, chr(149) + " " + limpar_para_pdf(l_limpa[2:]))
+            if l_limpa.startswith('• '):
+                pdf.set_x(15)
+                pdf.multi_cell(0, 6, limpar_para_pdf(l_limpa))
             else:
-                _ = pdf.multi_cell(0, 6, limpar_para_pdf(l_limpa))
-            _ = pdf.ln(1)
+                pdf.multi_cell(0, 6, limpar_para_pdf(l_limpa))
 
     resultado = pdf.output(dest="S")
     if isinstance(resultado, str):
@@ -340,7 +353,6 @@ header[data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stToolb
 
 .block-container { padding-top: 2rem !important; padding-bottom: 2rem !important; }
 
-/* 🟢 NOVO: Efeito de Card Premium */
 div[data-testid="stVerticalBlockBorderWrapper"] {
     transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
@@ -502,7 +514,6 @@ elif st.session_state.etapa == 1:
         if perfis_do_usuario:
             st.markdown("""<div style='display: flex; align-items: center; gap: 8px; color: #888; margin-bottom: 10px;'><span class='material-symbols-outlined'>group</span><h4 style='margin: 0;'>Planejamentos Criados</h4></div>""", unsafe_allow_html=True)
             
-            # 🟢 Criação de Grid (2 colunas) para os Cards
             colunas_grid = st.columns(2)
             
             for i, nome_salvo in enumerate(list(perfis_do_usuario.keys())):
@@ -523,7 +534,6 @@ elif st.session_state.etapa == 1:
                             except:
                                 pass
 
-                        # 🟢 UI ATUALIZADA: Ícones Reais e Alinhamento Premium
                         st.markdown(f"""
                         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
                             <span class="material-symbols-outlined" style="color: #1A1A1A; font-size: 1.4rem;">person</span>
@@ -544,7 +554,6 @@ elif st.session_state.etapa == 1:
                         </div>
                         """, unsafe_allow_html=True)
                         
-                        # Botões de Ação dentro do Card
                         c_btn, c_del = st.columns([4, 1]) 
                         with c_btn:
                             if st.button("Abrir Painel", key=f"btn_{nome_salvo}", type="primary", use_container_width=True):
@@ -664,7 +673,6 @@ elif st.session_state.etapa == 1:
         st.divider()
         c_vazia1, c_botao_sair, c_vazia2 = st.columns([3, 4, 3])
         with c_botao_sair:
-            # 🟢 UI: Botão Sair mais elegante
             if st.button("Sair da Plataforma", use_container_width=True, icon=":material/logout:"):
                 if "token" in st.session_state.banco[usuario]:
                     st.session_state.banco[usuario]["token"] = ""
@@ -775,7 +783,7 @@ elif st.session_state.etapa == 2:
         st.divider()
         pdf_final = gerar_pdf(plano_atual, nome)
         st.download_button(
-            label="Baixar Relatório em PDF",
+            label="Baixar Relatório Completo (PDF Premium)",
             data=pdf_final,
             file_name=f"Relatorio_Performance_{nome.replace(' ', '_')}.pdf",
             mime="application/pdf",
