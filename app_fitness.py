@@ -133,31 +133,42 @@ def extrair_json_da_ia(texto):
             pass
     return None
 
+# 🟢 ATUALIZADO: Extrai também o título antes da tabela
 @st.cache_data(show_spinner=False)
 def extrair_tabelas_do_markdown(texto):
     tabelas = []
     linhas = texto.split('\n')
     em_tabela = False
     tabela_atual = []
+    ultimo_titulo = ""
     
     for linha in linhas:
-        if linha.strip().startswith('|') or linha.strip().count('|') >= 2:
+        l_strip = linha.strip()
+        if l_strip.startswith('|') or l_strip.count('|') >= 2:
             em_tabela = True
-            tabela_atual.append(linha.strip())
-        elif em_tabela:
-            tabelas.append(tabela_atual)
-            tabela_atual = []
-            em_tabela = False
+            tabela_atual.append(l_strip)
+        else:
+            if em_tabela:
+                tabelas.append((ultimo_titulo, tabela_atual))
+                tabela_atual = []
+                em_tabela = False
+            
+            # Limpa formatações para extrair um título limpo
+            limpo = re.sub(r'^#+\s*', '', l_strip).replace('**', '').replace(':', ' -').strip()
+            # Garante que não é um item de lista, e que não é longo demais (exclui parágrafos normais)
+            if limpo and not limpo.startswith(('|', '-', '* ', '•')):
+                if len(limpo) < 70:
+                    ultimo_titulo = limpo
+                    
     if em_tabela and tabela_atual:
-        tabelas.append(tabela_atual)
+        tabelas.append((ultimo_titulo, tabela_atual))
         
     dfs = []
-    for tab in tabelas:
+    for titulo, tab in tabelas:
         if len(tab) > 1:
             cols = [c.strip() for c in tab[0].strip('|').split('|')]
             dados = []
             for row in tab[1:]:
-                # Filtro Absoluto: Remove as linhas de traços do markdown
                 if re.match(r'^[\s\|\-\:]+$', row):
                     continue
                 vals = [c.strip() for c in row.strip('|').split('|')]
@@ -165,7 +176,7 @@ def extrair_tabelas_do_markdown(texto):
                 elif len(vals) > len(cols): vals = vals[:len(cols)]
                 dados.append(vals)
             df = pd.DataFrame(dados, columns=cols)
-            dfs.append(df)
+            dfs.append((titulo, df))
     return dfs
 
 # ==========================================================
@@ -798,12 +809,14 @@ elif st.session_state.etapa == 2:
 
         with col_dieta:
             st.markdown("#### Plano Alimentar Completo")
-            df_dieta = next((df for df in tabelas_extraidas if any("refeição" in c.lower() or "alimento" in c.lower() for c in df.columns)), None)
+            
+            # 🟢 ATUALIZADO: Agora busca pelo segundo elemento (a tabela)
+            df_dieta = next((df for titulo, df in tabelas_extraidas if any("refeição" in c.lower() or "alimento" in c.lower() for c in df.columns)), None)
             
             if df_dieta is not None:
                 st.dataframe(df_dieta, use_container_width=True, hide_index=True)
             elif len(tabelas_extraidas) > 1:
-                st.dataframe(tabelas_extraidas[1], use_container_width=True, hide_index=True)
+                st.dataframe(tabelas_extraidas[1][1], use_container_width=True, hide_index=True)
             else:
                 st.warning("A gerar tabelas estruturadas...")
 
@@ -813,18 +826,36 @@ elif st.session_state.etapa == 2:
         
         with col_treino:
             st.markdown("#### Planilha de Treinamento")
-            dfs_treino = [df for df in tabelas_extraidas if any("exercício" in c.lower() or "séries" in c.lower() for c in df.columns)]
             
-            if dfs_treino:
-                for i, df in enumerate(dfs_treino):
-                    st.markdown(f"**Treino {i+1}**")
-                    st.dataframe(df, use_container_width=True, hide_index=True)
+            # 🟢 ATUALIZADO: Filtra treinos com título
+            treinos_encontrados = [(titulo, df) for titulo, df in tabelas_extraidas if any("exercício" in c.lower() or "séries" in c.lower() for c in df.columns)]
+            
+            if treinos_encontrados:
+                nomes_opcoes = []
+                # Pega os nomes para o menu suspenso
+                for i, (titulo, df) in enumerate(treinos_encontrados):
+                    nome = titulo if titulo else f"Treino {i+1}"
+                    # Evita nomes duplicados se a IA repetir títulos
+                    if nomes_opcoes.count(nome) > 0:
+                        nome = f"{nome} ({i+1})"
+                    nomes_opcoes.append(nome)
+                
+                # Seletor premium (Selectbox do Streamlit)
+                treino_selecionado = st.selectbox("Selecione o Dia / Treino:", nomes_opcoes)
+                
+                # Encontra o índice da opção e exibe apenas a tabela correspondente
+                idx_treino = nomes_opcoes.index(treino_selecionado)
+                df_exibir = treinos_encontrados[idx_treino][1]
+                
+                st.dataframe(df_exibir, use_container_width=True, hide_index=True)
             else:
                 st.info("Visualização de treino indisponível.")
 
         with col_suple:
             st.markdown("#### Suplementação")
-            df_suple = next((df for df in tabelas_extraidas if any("suplemento" in c.lower() for c in df.columns)), None)
+            
+            # 🟢 ATUALIZADO: Agora busca pelo segundo elemento (a tabela)
+            df_suple = next((df for titulo, df in tabelas_extraidas if any("suplemento" in c.lower() for c in df.columns)), None)
             if df_suple is not None:
                 st.dataframe(df_suple, use_container_width=True, hide_index=True)
             else:
