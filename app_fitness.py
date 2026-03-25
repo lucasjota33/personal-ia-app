@@ -733,7 +733,7 @@ elif st.session_state.etapa == 2:
         c3.metric("Meta de Água (Diária)", f"{dados_json.get('agua_ml', '0')} ml" if dados_json else "0 ml")
         c4.metric("Meta de Passos", f"{dados_json.get('passos', '0')}" if dados_json else "0")
             
-        # 🟢 LÓGICA DE PROJEÇÃO DE RESULTADOS
+        # 🟢 LÓGICA DE PROJEÇÃO DE RESULTADOS COM CARTÃO PREMIUM
         if dados_json:
             calorias = int(dados_json.get('calorias', 0))
             gasto_total = int(dados_json.get('gasto_total', 0))
@@ -743,20 +743,59 @@ elif st.session_state.etapa == 2:
                 
                 if diferenca < -100:
                     ritmo_perda = abs(diferenca) * 7 / 7700
-                    texto_projecao = f"📉 <b>Projeção IA:</b> Com o défice calórico estruturado, a estimativa média é de uma <b>perda de {ritmo_perda:.2f} kg por semana</b>."
+                    texto_destaque = f"Perda de {ritmo_perda:.2f} kg por semana"
+                    texto_secundario = "A IA projetou este défice calórico para que atinja resultados visíveis preservando a massa magra."
                     icone_projecao = "trending_down"
+                    cor_icone = "#e74c3c" 
                 elif diferenca > 100:
                     ritmo_ganho = diferenca * 7 / 7700
-                    texto_projecao = f"📈 <b>Projeção IA:</b> Com o superávit calórico estruturado, a estimativa é um ganho de volume focado em massa muscular de <b>{ritmo_ganho:.2f} kg por semana</b>."
+                    texto_destaque = f"Ganho de {ritmo_ganho:.2f} kg por semana"
+                    texto_secundario = "O seu plano tem um superávit calórico otimizado para o ganho de massa muscular sólida."
                     icone_projecao = "trending_up"
+                    cor_icone = "#2ecc71" 
                 else:
-                    texto_projecao = f"⚖️ <b>Projeção IA:</b> O seu plano foca em calorias de manutenção. O peso deve estabilizar enquanto ocorre a <b>recomposição corporal</b> (trocar gordura por músculo)."
+                    texto_destaque = "Recomposição Corporal (Manutenção)"
+                    texto_secundario = "A IA calculou calorias estáveis para perder gordura e ganhar músculo em simultâneo."
                     icone_projecao = "balance"
+                    cor_icone = "#f39c12" 
 
                 st.markdown(f"""
-                    <div style="background-color: rgba(128,128,128,0.03); padding: 18px; border-radius: 8px; border-left: 4px solid #1A1A1A; color: #333; margin-top: 10px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
-                        <span class="material-symbols-outlined" style="color: #1A1A1A; font-size: 24px;">{icone_projecao}</span>
-                        <span style="font-size: 1.05rem;">{texto_projecao}</span>
+                    <div style="
+                        background: linear-gradient(135deg, #ffffff 0%, #f7f9fa 100%);
+                        border-radius: 16px;
+                        padding: 25px;
+                        box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+                        border: 1px solid rgba(0,0,0,0.04);
+                        margin-top: 25px;
+                        margin-bottom: 30px;
+                        display: flex;
+                        align-items: center;
+                        gap: 24px;
+                        transition: transform 0.3s ease;
+                    ">
+                        <div style="
+                            background-color: #1A1A1A;
+                            color: {cor_icone};
+                            border-radius: 50%;
+                            width: 70px;
+                            height: 70px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            flex-shrink: 0;
+                            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+                        ">
+                            <span class="material-symbols-outlined" style="font-size: 38px;">{icone_projecao}</span>
+                        </div>
+                        <div>
+                            <p style="margin: 0; font-size: 0.9rem; color: #888; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;">Projeção da Inteligência Artificial</p>
+                            <h3 style="margin: 5px 0 5px 0; font-size: 1.8rem; font-weight: 800; color: #1A1A1A;">
+                                {texto_destaque}
+                            </h3>
+                            <p style="margin: 0; font-size: 1rem; color: #666; line-height: 1.4;">
+                                {texto_secundario}
+                            </p>
+                        </div>
                     </div>
                 """, unsafe_allow_html=True)
         
