@@ -851,37 +851,7 @@ elif st.session_state.etapa == 2:
                 st.dataframe(df_suple, use_container_width=True, hide_index=True)
             else:
                 st.info("Sem suplementos estruturados.")
-            
-            # 🟢 NOVO CARTÃO ABAIXO DA SUPLEMENTAÇÃO: GUIA VISUAL
-            st.markdown("<br>#### 🖼️ Guia de Ilustrações", unsafe_allow_html=True)
-            
-            # Extrair exercícios para criar a lista do dropdown
-            todos_exercicios = []
-            for df in dfs_treino:
-                col_ex = next((c for c in df.columns if "exercício" in c.lower() or "exercicio" in c.lower()), None)
-                if col_ex:
-                    todos_exercicios.extend(df[col_ex].dropna().tolist())
-            
-            todos_exercicios = sorted(list(set([ex.strip() for ex in todos_exercicios if str(ex).strip()])))
-            
-            if todos_exercicios:
-                ex_selecionado = st.selectbox("Selecione o exercício da tabela:", ["Escolher exercício..."] + todos_exercicios)
                 
-                if ex_selecionado != "Escolher exercício...":
-                    # Este cartão simula o espaço exato onde a imagem de uma API de exercícios entraria.
-                    # Usei uma imagem provisória (placeholder) que recria o nome do exercício
-                    url_imagem_provisoria = f"https://dummyimage.com/600x400/f4f4f4/1a1a1a.png&text={ex_selecionado.replace(' ', '+')}"
-                    
-                    st.markdown(f"""
-                        <div style="background: #ffffff; padding: 15px; border-radius: 12px; border: 1px solid #eaeaea; margin-top: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); text-align: center;">
-                            <h5 style="margin-top: 0; color: #1A1A1A;">Ilustração Anatómica</h5>
-                            <p style="color: #888; font-size: 0.8rem; margin-bottom: 15px;">Local reservado para API de Imagens (ex: ExerciseDB)</p>
-                        </div>
-                    """, unsafe_allow_html=True)
-                    st.image(url_imagem_provisoria, use_container_width=True)
-            else:
-                st.info("Sem exercícios carregados.")
-
         st.divider()
         pdf_final = gerar_pdf(plano_atual, nome)
         st.download_button(
