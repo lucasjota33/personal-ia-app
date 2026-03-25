@@ -88,7 +88,6 @@ def gerar_token_sessao():
 
 def limpar_para_pdf(texto):
     if not texto: return ""
-    texto = texto.replace('"', '').replace('**', '').replace('\r', '')
     substituicoes = {
         '\u2013': '-', '\u2014': '-', '\u2018': "'", '\u2019': "'",
         '\u201c': '"', '\u201d': '"', '\u2022': '-', '\u2026': '...',
@@ -96,7 +95,7 @@ def limpar_para_pdf(texto):
     }
     for char, sub in substituicoes.items():
         texto = texto.replace(char, sub)
-    return texto.encode("latin-1", "ignore").decode("latin-1").strip()
+    return texto.encode("latin-1", "ignore").decode("latin-1")
 
 def limpar_none(texto):
     if texto is None: return ""
@@ -166,9 +165,6 @@ def extrair_tabelas_do_markdown(texto):
             dfs.append(df)
     return dfs
 
-# ==========================================================
-# 🟢 CLASSE PDF MELHORADA (SEM CAPA, LIMPO, PROFISSIONAL)
-# ==========================================================
 class PDF_Elite(FPDF):
     def __init__(self, nome_atleta):
         super().__init__()
@@ -176,26 +172,18 @@ class PDF_Elite(FPDF):
 
     def header(self):
         try:
-            self.image("logo.png", 10, 8, 12)
-            self.set_x(26)
+            self.image("logo.png", 10, 8, 15)
+            self.set_x(30)
         except:
-            self.set_x(10)
-            
-        # Título da Empresa/Plano à Esquerda
-        self.set_font("Arial", "B", 12)
-        self.set_text_color(20, 20, 20)
-        self.cell(0, 6, "PLANEJAMENTO ESTRATÉGICO", 0, 0, "L")
-        
-        # Nome do Atleta à Direita
+            pass
         self.set_font("Arial", "B", 10)
-        self.set_text_color(100, 100, 100)
-        self.cell(0, 6, f"ATLETA: {self.nome_atleta.upper()}", 0, 1, "R")
-        
-        # Linha Divisória Mais Fina e Elegante
-        self.set_draw_color(200, 200, 200)
-        self.set_line_width(0.3)
-        self.line(10, 18, 200, 18)
-        self.ln(10) # Respiro antes do texto começar
+        self.set_text_color(150, 150, 150)
+        self.cell(0, 10, "PLANEJAMENTO", 0, 0, "L")
+        self.cell(0, 10, f"Atleta: {self.nome_atleta}", 0, 1, "R")
+        self.set_draw_color(30, 30, 30)
+        self.set_line_width(0.5)
+        self.line(10, 20, 200, 20)
+        self.ln(8)
 
     def footer(self):
         self.set_y(-15)
@@ -207,19 +195,15 @@ class PDF_Elite(FPDF):
 def gerar_pdf(texto_md, nome_atleta):
     texto_limpo = re.sub(r'```json\n.*?\n```', '', texto_md, flags=re.DOTALL)
     
-    # 🟢 CORTE INTELIGENTE: Remove toda a conversa da IA antes do plano real
-    marcadores = ["## 🧬 1. ANÁLISE METABÓLICA", "## 🧬 1", "1. ANÁLISE METABÓLICA", "# PLANEJAMENTO"]
-    for marcador in marcadores:
-        if marcador in texto_limpo:
-            texto_limpo = marcador + texto_limpo.split(marcador, 1)[1]
-            break
-            
-    # Caso a IA coloque um título que repete o cabeçalho, nós removemos
-    texto_limpo = texto_limpo.replace(f"# PLANEJAMENTO: {nome_atleta.upper()}", "").replace(f"# PLANEJAMENTO: {nome_atleta}", "").strip()
-    
     pdf = PDF_Elite(nome_atleta)
-    pdf.set_auto_page_break(True, margin=20) 
-    pdf.add_page()
+    _ = pdf.add_page()
+    _ = pdf.set_auto_page_break(True, margin=15) 
+    
+    _ = pdf.set_font("Arial", "B", 20)
+    _ = pdf.set_text_color(30, 30, 30)
+    _ = pdf.ln(10)
+    _ = pdf.multi_cell(0, 10, limpar_para_pdf(f"PLANEJAMENTO ESTRATÉGICO\n{nome_atleta.upper()}"), 0, "C")
+    _ = pdf.ln(15)
     
     linhas = texto_limpo.split("\n") + [""] 
     buffer_tabela = []
@@ -238,7 +222,7 @@ def gerar_pdf(texto_md, nome_atleta):
                     s = linha_str.strip()
                     if s.startswith('|'): s = s[1:]
                     if s.endswith('|'): s = s[:-1]
-                    return [c.strip().replace('"', '') for c in s.split('|')]
+                    return [c.strip() for c in s.split('|')]
 
                 cols = extrair_celulas(buffer_tabela[0])
                 if cols:
@@ -247,7 +231,10 @@ def gerar_pdf(texto_md, nome_atleta):
                         w_col = 190 / num_cols
                         
                         def draw_row(dados_linha, eh_cabecalho=False, zebra=False):
-                            pdf.set_font("Arial", "B" if eh_cabecalho else "", 9 if eh_cabecalho else 8)
+                            if eh_cabecalho:
+                                _ = pdf.set_font("Arial", "B", 9)
+                            else:
+                                _ = pdf.set_font("Arial", "", 8)
                                 
                             max_l = 1
                             for txt in dados_linha:
@@ -259,43 +246,41 @@ def gerar_pdf(texto_md, nome_atleta):
                                 if linhas_txt > max_l: 
                                     max_l = linhas_txt
                                     
-                            alt_linha = (5 * max_l) + 6 
+                            alt_linha = (5 * max_l) + 4 
                             
-                            if pdf.get_y() + alt_linha > 270:
-                                pdf.add_page()
+                            if pdf.get_y() + alt_linha > 275:
+                                _ = pdf.add_page()
                                 
                             y_ini = pdf.get_y()
                             
-                            pdf.set_draw_color(220, 220, 220) 
                             if eh_cabecalho:
-                                pdf.set_fill_color(30, 30, 30) 
-                                pdf.set_text_color(255, 255, 255)
+                                _ = pdf.set_fill_color(30, 30, 30)
+                                _ = pdf.set_text_color(255, 255, 255)
                             else:
-                                pdf.set_text_color(50, 50, 50)
+                                _ = pdf.set_text_color(40, 40, 40)
                                 if zebra:
-                                    pdf.set_fill_color(248, 248, 248)
+                                    _ = pdf.set_fill_color(245, 245, 245)
                                 else:
-                                    pdf.set_fill_color(255, 255, 255)
+                                    _ = pdf.set_fill_color(255, 255, 255)
 
                             for i, txt in enumerate(dados_linha):
                                 x_ini = 10 + (i * w_col)
-                                pdf.set_xy(x_ini, y_ini)
-                                pdf.cell(w_col, alt_linha, "", 1, 0, "", True)
+                                _ = pdf.set_xy(x_ini, y_ini)
+                                _ = pdf.cell(w_col, alt_linha, "", 1, 0, "", True)
                                 
-                                pdf.set_xy(x_ini, y_ini + 3) 
+                                _ = pdf.set_xy(x_ini, y_ini + 2) 
                                 txt_limpo = limpar_para_pdf(txt)
-                                pdf.multi_cell(w_col, 5, txt_limpo, 0, "C")
+                                _ = pdf.multi_cell(w_col, 5, txt_limpo, 0, "C")
                                 
-                            pdf.set_xy(10, y_ini + alt_linha)
+                            _ = pdf.set_xy(10, y_ini + alt_linha)
 
                         draw_row(cols, eh_cabecalho=True)
                         
                         zebra = False
                         for l_tab in buffer_tabela[1:]:
-                            if set(l_tab.strip().replace('|','').replace('-','').replace(' ','')) == set(): 
-                                continue
-                            
+                            if '---' in l_tab: continue
                             dados = extrair_celulas(l_tab)
+                            
                             if len(dados) < num_cols:
                                 dados.extend([''] * (num_cols - len(dados)))
                             elif len(dados) > num_cols:
@@ -304,44 +289,42 @@ def gerar_pdf(texto_md, nome_atleta):
                             draw_row(dados, eh_cabecalho=False, zebra=zebra)
                             zebra = not zebra
                         
-            pdf.ln(8)
+            _ = pdf.ln(5)
             buffer_tabela = []
             em_tabela = False
 
-        if not l_strip: 
-            pdf.ln(2)
-            continue
+        if not l_strip: continue
 
-        l_limpa = l_strip.replace("**", "").replace("* ", "• ")
+        l_limpa = l_strip.replace("**", "").replace("* ", "- ")
 
         if l_strip.startswith('### '):
-            pdf.ln(6)
-            pdf.set_font("Arial", "B", 11)
-            pdf.set_text_color(40, 40, 40)
-            pdf.multi_cell(0, 6, limpar_para_pdf(l_limpa.replace('### ', '')))
-            pdf.ln(1)
+            _ = pdf.ln(2)
+            _ = pdf.set_font("Arial", "B", 12)
+            _ = pdf.set_text_color(40, 40, 40)
+            _ = pdf.multi_cell(0, 7, limpar_para_pdf(l_limpa.replace('### ', '')))
         elif l_strip.startswith('## '):
-            pdf.ln(8)
-            pdf.set_font("Arial", "B", 12)
-            pdf.set_text_color(30, 30, 30)
-            
-            # Limpa o emoji do título no PDF para ficar mais limpo
-            titulo = l_limpa.replace('## ', '')
-            titulo_sem_emoji = re.sub(r'[^\w\s.,-]', '', titulo).strip()
-            
-            pdf.multi_cell(0, 7, limpar_para_pdf(titulo_sem_emoji))
-            pdf.ln(2)
+            _ = pdf.ln(4)
+            _ = pdf.set_font("Arial", "B", 14)
+            _ = pdf.set_text_color(30, 30, 30)
+            _ = pdf.multi_cell(0, 8, limpar_para_pdf(l_limpa.replace('## ', '')))
         elif l_strip.startswith('# '):
-            pass # Ignoramos o H1 pois já temos o cabeçalho padrão
+            _ = pdf.ln(6)
+            _ = pdf.set_font("Arial", "B", 18)
+            _ = pdf.set_text_color(30, 30, 30)
+            _ = pdf.multi_cell(0, 10, limpar_para_pdf(l_limpa.replace('# ', '')))
+            _ = pdf.set_draw_color(30, 30, 30)
+            _ = pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+            _ = pdf.ln(2)
         else:
-            pdf.set_font("Arial", "", 10)
-            pdf.set_text_color(60, 60, 60)
+            _ = pdf.set_font("Arial", "", 10)
+            _ = pdf.set_text_color(60, 60, 60)
             
-            if l_limpa.startswith('• '):
-                pdf.set_x(15)
-                pdf.multi_cell(0, 6, limpar_para_pdf(l_limpa))
+            if l_limpa.startswith('- '):
+                _ = pdf.set_x(15)
+                _ = pdf.multi_cell(0, 6, chr(149) + " " + limpar_para_pdf(l_limpa[2:]))
             else:
-                pdf.multi_cell(0, 6, limpar_para_pdf(l_limpa))
+                _ = pdf.multi_cell(0, 6, limpar_para_pdf(l_limpa))
+            _ = pdf.ln(1)
 
     resultado = pdf.output(dest="S")
     if isinstance(resultado, str):
@@ -357,6 +340,7 @@ header[data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stToolb
 
 .block-container { padding-top: 2rem !important; padding-bottom: 2rem !important; }
 
+/* 🟢 NOVO: Efeito de Card Premium */
 div[data-testid="stVerticalBlockBorderWrapper"] {
     transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
@@ -416,7 +400,7 @@ if st.session_state.etapa == 0:
                 <span class="material-symbols-outlined" style="font-size: 16px;">bolt</span> O FUTURO DO TREINAMENTO ESPORTIVO
             </span>
             <h1 style="font-size: 3.5rem; font-weight: 800; margin-top: 1.5rem; line-height: 1.1; letter-spacing: -1px;">
-                Transforme o seu corpo com<br>
+                Transforme seu corpo com<br>
                 <span style="background: -webkit-linear-gradient(45deg, #1A1A1A, #888888); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">apenas um prompt</span>
             </h1>
             <p style="font-size: 1.2rem; color: #888; max-width: 600px; margin: 1.5rem auto; line-height: 1.6;">
@@ -439,10 +423,10 @@ if st.session_state.etapa == 0:
         
         with tab1:
             with st.form("form_login"):
-                usuario_login = st.text_input("Utilizador ou E-mail")
-                senha_login = st.text_input("Palavra-passe", type="password")
-                manter_conectado = st.checkbox("Manter sessão iniciada") 
-                btn_login = st.form_submit_button("Aceder à Plataforma", type="primary", use_container_width=True)
+                usuario_login = st.text_input("Usuário ou E-mail")
+                senha_login = st.text_input("Senha", type="password")
+                manter_conectado = st.checkbox("Mantenha-me conectado") 
+                btn_login = st.form_submit_button("Acessar Plataforma", type="primary", use_container_width=True)
                 
                 if btn_login:
                     banco = st.session_state.banco
@@ -473,10 +457,10 @@ if st.session_state.etapa == 0:
                         
         with tab2:
             with st.form("form_cadastro"):
-                novo_usuario = st.text_input("Escolha um Nome de Utilizador")
-                novo_email = st.text_input("Digite o seu E-mail")
-                nova_senha = st.text_input("Crie uma Palavra-passe", type="password")
-                confirma_senha = st.text_input("Confirme a Palavra-passe", type="password")
+                novo_usuario = st.text_input("Escolha um Nome de Usuário")
+                novo_email = st.text_input("Digite seu E-mail")
+                nova_senha = st.text_input("Crie uma Senha", type="password")
+                confirma_senha = st.text_input("Confirme a Senha", type="password")
                 btn_cadastro = st.form_submit_button("Criar Conta", type="primary", use_container_width=True)
                 
                 if btn_cadastro:
@@ -485,11 +469,11 @@ if st.session_state.etapa == 0:
                     if not novo_usuario or not novo_email or not nova_senha or not confirma_senha:
                         exibir_mensagem("Preencha todos os campos!", "warning")
                     elif nova_senha != confirma_senha:
-                        exibir_mensagem("As palavras-passe não coincidem.", "warning")
+                        exibir_mensagem("As senhas não coincidem.", "warning")
                     elif novo_usuario in st.session_state.banco:
-                        exibir_mensagem("Utilizador já em uso!", "warning")
+                        exibir_mensagem("Usuário já em uso!", "warning")
                     elif email_em_uso:
-                        exibir_mensagem("E-mail já registado!", "warning")
+                        exibir_mensagem("E-mail já cadastrado!", "warning")
                     else:
                         st.session_state.banco[novo_usuario] = {
                             "email": novo_email, "senha": criptografar_senha(nova_senha), "token": "", "perfis": {}
@@ -510,14 +494,15 @@ elif st.session_state.etapa == 1:
     with col_centro:
         st.markdown(f"""
             <div style="text-align: center; margin-top: 1rem; margin-bottom: 2rem;">
-                <p style="color: #888; font-size: 0.9rem; font-weight: 600; letter-spacing: 1px; margin-bottom: 0;">PAINEL DE CONTROLO</p>
+                <p style="color: #888; font-size: 0.9rem; font-weight: 600; letter-spacing: 1px; margin-bottom: 0;">PAINEL DE CONTROLE</p>
                 <h1 style="font-size: 2.2rem; font-weight: 800; margin-top: 0;">Bem-vindo, {usuario}!</h1>
             </div>
         """, unsafe_allow_html=True)
         
         if perfis_do_usuario:
-            st.markdown("""<div style='display: flex; align-items: center; gap: 8px; color: #888; margin-bottom: 10px;'><span class='material-symbols-outlined'>group</span><h4 style='margin: 0;'>Planeamentos Criados</h4></div>""", unsafe_allow_html=True)
+            st.markdown("""<div style='display: flex; align-items: center; gap: 8px; color: #888; margin-bottom: 10px;'><span class='material-symbols-outlined'>group</span><h4 style='margin: 0;'>Planejamentos Criados</h4></div>""", unsafe_allow_html=True)
             
+            # 🟢 Criação de Grid (2 colunas) para os Cards
             colunas_grid = st.columns(2)
             
             for i, nome_salvo in enumerate(list(perfis_do_usuario.keys())):
@@ -538,6 +523,7 @@ elif st.session_state.etapa == 1:
                             except:
                                 pass
 
+                        # 🟢 UI ATUALIZADA: Ícones Reais e Alinhamento Premium
                         st.markdown(f"""
                         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
                             <span class="material-symbols-outlined" style="color: #1A1A1A; font-size: 1.4rem;">person</span>
@@ -558,6 +544,7 @@ elif st.session_state.etapa == 1:
                         </div>
                         """, unsafe_allow_html=True)
                         
+                        # Botões de Ação dentro do Card
                         c_btn, c_del = st.columns([4, 1]) 
                         with c_btn:
                             if st.button("Abrir Painel", key=f"btn_{nome_salvo}", type="primary", use_container_width=True):
@@ -572,9 +559,9 @@ elif st.session_state.etapa == 1:
                                 st.rerun()
             
             st.markdown("<br>", unsafe_allow_html=True)
-            st.markdown("""<div style='display: flex; align-items: center; gap: 8px; color: #888; margin-bottom: 10px;'><span class='material-symbols-outlined'>add_box</span><h4 style='margin: 0;'>Novo Planeamento</h4></div>""", unsafe_allow_html=True)
+            st.markdown("""<div style='display: flex; align-items: center; gap: 8px; color: #888; margin-bottom: 10px;'><span class='material-symbols-outlined'>add_box</span><h4 style='margin: 0;'>Novo Planejamento</h4></div>""", unsafe_allow_html=True)
         else:
-            exibir_mensagem("Nenhum atleta registado ainda.", "info")
+            exibir_mensagem("Nenhum atleta cadastrado ainda.", "info")
         
         with st.form("perfil_usuario"):
             nome = st.text_input("Nome Completo do Atleta", placeholder="Ex: Lucas Barbosa")
@@ -587,13 +574,13 @@ elif st.session_state.etapa == 1:
             with c_peso: peso = st.number_input("Peso (kg)", min_value=30.0, max_value=250.0, value=75.0, step=0.1)
             with c_altura: altura = st.number_input("Altura (cm)", min_value=100, max_value=230, value=175, step=1)
             
-            alergias = st.text_input("Alergias ou Restrições Alimentares", placeholder="Ex: Nenhuma, Intolerância à lactose, Alergia a amendoim")
+            alergias = st.text_input("Alergias ou Restrições Alimentares", placeholder="Ex: Nenhuma, Intolerância a lactose, Alergia a amendoim")
 
             objetivo = st.selectbox("Objetivo Principal", ["Ganhar Massa Muscular (Hipertrofia)", "Perder Peso (Déficit Calórico)", "Melhorar Performance (Força/Resistência)", "Definição Corporal", "Manutenção da Saúde"])
             nivel_atividade = st.selectbox("Nível de Atividade Diária", ["Sedentário (Trabalho de escritório, sem exercícios)", "Levemente Ativo (1 a 3 dias de exercício/semana)", "Moderadamente Ativo (3 a 5 dias de exercício/semana)", "Muito Ativo (6 a 7 dias de exercício intenso/semana)", "Extremamente Ativo (Atleta profissional, treinos duplos)"])
 
             st.markdown("<br>", unsafe_allow_html=True)
-            submit_button = st.form_submit_button(label="GERAR PLANEAMENTO", type="primary", use_container_width=True)
+            submit_button = st.form_submit_button(label="GERAR PLANEJAMENTO", type="primary", use_container_width=True)
 
         if submit_button:
             if not nome:
@@ -606,7 +593,7 @@ elif st.session_state.etapa == 1:
                     "alergias": alergias if alergias else "Nenhuma", "objetivo": objetivo, "nivel": nivel_atividade
                 }
                 
-                with st.spinner("A analisar dados e a estruturar planeamento Power BI..."):
+                with st.spinner("Analisando dados e estruturando planejamento Power BI..."):
                     
                     prompt_mestre = f"""
                     Atue como um Nutricionista Esportivo Clínico e Personal Trainer de extrema qualidade. 
@@ -677,6 +664,7 @@ elif st.session_state.etapa == 1:
         st.divider()
         c_vazia1, c_botao_sair, c_vazia2 = st.columns([3, 4, 3])
         with c_botao_sair:
+            # 🟢 UI: Botão Sair mais elegante
             if st.button("Sair da Plataforma", use_container_width=True, icon=":material/logout:"):
                 if "token" in st.session_state.banco[usuario]:
                     st.session_state.banco[usuario]["token"] = ""
@@ -739,7 +727,7 @@ elif st.session_state.etapa == 2:
             st.markdown("#### Distribuição de Macros")
             if dados_json and "proteinas_g" in dados_json:
                 df_macros = pd.DataFrame({
-                    "Macro": ["Proteína", "Hidratos", "Gordura"],
+                    "Macro": ["Proteína", "Carboidrato", "Gordura"],
                     "Gramas": [dados_json.get("proteinas_g", 0), dados_json.get("carboidratos_g", 0), dados_json.get("gorduras_g", 0)]
                 })
                 fig = px.pie(df_macros, values='Gramas', names='Macro', hole=0.55, 
@@ -759,7 +747,7 @@ elif st.session_state.etapa == 2:
             elif len(tabelas_extraidas) > 1:
                 st.dataframe(tabelas_extraidas[1], use_container_width=True, hide_index=True)
             else:
-                st.warning("A gerar tabelas estruturadas...")
+                st.warning("Gerando tabelas estruturadas...")
 
         st.divider()
 
@@ -787,7 +775,7 @@ elif st.session_state.etapa == 2:
         st.divider()
         pdf_final = gerar_pdf(plano_atual, nome)
         st.download_button(
-            label="Baixar Relatório Completo (PDF Premium)",
+            label="Baixar Relatório em PDF",
             data=pdf_final,
             file_name=f"Relatorio_Performance_{nome.replace(' ', '_')}.pdf",
             mime="application/pdf",
@@ -839,7 +827,7 @@ elif st.session_state.etapa == 2:
                 st.markdown(conteudo)
                 st.markdown("</div>", unsafe_allow_html=True)
         
-        prompt_duvida = st.chat_input("Ex: Troque o meu jantar por uma opção vegana...")
+        prompt_duvida = st.chat_input("Ex: Troque meu jantar por uma opção vegana...")
         comando_final = acao_rapida if acao_rapida else prompt_duvida
         
         if comando_final:
@@ -850,7 +838,7 @@ elif st.session_state.etapa == 2:
 
         if st.session_state.mensagens and st.session_state.mensagens[-1]["role"] == "user":
             
-            with st.spinner("O Treinador está a reformular o seu planeamento..."):
+            with st.spinner("O Treinador está reformulando seu planejamento..."):
                 comando_usuario = st.session_state.mensagens[-1]["content"]
                 
                 prompt_duvida_completo = f"""Plano Atual do Atleta:
@@ -888,4 +876,4 @@ Se for APENAS uma dúvida, responda normalmente de forma curta, sem reescrever o
                     else:
                         st.error(f"Erro {resposta.status_code}. Tente novamente.")
                 except Exception as e:
-                    st.error("Erro de ligação.")
+                    st.error("Erro de conexão.")
