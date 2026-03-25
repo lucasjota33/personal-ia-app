@@ -340,6 +340,15 @@ header[data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stToolb
 
 .block-container { padding-top: 2rem !important; padding-bottom: 2rem !important; }
 
+/* 🟢 NOVO: Efeito de Card Premium */
+div[data-testid="stVerticalBlockBorderWrapper"] {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+div[data-testid="stVerticalBlockBorderWrapper"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
 .stMarkdown table {
     display: block !important; overflow-x: auto !important; white-space: nowrap !important; 
     max-width: 100% !important; width: 100% !important; border-radius: 8px; margin-bottom: 20px;
@@ -497,13 +506,11 @@ elif st.session_state.etapa == 1:
             colunas_grid = st.columns(2)
             
             for i, nome_salvo in enumerate(list(perfis_do_usuario.keys())):
-                # Alterna entre a coluna da esquerda (0) e da direita (1)
                 col_atual = colunas_grid[i % 2] 
                 
                 with col_atual:
-                    with st.container(border=True): # Cria o Card com borda
+                    with st.container(border=True): 
                         
-                        # Resgata as infos para mostrar no resumo do Card
                         dados_salvos = perfis_do_usuario[nome_salvo].get("dados", {})
                         obj_salvo = dados_salvos.get("objetivo", "Não definido").split("(")[0].strip()
                         peso_salvo = dados_salvos.get("peso", "-")
@@ -516,22 +523,22 @@ elif st.session_state.etapa == 1:
                             except:
                                 pass
 
-                        # 🟢 AQUI ESTÁ A ATUALIZAÇÃO DOS ÍCONES COM DESIGN ALINHADO
+                        # 🟢 UI ATUALIZADA: Ícones Reais e Alinhamento Premium
                         st.markdown(f"""
                         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
                             <span class="material-symbols-outlined" style="color: #1A1A1A; font-size: 1.4rem;">person</span>
                             <h4 style="margin: 0; color: #1A1A1A; font-weight: 700;">{nome_salvo.upper()}</h4>
                         </div>
-                        <div style="color: #666; font-size: 0.85rem; margin-bottom: 15px; display: flex; flex-direction: column; gap: 5px;">
-                            <div style="display: flex; align-items: center; gap: 6px;">
-                                <span class="material-symbols-outlined" style="font-size: 16px;">track_changes</span>
+                        <div style="color: #666; font-size: 0.85rem; margin-bottom: 15px; display: flex; flex-direction: column; gap: 6px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span class="material-symbols-outlined" style="font-size: 16px;">ads_click</span>
                                 <span><b>Objetivo:</b> {obj_salvo}</span>
                             </div>
-                            <div style="display: flex; align-items: center; gap: 6px;">
-                                <span class="material-symbols-outlined" style="font-size: 16px;">scale</span>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span class="material-symbols-outlined" style="font-size: 16px;">monitor_weight</span>
                                 <span><b>Peso:</b> {peso_salvo}kg</span>
-                                <span style="margin: 0 2px; color: #ccc;">|</span>
-                                <span class="material-symbols-outlined" style="font-size: 16px;">bar_chart</span>
+                                <span style="margin: 0 4px; color: #ddd;">|</span>
+                                <span class="material-symbols-outlined" style="font-size: 16px;">analytics</span>
                                 <span><b>IMC:</b> {imc_salvo}</span>
                             </div>
                         </div>
@@ -546,7 +553,6 @@ elif st.session_state.etapa == 1:
                                 st.session_state.etapa = 2
                                 st.rerun()
                         with c_del:
-                            # O botão de excluir permanece como uma lixeirinha discreta
                             if st.button("🗑️", key=f"del_{nome_salvo}", use_container_width=True):
                                 del st.session_state.banco[usuario]["perfis"][nome_salvo]
                                 salvar_banco(st.session_state.banco)
@@ -658,7 +664,8 @@ elif st.session_state.etapa == 1:
         st.divider()
         c_vazia1, c_botao_sair, c_vazia2 = st.columns([3, 4, 3])
         with c_botao_sair:
-            if st.button("Sair", use_container_width=True):
+            # 🟢 UI: Botão Sair mais elegante
+            if st.button("Sair da Plataforma", use_container_width=True, icon=":material/logout:"):
                 if "token" in st.session_state.banco[usuario]:
                     st.session_state.banco[usuario]["token"] = ""
                     salvar_banco(st.session_state.banco)
@@ -686,11 +693,10 @@ elif st.session_state.etapa == 2:
 
     col_voltar, col_vazia = st.columns([4, 6])
     with col_voltar:
-        if st.button("Voltar ao Painel"):
+        if st.button("Voltar ao Painel", icon=":material/arrow_back:"):
             st.session_state.etapa = 1
             st.rerun()
 
-    # Resgatando o plano atual mais recente gerado pela IA
     plano_atual = ""
     for msg in reversed(st.session_state.mensagens):
         if msg["role"] == "assistant" and "## 🧬" in msg.get("content", ""):
@@ -704,9 +710,6 @@ elif st.session_state.etapa == 2:
 
     tab_dash, tab_chat = st.tabs(["📊 DASHBOARD DE ESTATÍSTICAS", "💬 CHAT DO TREINADOR & TEXTO"])
 
-    # ==========================================================
-    # ABA 1: DASHBOARD ESTILO POWER BI
-    # ==========================================================
     with tab_dash:
         st.markdown(f"<h2>Painel de Performance: {nome.upper()}</h2>", unsafe_allow_html=True)
         
@@ -780,9 +783,6 @@ elif st.session_state.etapa == 2:
             use_container_width=True
         )
 
-    # ==========================================================
-    # ABA 2: CHAT DO TREINADOR E TEXTO RAW
-    # ==========================================================
     with tab_chat:
         
         with st.expander("📄 VER PLANO COMPLETO EM TEXTO (MARKDOWN)", expanded=False):
@@ -815,7 +815,6 @@ elif st.session_state.etapa == 2:
 
         st.divider()
 
-        # Renderiza o Histórico de Chat ANTES do input
         for msg in st.session_state.mensagens:
             conteudo = limpar_none(msg.get("content"))
             if msg.get("role") == "assistant" and "## 🧬" in conteudo:
@@ -828,7 +827,6 @@ elif st.session_state.etapa == 2:
                 st.markdown(conteudo)
                 st.markdown("</div>", unsafe_allow_html=True)
         
-        # O campo de texto ou o botão acionado disparam a mesma lógica
         prompt_duvida = st.chat_input("Ex: Troque meu jantar por uma opção vegana...")
         comando_final = acao_rapida if acao_rapida else prompt_duvida
         
@@ -876,6 +874,6 @@ Se for APENAS uma dúvida, responda normalmente de forma curta, sem reescrever o
                         
                         st.rerun() 
                     else:
-                        st.error(f"O Google recusou a conexão (Erro {resposta.status_code}). Tente novamente em alguns segundos.")
+                        st.error(f"Erro {resposta.status_code}. Tente novamente.")
                 except Exception as e:
-                    st.error("Instabilidade na rede. O plano pode não ter sido salvo. Tente novamente.")
+                    st.error("Erro de conexão.")
