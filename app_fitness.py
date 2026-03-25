@@ -808,7 +808,7 @@ elif st.session_state.etapa == 2:
             st.markdown("#### Distribuição de Macros")
             if dados_json and "proteinas_g" in dados_json:
                 df_macros = pd.DataFrame({
-                    "Macro": ["Proteína", "Hidratos", "Gordura"],
+                    "Macro": ["Proteína", "Carbo", "Gordura"],
                     "Gramas": [dados_json.get("proteinas_g", 0), dados_json.get("carboidratos_g", 0), dados_json.get("gorduras_g", 0)]
                 })
                 fig = px.pie(df_macros, values='Gramas', names='Macro', hole=0.55, 
