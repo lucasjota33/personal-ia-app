@@ -734,7 +734,8 @@ elif st.session_state.etapa == 2:
     tabelas_extraidas = extrair_tabelas_do_markdown(plano_atual)
     dados_json = extrair_json_da_ia(plano_atual)
 
-    tab_dash, tab_chat = st.tabs(["📊 DASHBOARD DE ESTATÍSTICAS", "💬 CHAT DO TREINADOR & TEXTO"])
+    # 🟢 AQUI: Alteração dos títulos das abas para usar ícones Material Design
+    tab_dash, tab_chat = st.tabs([":material/analytics: DASHBOARD DE ESTATÍSTICAS", ":material/forum: CHAT DO TREINADOR & TEXTO"])
 
     with tab_dash:
         st.markdown(f"<h2>Painel de Performance: {nome.upper()}</h2>", unsafe_allow_html=True)
