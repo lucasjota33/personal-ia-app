@@ -72,9 +72,6 @@ def carregar_banco():
     return {}
 
 def salvar_banco(dados):
-    # DICA DE ESCALABILIDADE: Atualmente, isto salva TODOS os utilizadores de uma vez.
-    # No futuro, recomendo alterar o Firestore para que cada utilizador seja um Documento 
-    # separado. Assim, a gravação será instantânea e consumirá menos banda.
     try:
         campos = {str(k): conversor_para_firestore(v) for k, v in dados.items()}
         payload = {"fields": campos}
@@ -126,7 +123,25 @@ def gerador_de_texto(texto):
         yield palavra + " "
         time.sleep(0.03)
 
-# 🟢 OTIMIZAÇÃO: Cache para a leitura do Logo (evita ler o disco toda a hora)
+# 🟢 NOVA FUNÇÃO: Calcula a largura perfeita das colunas do st.dataframe baseado no tamanho do texto
+def auto_config_colunas(df):
+    config = {}
+    if df is not None and not df.empty:
+        for col in df.columns:
+            try:
+                # Transforma todos os valores em string e conta o tamanho máximo (incluindo o título da coluna)
+                max_len = max([len(str(x)) for x in df[col].values] + [len(str(col))])
+                # Ajusta a largura da coluna no Streamlit de acordo com o tamanho
+                if max_len > 40:
+                    config[col] = st.column_config.TextColumn(width="large")
+                elif max_len > 15:
+                    config[col] = st.column_config.TextColumn(width="medium")
+                else:
+                    config[col] = st.column_config.TextColumn()
+            except:
+                pass
+    return config
+
 @st.cache_data(show_spinner=False)
 def carregar_logo_b64(caminho_imagem):
     try:
@@ -145,7 +160,6 @@ def extrair_json_da_ia(texto):
             pass
     return None
 
-# 🟢 Motor Aprimorado: Extrai o Título e a Tabela juntos
 @st.cache_data(show_spinner=False)
 def extrair_tabelas_do_markdown(texto):
     tabelas = []
@@ -165,9 +179,7 @@ def extrair_tabelas_do_markdown(texto):
                 tabela_atual = []
                 em_tabela = False
             
-            # Limpa formatações para extrair um título limpo
             limpo = re.sub(r'^#+\s*', '', l_strip).replace('**', '').replace(':', ' -').strip()
-            # Garante que não é um item de lista, e que não é longo demais
             if limpo and not limpo.startswith(('|', '-', '* ', '•')):
                 if len(limpo) < 70:
                     ultimo_titulo = limpo
@@ -181,7 +193,6 @@ def extrair_tabelas_do_markdown(texto):
             cols = [c.strip() for c in tab[0].strip('|').split('|')]
             dados = []
             for row in tab[1:]:
-                # Filtro Absoluto: Remove as linhas de traços do markdown
                 if re.match(r'^[\s\|\-\:]+$', row):
                     continue
                 vals = [c.strip() for c in row.strip('|').split('|')]
@@ -832,10 +843,11 @@ elif st.session_state.etapa == 2:
             st.markdown("#### Plano Alimentar Completo")
             df_dieta = next((df for titulo, df in tabelas_extraidas if any("refeição" in c.lower() or "alimento" in c.lower() for c in df.columns)), None)
             
-            if df_dieta is not None:
-                st.dataframe(df_dieta, use_container_width=True, hide_index=True)
-            elif len(tabelas_extraidas) > 1:
-                st.dataframe(tabelas_extraidas[1][1], use_container_width=True, hide_index=True)
+            # 🟢 O SEGREDO ESTÁ AQUI: Utilizamos st.dataframe com column_config dinâmico
+            if df_dieta is not None and not df_dieta.empty:
+                st.dataframe(df_dieta, use_container_width=True, hide_index=True, column_config=auto_config_colunas(df_dieta))
+            elif len(tabelas_extraidas) > 1 and not tabelas_extraidas[1][1].empty:
+                st.dataframe(tabelas_extraidas[1][1], use_container_width=True, hide_index=True, column_config=auto_config_colunas(tabelas_extraidas[1][1]))
             else:
                 st.warning("A gerar tabelas estruturadas...")
 
@@ -860,15 +872,18 @@ elif st.session_state.etapa == 2:
                 idx_treino = nomes_opcoes.index(treino_selecionado)
                 df_exibir = treinos_encontrados[idx_treino][1]
                 
-                st.dataframe(df_exibir, use_container_width=True, hide_index=True)
+                # 🟢 O SEGREDO ESTÁ AQUI
+                st.dataframe(df_exibir, use_container_width=True, hide_index=True, column_config=auto_config_colunas(df_exibir))
             else:
                 st.info("Visualização de treino indisponível.")
 
         with col_suple:
             st.markdown("#### Suplementação")
             df_suple = next((df for titulo, df in tabelas_extraidas if any("suplemento" in c.lower() for c in df.columns)), None)
-            if df_suple is not None:
-                st.dataframe(df_suple, use_container_width=True, hide_index=True)
+            
+            if df_suple is not None and not df_suple.empty:
+                # 🟢 O SEGREDO ESTÁ AQUI
+                st.dataframe(df_suple, use_container_width=True, hide_index=True, column_config=auto_config_colunas(df_suple))
             else:
                 st.info("Sem suplementos estruturados.")
                 
@@ -1001,7 +1016,6 @@ Se for APENAS uma dúvida, responda normalmente de forma curta, sem reescrever o
                             if "## 🧬" not in texto_ia_duvida:
                                 st.write_stream(gerador_de_texto(texto_ia_duvida))
                             else:
-                                # 🟢 OTIMIZAÇÃO: Usando o TOAST nativo do Streamlit ao invés de Sleep() que congelava a aplicação
                                 st.toast("Plano atualizado com sucesso! Confira o Dashboard.", icon="✅")
                                 
                             st.session_state.mensagens.append({"role": "assistant", "content": texto_ia_duvida})
