@@ -830,12 +830,19 @@ elif st.session_state.etapa == 2:
 
         with col_dieta:
             st.markdown("#### Plano Alimentar Completo")
+            # Busca a tabela de dieta
             df_dieta = next((df for titulo, df in tabelas_extraidas if any("refeição" in c.lower() or "alimento" in c.lower() for c in df.columns)), None)
             
             if df_dieta is not None:
+                # 🟢 A MÁGICA AQUI: Remove todos os asteriscos da tabela inteira de uma vez
+                df_dieta = df_dieta.replace(r'\*\*', '', regex=True)
+                
                 st.dataframe(df_dieta, use_container_width=True, hide_index=True)
+                
             elif len(tabelas_extraidas) > 1:
-                st.dataframe(tabelas_extraidas[1][1], use_container_width=True, hide_index=True)
+                # Pega a segunda tabela caso a primeira não seja a dieta, limpando também os asteriscos
+                df_reserva = tabelas_extraidas[1][1].replace(r'\*\*', '', regex=True)
+                st.dataframe(df_reserva, use_container_width=True, hide_index=True)
             else:
                 st.warning("A gerar tabelas estruturadas...")
 
