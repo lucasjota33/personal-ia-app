@@ -810,6 +810,14 @@ elif st.session_state.etapa == 2:
                 """, unsafe_allow_html=True)
         
         st.divider()
+        st.download_button(
+            label="Baixar Relatório Completo (PDF Premium)",
+            data=pdf_final,
+            file_name=f"Relatorio_Performance_{nome.replace(' ', '_')}.pdf",
+            mime="application/pdf",
+            type="primary",
+            use_container_width=True
+        )
         
         col_grafico, col_dieta = st.columns([1, 2.5])
         
