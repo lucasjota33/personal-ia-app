@@ -580,7 +580,8 @@ elif st.session_state.etapa == 1:
                                 st.session_state.etapa = 2
                                 st.rerun()
                         with c_del:
-                            if st.button("Excluir", icon=":material/delete:", key=f"del_{nome_salvo}", use_container_width=True):
+                            # 🟢 AQUI: Alteração do botão de deletar (apenas ícone sem texto)
+                            if st.button(" ", icon=":material/delete:", key=f"del_{nome_salvo}", help="Excluir Perfil", use_container_width=True):
                                 del st.session_state.banco[usuario]["perfis"][nome_salvo]
                                 salvar_banco(st.session_state.banco)
                                 st.rerun()
@@ -734,7 +735,6 @@ elif st.session_state.etapa == 2:
     tabelas_extraidas = extrair_tabelas_do_markdown(plano_atual)
     dados_json = extrair_json_da_ia(plano_atual)
 
-    # 🟢 AQUI: Alteração dos títulos das abas para usar ícones Material Design
     tab_dash, tab_chat = st.tabs([":material/analytics: DASHBOARD DE ESTATÍSTICAS", ":material/forum: CHAT DO TREINADOR & TEXTO"])
 
     with tab_dash:
