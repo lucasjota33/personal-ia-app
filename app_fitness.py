@@ -930,14 +930,6 @@ elif st.session_state.etapa == 2:
         with st.expander("VER PLANO COMPLETO EM TEXTO (MARKDOWN)", expanded=False):
             texto_exibicao = re.sub(r'```json\n.*?\n```', '', limpar_none(plano_atual), flags=re.DOTALL)
             st.markdown(texto_exibicao)
-            st.download_button(
-            label="Baixar Relatório Completo (PDF Premium)",
-            data=pdf_final,
-            file_name=f"Relatorio_Performance_{nome.replace(' ', '_')}.pdf",
-            mime="application/pdf",
-            type="primary",
-            use_container_width=True
-        )
             
         st.markdown("""
 <div style='display: flex; align-items: center; gap: 8px; margin-top: 15px; margin-bottom: 5px;'>
