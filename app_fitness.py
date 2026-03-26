@@ -72,9 +72,6 @@ def carregar_banco():
     return {}
 
 def salvar_banco(dados):
-    # DICA DE ESCALABILIDADE: Atualmente, isto salva TODOS os utilizadores de uma vez.
-    # No futuro, recomendo alterar o Firestore para que cada utilizador seja um Documento 
-    # separado. Assim, a gravação será instantânea e consumirá menos banda.
     try:
         campos = {str(k): conversor_para_firestore(v) for k, v in dados.items()}
         payload = {"fields": campos}
@@ -121,12 +118,58 @@ def exibir_mensagem(texto, tipo="info"):
 </div>
     """, unsafe_allow_html=True)
 
+# 🟢 NOVA FUNÇÃO: Renderiza tabelas com estilo "Card" mantendo o texto totalmente ajustado
+def exibir_tabela_estilo_dataframe(df):
+    html = df.to_html(index=False, escape=False)
+    html = html.replace('<table border="1" class="dataframe">', '<table class="st-card-table">')
+    
+    st.markdown(f"""
+    <style>
+    .st-card-table-wrapper {{
+        background-color: #ffffff;
+        border: 1px solid rgba(49, 51, 63, 0.2);
+        border-radius: 0.5rem;
+        overflow-x: auto;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        margin-bottom: 24px;
+    }}
+    .st-card-table {{
+        width: 100%;
+        border-collapse: collapse;
+        font-family: "Source Sans Pro", sans-serif;
+        font-size: 14px;
+    }}
+    .st-card-table th {{
+        background-color: #f8f9fb;
+        color: #31333F;
+        font-weight: 600;
+        padding: 12px 16px;
+        border-bottom: 1px solid rgba(49, 51, 63, 0.2);
+        text-align: left;
+    }}
+    .st-card-table td {{
+        padding: 12px 16px;
+        border-bottom: 1px solid rgba(49, 51, 63, 0.1);
+        color: #31333F;
+        vertical-align: middle;
+    }}
+    .st-card-table tr:last-child td {{
+        border-bottom: none;
+    }}
+    .st-card-table tr:hover td {{
+        background-color: #fcfcfc;
+    }}
+    </style>
+    <div class="st-card-table-wrapper">
+        {html}
+    </div>
+    """, unsafe_allow_html=True)
+
 def gerador_de_texto(texto):
     for palavra in texto.split(" "):
         yield palavra + " "
         time.sleep(0.03)
 
-# 🟢 OTIMIZAÇÃO: Cache para a leitura do Logo (evita ler o disco toda a hora)
 @st.cache_data(show_spinner=False)
 def carregar_logo_b64(caminho_imagem):
     try:
@@ -145,7 +188,6 @@ def extrair_json_da_ia(texto):
             pass
     return None
 
-# 🟢 Motor Aprimorado: Extrai o Título e a Tabela juntos
 @st.cache_data(show_spinner=False)
 def extrair_tabelas_do_markdown(texto):
     tabelas = []
@@ -165,9 +207,7 @@ def extrair_tabelas_do_markdown(texto):
                 tabela_atual = []
                 em_tabela = False
             
-            # Limpa formatações para extrair um título limpo
             limpo = re.sub(r'^#+\s*', '', l_strip).replace('**', '').replace(':', ' -').strip()
-            # Garante que não é um item de lista, e que não é longo demais
             if limpo and not limpo.startswith(('|', '-', '* ', '•')):
                 if len(limpo) < 70:
                     ultimo_titulo = limpo
@@ -181,7 +221,6 @@ def extrair_tabelas_do_markdown(texto):
             cols = [c.strip() for c in tab[0].strip('|').split('|')]
             dados = []
             for row in tab[1:]:
-                # Filtro Absoluto: Remove as linhas de traços do markdown
                 if re.match(r'^[\s\|\-\:]+$', row):
                     continue
                 vals = [c.strip() for c in row.strip('|').split('|')]
@@ -832,10 +871,10 @@ elif st.session_state.etapa == 2:
             st.markdown("#### Plano Alimentar Completo")
             df_dieta = next((df for titulo, df in tabelas_extraidas if any("refeição" in c.lower() or "alimento" in c.lower() for c in df.columns)), None)
             
-            if df_dieta is not None:
-                st.dataframe(df_dieta, use_container_width=True, hide_index=True)
-            elif len(tabelas_extraidas) > 1:
-                st.dataframe(tabelas_extraidas[1][1], use_container_width=True, hide_index=True)
+            if df_dieta is not None and not df_dieta.empty:
+                exibir_tabela_estilo_dataframe(df_dieta)
+            elif len(tabelas_extraidas) > 1 and not tabelas_extraidas[1][1].empty:
+                exibir_tabela_estilo_dataframe(tabelas_extraidas[1][1])
             else:
                 st.warning("A gerar tabelas estruturadas...")
 
@@ -860,15 +899,15 @@ elif st.session_state.etapa == 2:
                 idx_treino = nomes_opcoes.index(treino_selecionado)
                 df_exibir = treinos_encontrados[idx_treino][1]
                 
-                st.dataframe(df_exibir, use_container_width=True, hide_index=True)
+                exibir_tabela_estilo_dataframe(df_exibir)
             else:
                 st.info("Visualização de treino indisponível.")
 
         with col_suple:
             st.markdown("#### Suplementação")
             df_suple = next((df for titulo, df in tabelas_extraidas if any("suplemento" in c.lower() for c in df.columns)), None)
-            if df_suple is not None:
-                st.dataframe(df_suple, use_container_width=True, hide_index=True)
+            if df_suple is not None and not df_suple.empty:
+                exibir_tabela_estilo_dataframe(df_suple)
             else:
                 st.info("Sem suplementos estruturados.")
                 
@@ -1001,7 +1040,6 @@ Se for APENAS uma dúvida, responda normalmente de forma curta, sem reescrever o
                             if "## 🧬" not in texto_ia_duvida:
                                 st.write_stream(gerador_de_texto(texto_ia_duvida))
                             else:
-                                # 🟢 OTIMIZAÇÃO: Usando o TOAST nativo do Streamlit ao invés de Sleep() que congelava a aplicação
                                 st.toast("Plano atualizado com sucesso! Confira o Dashboard.", icon="✅")
                                 
                             st.session_state.mensagens.append({"role": "assistant", "content": texto_ia_duvida})
