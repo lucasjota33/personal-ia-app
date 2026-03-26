@@ -126,7 +126,6 @@ def gerador_de_texto(texto):
         yield palavra + " "
         time.sleep(0.03)
 
-# 🟢 OTIMIZAÇÃO: Cache para a leitura do Logo (evita ler o disco toda a hora)
 @st.cache_data(show_spinner=False)
 def carregar_logo_b64(caminho_imagem):
     try:
@@ -145,7 +144,6 @@ def extrair_json_da_ia(texto):
             pass
     return None
 
-# 🟢 Motor Aprimorado: Extrai o Título e a Tabela juntos
 @st.cache_data(show_spinner=False)
 def extrair_tabelas_do_markdown(texto):
     tabelas = []
@@ -165,9 +163,7 @@ def extrair_tabelas_do_markdown(texto):
                 tabela_atual = []
                 em_tabela = False
             
-            # Limpa formatações para extrair um título limpo
             limpo = re.sub(r'^#+\s*', '', l_strip).replace('**', '').replace(':', ' -').strip()
-            # Garante que não é um item de lista, e que não é longo demais
             if limpo and not limpo.startswith(('|', '-', '* ', '•')):
                 if len(limpo) < 70:
                     ultimo_titulo = limpo
@@ -181,7 +177,6 @@ def extrair_tabelas_do_markdown(texto):
             cols = [c.strip() for c in tab[0].strip('|').split('|')]
             dados = []
             for row in tab[1:]:
-                # Filtro Absoluto: Remove as linhas de traços do markdown
                 if re.match(r'^[\s\|\-\:]+$', row):
                     continue
                 vals = [c.strip() for c in row.strip('|').split('|')]
@@ -828,14 +823,16 @@ elif st.session_state.etapa == 2:
             else:
                 st.info("Gráfico numérico não disponível para planos antigos.")
 
+        # 🟢 AQUI: Alteração de volta para st.dataframe mas SEM use_container_width=True
+        # Isso garante que as colunas adotem o tamanho natural do texto e permite ao usuário arrastá-las/fazer scroll horizontal.
         with col_dieta:
             st.markdown("#### Plano Alimentar Completo")
             df_dieta = next((df for titulo, df in tabelas_extraidas if any("refeição" in c.lower() or "alimento" in c.lower() for c in df.columns)), None)
             
-            if df_dieta is not None:
-                st.dataframe(df_dieta, use_container_width=True, hide_index=True)
-            elif len(tabelas_extraidas) > 1:
-                st.dataframe(tabelas_extraidas[1][1], use_container_width=True, hide_index=True)
+            if df_dieta is not None and not df_dieta.empty:
+                st.dataframe(df_dieta, hide_index=True)
+            elif len(tabelas_extraidas) > 1 and not tabelas_extraidas[1][1].empty:
+                st.dataframe(tabelas_extraidas[1][1], hide_index=True)
             else:
                 st.warning("A gerar tabelas estruturadas...")
 
@@ -843,6 +840,7 @@ elif st.session_state.etapa == 2:
 
         col_treino, col_suple = st.columns([2, 1])
         
+        # 🟢 AQUI: Volta ao st.dataframe sem forçar a largura do container
         with col_treino:
             st.markdown("#### Planilha de Treinamento")
             treinos_encontrados = [(titulo, df) for titulo, df in tabelas_extraidas if any("exercício" in c.lower() or "séries" in c.lower() for c in df.columns)]
@@ -860,15 +858,16 @@ elif st.session_state.etapa == 2:
                 idx_treino = nomes_opcoes.index(treino_selecionado)
                 df_exibir = treinos_encontrados[idx_treino][1]
                 
-                st.dataframe(df_exibir, use_container_width=True, hide_index=True)
+                st.dataframe(df_exibir, hide_index=True)
             else:
                 st.info("Visualização de treino indisponível.")
 
+        # 🟢 AQUI: Volta ao st.dataframe sem forçar a largura do container
         with col_suple:
             st.markdown("#### Suplementação")
             df_suple = next((df for titulo, df in tabelas_extraidas if any("suplemento" in c.lower() for c in df.columns)), None)
-            if df_suple is not None:
-                st.dataframe(df_suple, use_container_width=True, hide_index=True)
+            if df_suple is not None and not df_suple.empty:
+                st.dataframe(df_suple, hide_index=True)
             else:
                 st.info("Sem suplementos estruturados.")
                 
@@ -1001,7 +1000,6 @@ Se for APENAS uma dúvida, responda normalmente de forma curta, sem reescrever o
                             if "## 🧬" not in texto_ia_duvida:
                                 st.write_stream(gerador_de_texto(texto_ia_duvida))
                             else:
-                                # 🟢 OTIMIZAÇÃO: Usando o TOAST nativo do Streamlit ao invés de Sleep() que congelava a aplicação
                                 st.toast("Plano atualizado com sucesso! Confira o Dashboard.", icon="✅")
                                 
                             st.session_state.mensagens.append({"role": "assistant", "content": texto_ia_duvida})
