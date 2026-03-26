@@ -123,74 +123,79 @@ def exibir_tabela_halter(df):
     if df is None or df.empty:
         return
     
-    # Gerar HTML da tabela e aplicar classes customizadas
-    html_table = df.to_html(index=False, escape=False)
+    # Gerar o HTML da tabela removendo classes padrão do pandas que podem dar conflito
+    html_table = df.to_html(index=False, justify='left', border=0)
     
     st.markdown(f"""
     <style>
-    /* Estilo do Card que envolve a tabela */
-    .halter-table-container {{
+    /* Container que cria o efeito de 'Card' */
+    .halter-card {{
         background-color: #ffffff;
         border: 1px solid #e6e9ef;
         border-radius: 10px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
-        margin-bottom: 25px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        margin: 10px 0 25px 0;
+        width: 100%;
         overflow: hidden;
     }}
 
-    /* Container que permite o scroll horizontal suave */
-    .halter-scroll-wrapper {{
+    /* Wrapper do Scroll - Garante que o texto não quebre e role para o lado */
+    .halter-scroll {{
         overflow-x: auto;
         width: 100%;
-        -webkit-overflow-scrolling: touch;
+        display: block;
     }}
 
-    /* Tabela propriamente dita */
-    .halter-table-styled {{
+    /* Estilização Real da Tabela HTML */
+    .halter-main-table {{
         width: 100%;
         border-collapse: collapse;
-        font-family: 'Source Sans Pro', sans-serif;
-        font-size: 14px;
-        text-align: left;
+        min-width: 600px; /* Garante uma largura mínima para não esmagar no PC */
+        font-family: sans-serif;
     }}
 
     /* Cabeçalho */
-    .halter-table-styled th {{
+    .halter-main-table thead th {{
         background-color: #f8f9fb;
         color: #555e6d;
         font-weight: 600;
         padding: 12px 20px;
         border-bottom: 2px solid #f0f2f6;
-        white-space: nowrap; /* Não quebra texto no topo */
+        text-align: left;
+        white-space: nowrap; /* Não corta o título */
     }}
 
-    /* Células de dados */
-    .halter-table-styled td {{
+    /* Células de Conteúdo */
+    .halter-main-table tbody td {{
         padding: 14px 20px;
         border-bottom: 1px solid #f0f2f6;
         color: #31333F;
-        /* O SEGREDO: conteúdo inteiro sem quebra de linha */
+        font-size: 14px;
+        /* O PONTO CRUCIAL: Impede quebra de linha e mantém o conteúdo inteiro */
         white-space: nowrap; 
     }}
 
-    /* Efeito hover nas linhas */
-    .halter-table-styled tr:hover {{
-        background-color: #fafbfc;
+    /* Zebra nas linhas e Hover */
+    .halter-main-table tbody tr:nth-child(even) {{
+        background-color: #fcfcfc;
+    }}
+    .halter-main-table tbody tr:hover {{
+        background-color: #f1f3f6;
     }}
 
-    /* Scrollbar personalizada para PC */
-    .halter-scroll-wrapper::-webkit-scrollbar {{
+    /* Barra de rolagem mais elegante */
+    .halter-scroll::-webkit-scrollbar {{
         height: 6px;
     }}
-    .halter-scroll-wrapper::-webkit-scrollbar-thumb {{
+    .halter-scroll::-webkit-scrollbar-thumb {{
         background: #d1d5db;
         border-radius: 10px;
     }}
     </style>
 
-    <div class="halter-table-container">
-        <div class="halter-scroll-wrapper">
-            {html_table.replace('<table border="1" class="dataframe">', '<table class="halter-table-styled">')}
+    <div class="halter-card">
+        <div class="halter-scroll">
+            {html_table.replace('class="dataframe"', 'class="halter-main-table"')}
         </div>
     </div>
     """, unsafe_allow_html=True)
