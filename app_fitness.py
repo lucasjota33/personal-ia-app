@@ -72,6 +72,9 @@ def carregar_banco():
     return {}
 
 def salvar_banco(dados):
+    # DICA DE ESCALABILIDADE: Atualmente, isto salva TODOS os utilizadores de uma vez.
+    # No futuro, recomendo alterar o Firestore para que cada utilizador seja um Documento 
+    # separado. Assim, a gravação será instantânea e consumirá menos banda.
     try:
         campos = {str(k): conversor_para_firestore(v) for k, v in dados.items()}
         payload = {"fields": campos}
@@ -122,6 +125,15 @@ def gerador_de_texto(texto):
     for palavra in texto.split(" "):
         yield palavra + " "
         time.sleep(0.03)
+
+# 🟢 OTIMIZAÇÃO: Cache para a leitura do Logo (evita ler o disco toda a hora)
+@st.cache_data(show_spinner=False)
+def carregar_logo_b64(caminho_imagem):
+    try:
+        with open(caminho_imagem, "rb") as img_file:
+            return base64.b64encode(img_file.read()).decode()
+    except Exception:
+        return None
 
 @st.cache_data(show_spinner=False)
 def extrair_json_da_ia(texto):
@@ -442,12 +454,9 @@ if st.session_state.etapa == 0:
 
     col1, col2, col3 = st.columns([1, 1.5, 1])
     with col2:
-        try:
-            with open("logo.png", "rb") as img_file:
-                img_b64 = base64.b64encode(img_file.read()).decode()
+        img_b64 = carregar_logo_b64("logo.png")
+        if img_b64:
             st.markdown(f'<div style="display: flex; justify-content: center; margin-bottom: 20px;"><img src="data:image/png;base64,{img_b64}" width="140"></div>', unsafe_allow_html=True)
-        except:
-            pass
         
         tab1, tab2 = st.tabs(["Entrar", "Criar Conta Nova"])
         
@@ -580,7 +589,6 @@ elif st.session_state.etapa == 1:
                                 st.session_state.etapa = 2
                                 st.rerun()
                         with c_del:
-                            # 🟢 AQUI: Alteração do botão de deletar (apenas ícone sem texto)
                             if st.button(" ", icon=":material/delete:", key=f"del_{nome_salvo}", help="Excluir Perfil", use_container_width=True):
                                 del st.session_state.banco[usuario]["perfis"][nome_salvo]
                                 salvar_banco(st.session_state.banco)
@@ -621,7 +629,7 @@ elif st.session_state.etapa == 1:
                     "alergias": alergias if alergias else "Nenhuma", "objetivo": objetivo, "nivel": nivel_atividade
                 }
                 
-                with st.spinner("A analisar dados e a estruturar planejamento Power BI..."):
+                with st.spinner("A analisar dados e a estruturar planejamento..."):
                     
                     prompt_mestre = f"""
                     Atue como um Nutricionista Esportivo Clínico e Personal Trainer de extrema qualidade. 
@@ -993,8 +1001,8 @@ Se for APENAS uma dúvida, responda normalmente de forma curta, sem reescrever o
                             if "## 🧬" not in texto_ia_duvida:
                                 st.write_stream(gerador_de_texto(texto_ia_duvida))
                             else:
-                                st.success("Plano atualizado com sucesso! Confira o Dashboard.")
-                                time.sleep(1.5) 
+                                # 🟢 OTIMIZAÇÃO: Usando o TOAST nativo do Streamlit ao invés de Sleep() que congelava a aplicação
+                                st.toast("Plano atualizado com sucesso! Confira o Dashboard.", icon="✅")
                                 
                             st.session_state.mensagens.append({"role": "assistant", "content": texto_ia_duvida})
                             st.session_state.banco[usuario]["perfis"][nome]["mensagens"] = st.session_state.mensagens
