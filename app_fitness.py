@@ -756,7 +756,7 @@ elif st.session_state.etapa == 2:
     </div>
     <div style="width: 1px; height: 50px; background-color: #ddd; flex-shrink: 0;"></div>
     <div style="flex: 1; min-width: 150px;">
-        <p style="margin: 0 0 5px 0; font-size: 0.8rem; color: #888; font-weight: 700; text-transform: uppercase;"><span class="material-symbols-outlined" style="vertical-align: middle; font-size: 16px; margin-right: 5px;">local_fire_department</span>Calorias Diárias</p>
+        <p style="margin: 0 0 5px 0; font-size: 0.8rem; color: #888; font-weight: 700; text-transform: uppercase;"><span class="material-symbols-outlined" style="vertical-align: middle; font-size: 16px; margin-right: 5px;">local_fire_department</span>Meta Calórica Diária</p>
         <p style="margin: 0; font-size: 1.3rem; font-weight: 800; color: #1A1A1A;">{dados_json.get('calorias', '0') if dados_json else '0'} kcal</p>
     </div>
     <div style="width: 1px; height: 50px; background-color: #ddd; flex-shrink: 0;"></div>
