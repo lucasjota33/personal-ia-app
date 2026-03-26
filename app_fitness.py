@@ -580,7 +580,7 @@ elif st.session_state.etapa == 1:
                                 st.session_state.etapa = 2
                                 st.rerun()
                         with c_del:
-                            if st.button("🗑️", key=f"del_{nome_salvo}", use_container_width=True):
+                            if st.button("Excluir", icon=":material/delete:", key=f"del_{nome_salvo}", use_container_width=True):
                                 del st.session_state.banco[usuario]["perfis"][nome_salvo]
                                 salvar_banco(st.session_state.banco)
                                 st.rerun()
@@ -840,7 +840,6 @@ elif st.session_state.etapa == 2:
             
             if treinos_encontrados:
                 nomes_opcoes = []
-                # 🟢 CORREÇÃO DO BUG: Utilizamos 'nome_opcao' para não reescrever a variável 'nome' do Utilizador
                 for i, (titulo, df) in enumerate(treinos_encontrados):
                     nome_opcao = titulo if titulo else f"Treino {i+1}"
                     if nomes_opcoes.count(nome_opcao) > 0:
@@ -909,7 +908,7 @@ elif st.session_state.etapa == 2:
 
     with tab_chat:
         
-        with st.expander("📄 VER PLANO COMPLETO EM TEXTO (MARKDOWN)", expanded=False):
+        with st.expander("VER PLANO COMPLETO EM TEXTO (MARKDOWN)", expanded=False):
             texto_exibicao = re.sub(r'```json\n.*?\n```', '', limpar_none(plano_atual), flags=re.DOTALL)
             st.markdown(texto_exibicao)
             
@@ -926,11 +925,11 @@ elif st.session_state.etapa == 2:
         c_btn1, c_btn2, c_btn3, c_btn_limpar = st.columns([1.5, 1.5, 1.5, 1])
         acao_rapida = None
         
-        if c_btn1.button("🥬 Tornar Dieta Vegana", use_container_width=True): acao_rapida = "Altere todo o plano alimentar para uma dieta estritamente vegana, garantindo o aporte de proteínas."
-        if c_btn2.button("🔄 Variar Refeições", use_container_width=True): acao_rapida = "Mude as opções de almoço e jantar para opções completamente diferentes das atuais."
-        if c_btn3.button("⏱️ Treino mais Curto", use_container_width=True): acao_rapida = "Ajuste o treino para que dure no máximo 45 minutos (menos exercícios ou métodos avançados)."
+        if c_btn1.button("Tornar Dieta Vegana", icon=":material/eco:", use_container_width=True): acao_rapida = "Altere todo o plano alimentar para uma dieta estritamente vegana, garantindo o aporte de proteínas."
+        if c_btn2.button("Variar Refeições", icon=":material/sync:", use_container_width=True): acao_rapida = "Mude as opções de almoço e jantar para opções completamente diferentes das atuais."
+        if c_btn3.button("Treino mais Curto", icon=":material/timer:", use_container_width=True): acao_rapida = "Ajuste o treino para que dure no máximo 45 minutos (menos exercícios ou métodos avançados)."
         
-        if c_btn_limpar.button("🗑️ Limpar Chat", use_container_width=True):
+        if c_btn_limpar.button("Limpar Chat", icon=":material/delete:", use_container_width=True):
             if len(st.session_state.mensagens) > 0:
                 st.session_state.mensagens = [st.session_state.mensagens[0]]
                 st.session_state.banco[usuario]["perfis"][nome]["mensagens"] = st.session_state.mensagens
@@ -993,7 +992,7 @@ Se for APENAS uma dúvida, responda normalmente de forma curta, sem reescrever o
                             if "## 🧬" not in texto_ia_duvida:
                                 st.write_stream(gerador_de_texto(texto_ia_duvida))
                             else:
-                                st.success("✨ Plano atualizado com sucesso! Confira o Dashboard.")
+                                st.success("Plano atualizado com sucesso! Confira o Dashboard.")
                                 time.sleep(1.5) 
                                 
                             st.session_state.mensagens.append({"role": "assistant", "content": texto_ia_duvida})
