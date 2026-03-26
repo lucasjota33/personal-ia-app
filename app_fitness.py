@@ -646,7 +646,7 @@ elif st.session_state.etapa == 1:
 
                     ## 🥗 2. PLANO ALIMENTAR
                     Crie uma tabela em Markdown seguindo EXATAMENTE as colunas abaixo (Seja variado na criação do plano, não monte algo genérico e respeite as restrições alimentares mencionadas):
-                    | Refeição(Almoço, janta, etc) | Alimento Principal | Macronutrientes | Substituição |
+                    | Refeição(Almoço, janta, etc) | Alimento Principal | Macronutrientes (g) | Substituição |
                     
                     ## ⚡ 3. PLANILHA DE TREINAMENTO
                     Defina uma divisão semanal inteligente (ex:ABCDE, ABC, AB, Fullbody) com base no objetivo e sexo.
