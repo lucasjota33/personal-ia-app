@@ -72,9 +72,6 @@ def carregar_banco():
     return {}
 
 def salvar_banco(dados):
-    # DICA DE ESCALABILIDADE: Atualmente, isto salva TODOS os utilizadores de uma vez.
-    # No futuro, recomendo alterar o Firestore para que cada utilizador seja um Documento 
-    # separado. Assim, a gravação será instantânea e consumirá menos banda.
     try:
         campos = {str(k): conversor_para_firestore(v) for k, v in dados.items()}
         payload = {"fields": campos}
@@ -121,12 +118,88 @@ def exibir_mensagem(texto, tipo="info"):
 </div>
     """, unsafe_allow_html=True)
 
+# 🟢 NOVA FUNÇÃO: Tabela Profissional sem cortes de texto e com scroll horizontal
+def exibir_tabela_halter(df):
+    if df is None or df.empty:
+        return
+    
+    # Gerar HTML da tabela e aplicar classes customizadas
+    html_table = df.to_html(index=False, escape=False)
+    
+    st.markdown(f"""
+    <style>
+    /* Estilo do Card que envolve a tabela */
+    .halter-table-container {{
+        background-color: #ffffff;
+        border: 1px solid #e6e9ef;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+        margin-bottom: 25px;
+        overflow: hidden;
+    }}
+
+    /* Container que permite o scroll horizontal suave */
+    .halter-scroll-wrapper {{
+        overflow-x: auto;
+        width: 100%;
+        -webkit-overflow-scrolling: touch;
+    }}
+
+    /* Tabela propriamente dita */
+    .halter-table-styled {{
+        width: 100%;
+        border-collapse: collapse;
+        font-family: 'Source Sans Pro', sans-serif;
+        font-size: 14px;
+        text-align: left;
+    }}
+
+    /* Cabeçalho */
+    .halter-table-styled th {{
+        background-color: #f8f9fb;
+        color: #555e6d;
+        font-weight: 600;
+        padding: 12px 20px;
+        border-bottom: 2px solid #f0f2f6;
+        white-space: nowrap; /* Não quebra texto no topo */
+    }}
+
+    /* Células de dados */
+    .halter-table-styled td {{
+        padding: 14px 20px;
+        border-bottom: 1px solid #f0f2f6;
+        color: #31333F;
+        /* O SEGREDO: conteúdo inteiro sem quebra de linha */
+        white-space: nowrap; 
+    }}
+
+    /* Efeito hover nas linhas */
+    .halter-table-styled tr:hover {{
+        background-color: #fafbfc;
+    }}
+
+    /* Scrollbar personalizada para PC */
+    .halter-scroll-wrapper::-webkit-scrollbar {{
+        height: 6px;
+    }}
+    .halter-scroll-wrapper::-webkit-scrollbar-thumb {{
+        background: #d1d5db;
+        border-radius: 10px;
+    }}
+    </style>
+
+    <div class="halter-table-container">
+        <div class="halter-scroll-wrapper">
+            {html_table.replace('<table border="1" class="dataframe">', '<table class="halter-table-styled">')}
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
 def gerador_de_texto(texto):
     for palavra in texto.split(" "):
         yield palavra + " "
         time.sleep(0.03)
 
-# 🟢 OTIMIZAÇÃO: Cache para a leitura do Logo (evita ler o disco toda a hora)
 @st.cache_data(show_spinner=False)
 def carregar_logo_b64(caminho_imagem):
     try:
@@ -145,7 +218,6 @@ def extrair_json_da_ia(texto):
             pass
     return None
 
-# 🟢 Motor Aprimorado: Extrai o Título e a Tabela juntos
 @st.cache_data(show_spinner=False)
 def extrair_tabelas_do_markdown(texto):
     tabelas = []
@@ -165,9 +237,7 @@ def extrair_tabelas_do_markdown(texto):
                 tabela_atual = []
                 em_tabela = False
             
-            # Limpa formatações para extrair um título limpo
             limpo = re.sub(r'^#+\s*', '', l_strip).replace('**', '').replace(':', ' -').strip()
-            # Garante que não é um item de lista, e que não é longo demais
             if limpo and not limpo.startswith(('|', '-', '* ', '•')):
                 if len(limpo) < 70:
                     ultimo_titulo = limpo
@@ -181,7 +251,6 @@ def extrair_tabelas_do_markdown(texto):
             cols = [c.strip() for c in tab[0].strip('|').split('|')]
             dados = []
             for row in tab[1:]:
-                # Filtro Absoluto: Remove as linhas de traços do markdown
                 if re.match(r'^[\s\|\-\:]+$', row):
                     continue
                 vals = [c.strip() for c in row.strip('|').split('|')]
@@ -391,6 +460,7 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {
     box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 
+/* Tabelas Markdown padrão (se houver no texto do chat) */
 .stMarkdown table {
     display: block !important; overflow-x: auto !important; white-space: nowrap !important; 
     max-width: 100% !important; width: 100% !important; border-radius: 8px; margin-bottom: 20px;
@@ -832,10 +902,11 @@ elif st.session_state.etapa == 2:
             st.markdown("#### Plano Alimentar Completo")
             df_dieta = next((df for titulo, df in tabelas_extraidas if any("refeição" in c.lower() or "alimento" in c.lower() for c in df.columns)), None)
             
-            if df_dieta is not None:
-                st.dataframe(df_dieta, use_container_width=True, hide_index=True)
-            elif len(tabelas_extraidas) > 1:
-                st.dataframe(tabelas_extraidas[1][1], use_container_width=True, hide_index=True)
+            if df_dieta is not None and not df_dieta.empty:
+                # 🟢 CHAMADA DA NOVA TABELA HTML
+                exibir_tabela_halter(df_dieta)
+            elif len(tabelas_extraidas) > 1 and not tabelas_extraidas[1][1].empty:
+                exibir_tabela_halter(tabelas_extraidas[1][1])
             else:
                 st.warning("A gerar tabelas estruturadas...")
 
@@ -860,15 +931,17 @@ elif st.session_state.etapa == 2:
                 idx_treino = nomes_opcoes.index(treino_selecionado)
                 df_exibir = treinos_encontrados[idx_treino][1]
                 
-                st.dataframe(df_exibir, use_container_width=True, hide_index=True)
+                # 🟢 CHAMADA DA NOVA TABELA HTML
+                exibir_tabela_halter(df_exibir)
             else:
                 st.info("Visualização de treino indisponível.")
 
         with col_suple:
             st.markdown("#### Suplementação")
             df_suple = next((df for titulo, df in tabelas_extraidas if any("suplemento" in c.lower() for c in df.columns)), None)
-            if df_suple is not None:
-                st.dataframe(df_suple, use_container_width=True, hide_index=True)
+            if df_suple is not None and not df_suple.empty:
+                # 🟢 CHAMADA DA NOVA TABELA HTML
+                exibir_tabela_halter(df_suple)
             else:
                 st.info("Sem suplementos estruturados.")
                 
@@ -1001,7 +1074,6 @@ Se for APENAS uma dúvida, responda normalmente de forma curta, sem reescrever o
                             if "## 🧬" not in texto_ia_duvida:
                                 st.write_stream(gerador_de_texto(texto_ia_duvida))
                             else:
-                                # 🟢 OTIMIZAÇÃO: Usando o TOAST nativo do Streamlit ao invés de Sleep() que congelava a aplicação
                                 st.toast("Plano atualizado com sucesso! Confira o Dashboard.", icon="✅")
                                 
                             st.session_state.mensagens.append({"role": "assistant", "content": texto_ia_duvida})
