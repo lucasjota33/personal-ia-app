@@ -833,7 +833,17 @@ elif st.session_state.etapa == 2:
             df_dieta = next((df for titulo, df in tabelas_extraidas if any("refeição" in c.lower() or "alimento" in c.lower() for c in df.columns)), None)
             
             if df_dieta is not None:
-                st.dataframe(df_dieta, use_container_width=True, hide_index=True)
+                st.dataframe(
+                    df_dieta, 
+                    use_container_width=True, 
+                    hide_index=True,
+                    column_config={
+                        "Alimento Principal": st.column_config.Column(width="large"),
+                        "Substituição": st.column_config.Column(width="large"),
+                        "Macronutrientes": st.column_config.Column(width="medium"),
+                        "Exercício": st.column_config.Column(width="large")
+                    }
+                )
             elif len(tabelas_extraidas) > 1:
                 st.dataframe(tabelas_extraidas[1][1], use_container_width=True, hide_index=True)
             else:
