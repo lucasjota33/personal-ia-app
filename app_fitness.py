@@ -629,7 +629,7 @@ elif st.session_state.etapa == 1:
                     "alergias": alergias if alergias else "Nenhuma", "objetivo": objetivo, "nivel": nivel_atividade
                 }
                 
-                with st.spinner("A analisar dados e estruturando o planejamento..."):
+                with st.spinner("Analisando dados e estruturando o planejamento..."):
                     
                     prompt_mestre = f"""
                     Atue como um Nutricionista Esportivo Clínico e Personal Trainer de extrema qualidade. 
