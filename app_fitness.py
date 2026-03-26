@@ -874,7 +874,10 @@ elif st.session_state.etapa == 2:
         with col_suple:
             st.markdown("#### Suplementação")
             df_suple = next((df for titulo, df in tabelas_extraidas if any("suplemento" in c.lower() for c in df.columns)), None)
+            
             if df_suple is not None:
+                # 🟢 LIMPEZA: Remove os asteriscos de negrito do Markdown
+                df_suple = df_suple.replace(r'\*\*', '', regex=True)
                 st.dataframe(df_suple, use_container_width=True, hide_index=True)
             else:
                 st.info("Sem suplementos estruturados.")
