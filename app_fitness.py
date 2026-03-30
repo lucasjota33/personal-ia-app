@@ -309,7 +309,13 @@ def gerar_pdf(texto_md, nome_perfil):
                                 
                                 pdf.set_xy(x_ini, y_ini + 4) 
                                 txt_limpo = limpar_para_pdf(txt)
-                                pdf.multi_cell(w_col, 5, txt_limpo, 0, "C")
+                                
+                                # 🟢 AJUSTE DE SEGURANÇA 1: Tabelas
+                                try:
+                                    pdf.multi_cell(w_col, 5, txt_limpo, 0, "C")
+                                except Exception:
+                                    pdf.set_xy(x_ini, y_ini + 4)
+                                    pdf.cell(w_col, 5, txt_limpo[:10] + "..", 0, 0, "C")
                                 
                             pdf.set_xy(10, y_ini + alt_linha)
 
@@ -343,8 +349,15 @@ def gerar_pdf(texto_md, nome_perfil):
             pdf.ln(6)
             pdf.set_font("Arial", "B", 12)
             pdf.set_text_color(40, 40, 40)
-            pdf.multi_cell(0, 6, limpar_para_pdf(l_limpa.replace('### ', '')))
+            
+            # 🟢 AJUSTE DE SEGURANÇA 2: Subtítulos
+            texto_titulo = limpar_para_pdf(l_limpa.replace('### ', ''))
+            try:
+                pdf.multi_cell(0, 6, texto_titulo)
+            except Exception:
+                pdf.cell(0, 6, texto_titulo[:80] + "...", 0, 1)
             pdf.ln(1)
+            
         elif l_strip.startswith('## '):
             pdf.ln(10)
             pdf.set_font("Arial", "B", 14)
@@ -353,23 +366,31 @@ def gerar_pdf(texto_md, nome_perfil):
             titulo = l_limpa.replace('## ', '')
             titulo_sem_emoji = re.sub(r'[^\w\s.,-]', '', titulo).strip()
             
-            pdf.cell(0, 8, limpar_para_pdf(titulo_sem_emoji), 0, 1, "L")
+            pdf.cell(0, 8, limpar_para_pdf(titulo_sem_emoji)[:80], 0, 1, "L")
             
             pdf.set_draw_color(200, 200, 200)
             pdf.set_line_width(0.3)
             pdf.line(10, pdf.get_y(), 200, pdf.get_y())
             pdf.ln(4)
+            
         elif l_strip.startswith('# '):
             pass 
         else:
             pdf.set_font("Arial", "", 10.5)
             pdf.set_text_color(50, 50, 50)
             
-            if l_limpa.startswith('• '):
-                pdf.set_x(15)
-                pdf.multi_cell(0, 6, limpar_para_pdf(l_limpa))
-            else:
-                pdf.multi_cell(0, 6, limpar_para_pdf(l_limpa))
+            # 🟢 AJUSTE DE SEGURANÇA 3: Texto normal
+            texto_final = limpar_para_pdf(l_limpa)
+            if texto_final:
+                try:
+                    if l_limpa.startswith('• '):
+                        pdf.set_x(15)
+                        pdf.multi_cell(0, 6, texto_final)
+                    else:
+                        pdf.multi_cell(0, 6, texto_final)
+                except Exception:
+                    pdf.set_x(10)
+                    pdf.multi_cell(0, 6, texto_final[:90] + "...")
 
     resultado = pdf.output(dest="S")
     if isinstance(resultado, str):
