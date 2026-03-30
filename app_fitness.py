@@ -10,20 +10,23 @@ import secrets
 import base64
 import re
 import time
+import os
 import pandas as pd
 import plotly.express as px  
 from fpdf import FPDF 
 
-# Configurações iniciais
-CHAVE = st.secrets["GEMINI_API_KEY"]
+# Configurações iniciais com proteção para Google Cloud
+CHAVE = os.environ.get("GEMINI_API_KEY") or st.secrets["GEMINI_API_KEY"]
 MODELO = "models/gemini-2.5-flash-lite"
 
 # ==========================================================
-# 🟢 MOTOR DE BANCO DE DADOS EM NUVEM (FIREBASE FIRESTORE)
+# 🟢 ARQUITETURA ESCALÁVEL DO FIRESTORE (1 DOCUMENTO POR USUÁRIO)
 # ==========================================================
 FIREBASE_PROJECT_ID = "treinadordigital-b8fe2"
-FIREBASE_API_KEY = "AIzaSyBXmbHcwmGBZSMRCJyv-P7YtbslVydIbro"
-URL_FIRESTORE = f"https://firestore.googleapis.com/v1/projects/{FIREBASE_PROJECT_ID}/databases/(default)/documents/sistema/banco_de_dados?key={FIREBASE_API_KEY}"
+FIREBASE_API_KEY = os.environ.get("FIREBASE_API_KEY") or st.secrets["FIREBASE_API_KEY"]
+
+# Agora apontamos para uma COLEÇÃO chamada "usuarios"
+URL_FIRESTORE_BASE = f"https://firestore.googleapis.com/v1/projects/{FIREBASE_PROJECT_ID}/databases/(default)/documents/usuarios"
 
 def conversor_para_firestore(valor):
     if isinstance(valor, dict):
@@ -61,24 +64,31 @@ def conversor_para_python(valor):
     return None
 
 def carregar_banco():
+    """Lê todos os usuários individuais da coleção e monta o dicionário do sistema."""
+    banco = {}
     try:
-        resposta = requests.get(URL_FIRESTORE)
+        url = f"{URL_FIRESTORE_BASE}?key={FIREBASE_API_KEY}"
+        resposta = requests.get(url)
         if resposta.status_code == 200:
             dados = resposta.json()
-            if "fields" in dados:
-                return {k: conversor_para_python(v) for k, v in dados["fields"].items()}
+            if "documents" in dados:
+                for doc in dados["documents"]:
+                    # Extrai o nome do usuário do final da URL do documento
+                    nome_usuario = doc["name"].split("/")[-1]
+                    campos = doc.get("fields", {})
+                    banco[nome_usuario] = {k: conversor_para_python(v) for k, v in campos.items()}
     except Exception:
         pass
-    return {}
+    return banco
 
-def salvar_banco(dados):
-    # DICA DE ESCALABILIDADE: Atualmente, isto salva TODOS os utilizadores de uma vez.
-    # No futuro, recomendo alterar o Firestore para que cada utilizador seja um Documento 
-    # separado. Assim, a gravação será instantânea e consumirá menos banda.
+def salvar_usuario(usuario, dados_do_usuario):
+    """Salva APENAS os dados do usuário específico no seu próprio documento."""
     try:
-        campos = {str(k): conversor_para_firestore(v) for k, v in dados.items()}
+        campos = {str(k): conversor_para_firestore(v) for k, v in dados_do_usuario.items()}
         payload = {"fields": campos}
-        requests.patch(URL_FIRESTORE, json=payload)
+        # URL aponta diretamente para o documento do usuário
+        url = f"{URL_FIRESTORE_BASE}/{usuario}?key={FIREBASE_API_KEY}"
+        requests.patch(url, json=payload)
     except Exception:
         pass
 
@@ -126,7 +136,6 @@ def gerador_de_texto(texto):
         yield palavra + " "
         time.sleep(0.03)
 
-# 🟢 OTIMIZAÇÃO: Cache para a leitura do Logo (evita ler o disco toda a hora)
 @st.cache_data(show_spinner=False)
 def carregar_logo_b64(caminho_imagem):
     try:
@@ -145,7 +154,6 @@ def extrair_json_da_ia(texto):
             pass
     return None
 
-# 🟢 Motor Aprimorado: Extrai o Título e a Tabela juntos
 @st.cache_data(show_spinner=False)
 def extrair_tabelas_do_markdown(texto):
     tabelas = []
@@ -165,9 +173,7 @@ def extrair_tabelas_do_markdown(texto):
                 tabela_atual = []
                 em_tabela = False
             
-            # Limpa formatações para extrair um título limpo
             limpo = re.sub(r'^#+\s*', '', l_strip).replace('**', '').replace(':', ' -').strip()
-            # Garante que não é um item de lista, e que não é longo demais
             if limpo and not limpo.startswith(('|', '-', '* ', '•')):
                 if len(limpo) < 70:
                     ultimo_titulo = limpo
@@ -181,7 +187,6 @@ def extrair_tabelas_do_markdown(texto):
             cols = [c.strip() for c in tab[0].strip('|').split('|')]
             dados = []
             for row in tab[1:]:
-                # Filtro Absoluto: Remove as linhas de traços do markdown
                 if re.match(r'^[\s\|\-\:]+$', row):
                     continue
                 vals = [c.strip() for c in row.strip('|').split('|')]
@@ -192,9 +197,6 @@ def extrair_tabelas_do_markdown(texto):
             dfs.append((titulo, df))
     return dfs
 
-# ==========================================================
-# 🟢 CLASSE PDF: DESIGN PREMIUM (BANNER SUPERIOR)
-# ==========================================================
 class PDF_Elite(FPDF):
     def __init__(self, nome_perfil):
         super().__init__()
@@ -487,7 +489,8 @@ if st.session_state.etapa == 0:
                         if manter_conectado:
                             novo_token = gerar_token_sessao()
                             st.session_state.banco[usuario_encontrado]["token"] = novo_token
-                            salvar_banco(st.session_state.banco)
+                            # 🟢 Salva APENAS o usuário logado
+                            salvar_usuario(usuario_encontrado, st.session_state.banco[usuario_encontrado])
                             st.query_params["session"] = novo_token
                             
                         st.rerun()
@@ -517,7 +520,8 @@ if st.session_state.etapa == 0:
                         st.session_state.banco[novo_usuario] = {
                             "email": novo_email, "senha": criptografar_senha(nova_senha), "token": "", "perfis": {}
                         }
-                        salvar_banco(st.session_state.banco)
+                        # 🟢 Salva APENAS o novo usuário
+                        salvar_usuario(novo_usuario, st.session_state.banco[novo_usuario])
                         exibir_mensagem("Conta criada com sucesso!", "success")
 
 # ==========================================================
@@ -526,7 +530,7 @@ if st.session_state.etapa == 0:
 elif st.session_state.etapa == 1:
     
     usuario = st.session_state.usuario_logado
-    perfis_do_usuario = st.session_state.banco[usuario]["perfis"]
+    perfis_do_usuario = st.session_state.banco[usuario].get("perfis", {})
     
     col_esquerda, col_centro, col_direita = st.columns([1, 1.5, 1])
     
@@ -591,7 +595,8 @@ elif st.session_state.etapa == 1:
                         with c_del:
                             if st.button(" ", icon=":material/delete:", key=f"del_{nome_salvo}", help="Excluir Perfil", use_container_width=True):
                                 del st.session_state.banco[usuario]["perfis"][nome_salvo]
-                                salvar_banco(st.session_state.banco)
+                                # 🟢 Salva a exclusão apenas para este usuário
+                                salvar_usuario(usuario, st.session_state.banco[usuario])
                                 st.rerun()
             
             st.markdown("<br>", unsafe_allow_html=True)
@@ -688,7 +693,8 @@ elif st.session_state.etapa == 1:
                                 "dados": st.session_state.dados_usuario,
                                 "mensagens": st.session_state.mensagens
                             }
-                            salvar_banco(st.session_state.banco)
+                            # 🟢 Salva o novo planejamento apenas para o usuário
+                            salvar_usuario(usuario, st.session_state.banco[usuario])
                             
                             st.session_state.etapa = 2
                             st.rerun()
@@ -703,7 +709,8 @@ elif st.session_state.etapa == 1:
             if st.button("Sair da Plataforma", use_container_width=True, icon=":material/logout:"):
                 if "token" in st.session_state.banco[usuario]:
                     st.session_state.banco[usuario]["token"] = ""
-                    salvar_banco(st.session_state.banco)
+                    # 🟢 Limpa o token e salva só o usuário
+                    salvar_usuario(usuario, st.session_state.banco[usuario])
                 st.query_params.clear()
                 st.session_state.usuario_logado = None
                 st.session_state.etapa = 0
@@ -830,17 +837,13 @@ elif st.session_state.etapa == 2:
 
         with col_dieta:
             st.markdown("#### Plano Alimentar Completo")
-            # Busca a tabela de dieta
             df_dieta = next((df for titulo, df in tabelas_extraidas if any("refeição" in c.lower() or "alimento" in c.lower() for c in df.columns)), None)
             
             if df_dieta is not None:
-                # 🟢 A MÁGICA AQUI: Remove todos os asteriscos da tabela inteira de uma vez
                 df_dieta = df_dieta.replace(r'\*\*', '', regex=True)
-                
                 st.dataframe(df_dieta, use_container_width=True, hide_index=True)
                 
             elif len(tabelas_extraidas) > 1:
-                # Pega a segunda tabela caso a primeira não seja a dieta, limpando também os asteriscos
                 df_reserva = tabelas_extraidas[1][1].replace(r'\*\*', '', regex=True)
                 st.dataframe(df_reserva, use_container_width=True, hide_index=True)
             else:
@@ -876,7 +879,6 @@ elif st.session_state.etapa == 2:
             df_suple = next((df for titulo, df in tabelas_extraidas if any("suplemento" in c.lower() for c in df.columns)), None)
             
             if df_suple is not None:
-                # 🟢 LIMPEZA: Remove os asteriscos de negrito do Markdown
                 df_suple = df_suple.replace(r'\*\*', '', regex=True)
                 st.dataframe(df_suple, use_container_width=True, hide_index=True)
             else:
@@ -952,7 +954,8 @@ elif st.session_state.etapa == 2:
             if len(st.session_state.mensagens) > 0:
                 st.session_state.mensagens = [st.session_state.mensagens[0]]
                 st.session_state.banco[usuario]["perfis"][nome]["mensagens"] = st.session_state.mensagens
-                salvar_banco(st.session_state.banco)
+                # 🟢 Salva a limpeza de chat apenas para o usuário
+                salvar_usuario(usuario, st.session_state.banco[usuario])
             st.rerun()
 
         st.divider()
@@ -978,7 +981,8 @@ elif st.session_state.etapa == 2:
         if comando_final:
             st.session_state.mensagens.append({"role": "user", "content": comando_final})
             st.session_state.banco[usuario]["perfis"][nome]["mensagens"] = st.session_state.mensagens
-            salvar_banco(st.session_state.banco)
+            # 🟢 Salva a nova pergunta apenas para o usuário
+            salvar_usuario(usuario, st.session_state.banco[usuario])
             st.rerun() 
 
         if st.session_state.mensagens and st.session_state.mensagens[-1]["role"] == "user":
@@ -1011,12 +1015,12 @@ Se for APENAS uma dúvida, responda normalmente de forma curta, sem reescrever o
                             if "## 🧬" not in texto_ia_duvida:
                                 st.write_stream(gerador_de_texto(texto_ia_duvida))
                             else:
-                                # 🟢 OTIMIZAÇÃO: Usando o TOAST nativo do Streamlit ao invés de Sleep() que congelava a aplicação
                                 st.toast("Plano atualizado com sucesso! Confira o Dashboard.", icon="✅")
                                 
                             st.session_state.mensagens.append({"role": "assistant", "content": texto_ia_duvida})
                             st.session_state.banco[usuario]["perfis"][nome]["mensagens"] = st.session_state.mensagens
-                            salvar_banco(st.session_state.banco)
+                            # 🟢 Salva a resposta da IA apenas para o usuário
+                            salvar_usuario(usuario, st.session_state.banco[usuario])
                             
                             st.rerun() 
                         else:
