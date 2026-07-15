@@ -1,363 +1,574 @@
-const API_BASE = "/api";
+/* ═══════════════════════════════════════════════════════════════
+   Halter AI — script.js
+   API_BASE vazio = mesma origin (funciona no Render onde FastAPI
+   serve tudo na raiz sem prefixo /api)
+═══════════════════════════════════════════════════════════════ */
 
-function getToken() {
-  return localStorage.getItem("halterai_token") || null;
+const API_BASE = "";   // rotas: /auth/login, /perfis, etc.
+
+/* ── Token ────────────────────────────────────────────────────── */
+const getToken    = () => localStorage.getItem("halterai_token");
+const setToken    = (t) => localStorage.setItem("halterai_token", t);
+const clearToken  = () => localStorage.removeItem("halterai_token");
+const authHeaders = () => {
+  const t = getToken();
+  return t ? { Authorization: `Bearer ${t}` } : {};
+};
+
+/* ── Toast ────────────────────────────────────────────────────── */
+function showToast(msg, duration = 3000) {
+  const el = document.getElementById("toast");
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove("show"), duration);
 }
 
-function setToken(token) {
-  localStorage.setItem("halterai_token", token);
+/* ── Feedback inline ──────────────────────────────────────────── */
+function setFeedback(id, msg, type = "info") {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = msg;
+  el.className = "feedback " + (type === "error" ? "error" : type === "success" ? "success" : "");
 }
 
-function clearToken() {
-  localStorage.removeItem("halterai_token");
+/* ── Loading overlay ──────────────────────────────────────────── */
+function showLoading(msg = "Aguarde...") {
+  const ov = document.getElementById("loading-overlay");
+  const tx = document.getElementById("loading-text");
+  if (!ov) return;
+  if (tx) tx.textContent = msg;
+  ov.classList.add("show");
+}
+function hideLoading() {
+  const ov = document.getElementById("loading-overlay");
+  if (ov) ov.classList.remove("show");
 }
 
-function authHeaders() {
-  const token = getToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
+/* ── HTTP helper ──────────────────────────────────────────────── */
+async function api(path, options = {}) {
+  const headers = {
+    "Content-Type": "application/json",
+    ...authHeaders(),
+    ...(options.headers || {}),
+  };
+  const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+  const text = await res.text();
+  let data = null;
+  try { data = JSON.parse(text); } catch (_) { data = { detail: text }; }
+
+  if (!res.ok) {
+    if (res.status === 401) { clearToken(); navigate("index.html"); }
+    throw new Error(data?.detail || data?.message || res.statusText || "Erro desconhecido");
+  }
+  return data;
 }
 
+/* ── Navigation ───────────────────────────────────────────────── */
+function navigate(url) { window.location.href = url; }
+function parseQuery() { return new URLSearchParams(window.location.search); }
+
+/* ── Blob download ────────────────────────────────────────────── */
 function downloadBlob(blob, filename) {
   const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = filename;
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
   URL.revokeObjectURL(url);
 }
 
-function showFeedback(message, type = "info", containerId = "auth-feedback") {
-  const container = document.getElementById(containerId);
-  if (!container) return;
-  container.textContent = message;
-  container.style.color = type === "error" ? "#fda4af" : "#a5f3fc";
-}
+/* ══════════════════════════════════════════════════════════════
+   AUTH PAGE  (index.html)
+══════════════════════════════════════════════════════════════ */
+if (document.getElementById("login-button")) {
 
-function navigateTo(url) {
-  window.location.href = url;
-}
+  // Already logged in → skip to dashboard
+  if (getToken()) navigate("dashboard.html");
 
-async function requestJson(path, options = {}) {
-  const headers = { "Content-Type": "application/json", ...authHeaders(), ...(options.headers || {}) };
-  const response = await fetch(`${API_BASE}${path}`, { ...options, headers });
-  const text = await response.text();
-  let payload = null;
-  try { payload = JSON.parse(text); } catch (error) { payload = null; }
-  if (!response.ok) {
-    if (response.status === 401) {
-      clearToken();
-      navigateTo("index.html");
-    }
-    throw new Error(payload?.detail || payload?.message || response.statusText || text);
-  }
-  return payload;
-}
-
-// Auth page
-if (document.body.contains(document.querySelector("#login-button"))) {
-  if (getToken()) {
-    navigateTo("dashboard.html");
-  }
-  document.querySelectorAll(".tab-button").forEach((button) => {
-    button.addEventListener("click", () => {
-      document.querySelectorAll(".tab-button").forEach((tab) => tab.classList.remove("active"));
-      document.querySelectorAll(".auth-panel").forEach((panel) => panel.classList.remove("active"));
-      button.classList.add("active");
-      document.getElementById(button.dataset.target).classList.add("active");
-      showFeedback("");
+  // Tab switching
+  document.querySelectorAll(".auth-tab").forEach((tab) => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll(".auth-tab").forEach((t) => t.classList.remove("active"));
+      document.querySelectorAll(".auth-form").forEach((f) => f.classList.remove("active"));
+      tab.classList.add("active");
+      document.getElementById(tab.dataset.target).classList.add("active");
+      setFeedback("auth-feedback", "");
     });
   });
 
+  // LOGIN
   document.getElementById("login-button").addEventListener("click", async () => {
     const login = document.getElementById("login-username").value.trim();
     const senha = document.getElementById("login-password").value.trim();
-    if (!login || !senha) {
-      return showFeedback("Preencha todos os campos.", "error");
-    }
+    if (!login || !senha) return setFeedback("auth-feedback", "Preencha todos os campos.", "error");
+
+    const btn = document.getElementById("login-button");
+    btn.disabled = true;
+    btn.textContent = "A entrar...";
+    setFeedback("auth-feedback", "");
+
     try {
-      const response = await requestJson("/auth/login", { method: "POST", body: JSON.stringify({ login, senha }) });
-      setToken(response.token);
-      navigateTo("dashboard.html");
-    } catch (error) {
-      showFeedback(error.message, "error");
+      const res = await api("/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ login, senha }),
+      });
+      setToken(res.token);
+      navigate("dashboard.html");
+    } catch (err) {
+      setFeedback("auth-feedback", err.message, "error");
+      btn.disabled = false;
+      btn.textContent = "Acessar a Plataforma";
     }
   });
 
+  // REGISTER
   document.getElementById("register-button").addEventListener("click", async () => {
     const username = document.getElementById("register-username").value.trim();
-    const email = document.getElementById("register-email").value.trim();
-    const senha = document.getElementById("register-password").value.trim();
-    const confirm = document.getElementById("register-password-confirm").value.trim();
-    if (!username || !email || !senha || !confirm) {
-      return showFeedback("Preencha todos os campos.", "error");
-    }
-    if (senha !== confirm) {
-      return showFeedback("As palavras-passe não coincidem.", "error");
-    }
+    const email    = document.getElementById("register-email").value.trim();
+    const senha    = document.getElementById("register-password").value.trim();
+    const confirm  = document.getElementById("register-password-confirm").value.trim();
+
+    if (!username || !email || !senha || !confirm)
+      return setFeedback("auth-feedback", "Preencha todos os campos.", "error");
+    if (senha !== confirm)
+      return setFeedback("auth-feedback", "As palavras-passe não coincidem.", "error");
+    if (senha.length < 6)
+      return setFeedback("auth-feedback", "A senha deve ter ao menos 6 caracteres.", "error");
+
+    const btn = document.getElementById("register-button");
+    btn.disabled = true;
+    btn.textContent = "A criar conta...";
+    setFeedback("auth-feedback", "");
+
     try {
-      const response = await requestJson("/auth/register", { method: "POST", body: JSON.stringify({ username, email, senha }) });
-      setToken(response.token);
-      navigateTo("dashboard.html");
-    } catch (error) {
-      showFeedback(error.message, "error");
+      const res = await api("/auth/register", {
+        method: "POST",
+        body: JSON.stringify({ username, email, senha }),
+      });
+      setToken(res.token);
+      navigate("dashboard.html");
+    } catch (err) {
+      setFeedback("auth-feedback", err.message, "error");
+      btn.disabled = false;
+      btn.textContent = "Criar Conta";
     }
+  });
+
+  // Submit on Enter
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") return;
+    const activeForm = document.querySelector(".auth-form.active");
+    if (!activeForm) return;
+    if (activeForm.id === "login-form")    document.getElementById("login-button").click();
+    if (activeForm.id === "register-form") document.getElementById("register-button").click();
   });
 }
 
-// Dashboard page
-if (document.body.contains(document.querySelector("#create-profile-button"))) {
+/* ══════════════════════════════════════════════════════════════
+   DASHBOARD PAGE  (dashboard.html)
+══════════════════════════════════════════════════════════════ */
+if (document.getElementById("create-profile-button")) {
+
+  if (!getToken()) navigate("index.html");
+
+  /* --- render profiles list --- */
   async function loadProfiles() {
+    const list = document.getElementById("profiles-list");
+    list.innerHTML = `<div style="color:var(--gray-500);font-size:.88rem;padding:12px 0">A carregar...</div>`;
     try {
-      const data = await requestJson("/perfis", { method: "GET" });
-      const profiles = data.perfis || {};
-      const list = document.getElementById("profiles-list");
+      const data = await api("/perfis");
+      const perfis = data.perfis || {};
       list.innerHTML = "";
-      if (Object.keys(profiles).length === 0) {
-        list.innerHTML = `<div class="card"><p>Nenhum perfil registado ainda. Crie o seu primeiro planeamento.</p></div>`;
+
+      if (Object.keys(perfis).length === 0) {
+        list.innerHTML = `
+          <div class="empty-state" style="grid-column:1/-1">
+            <p>Nenhum planejamento criado ainda.<br>Preencha o formulário abaixo para começar.</p>
+          </div>`;
         return;
       }
-      Object.entries(profiles).forEach(([nome, perfil]) => {
-        const dados = perfil.dados || {};
+
+      Object.entries(perfis).forEach(([nome, perfil]) => {
+        const d = perfil.dados || {};
+        const imc = (d.peso && d.altura)
+          ? (d.peso / ((d.altura / 100) ** 2)).toFixed(1)
+          : "—";
+        const goal = (d.objetivo || "").split("(")[0].trim();
+
         const card = document.createElement("article");
-        card.className = "profile-card";
+        card.className = "surface profile-card";
         card.innerHTML = `
-          <div>
-            <small>Perfil</small>
-            <strong>${nome}</strong>
+          <div class="profile-name">${nome}</div>
+          <div class="profile-meta">
+            <div class="profile-meta-row"><span class="label">Objetivo</span><span class="value">${goal || "—"}</span></div>
+            <div class="profile-meta-row"><span class="label">Peso</span><span class="value">${d.peso || "—"} kg</span></div>
+            <div class="profile-meta-row"><span class="label">Altura</span><span class="value">${d.altura || "—"} cm</span></div>
+            <div class="profile-meta-row"><span class="label">IMC</span><span class="value">${imc}</span></div>
           </div>
-          <div><small>Objetivo</small><br>${dados.objetivo || "-"}</div>
-          <div><small>Peso</small><br>${dados.peso || "-"} kg</div>
-          <div><small>IMC</small><br>${dados.peso && dados.altura ? (dados.peso / ((dados.altura / 100) ** 2)).toFixed(1) : "-"}</div>
-          <div class="card-actions">
-            <button class="secondary-button" data-action="open" data-profile="${nome}">Abrir Painel</button>
-            <button class="secondary-button" data-action="delete" data-profile="${nome}">Excluir</button>
-          </div>
-        `;
+          <div class="profile-card-actions">
+            <button class="btn btn-primary btn-sm btn-open" data-name="${nome}">Abrir Painel</button>
+            <button class="btn btn-danger btn-sm btn-delete" data-name="${nome}">Excluir</button>
+          </div>`;
         list.appendChild(card);
       });
-      list.querySelectorAll("button[data-action='open']").forEach((button) => {
-        button.addEventListener("click", () => {
-          const profile = button.dataset.profile;
-          navigateTo(`perfil.html?profile=${encodeURIComponent(profile)}`);
-        });
-      });
-      list.querySelectorAll("button[data-action='delete']").forEach((button) => {
-        button.addEventListener("click", async () => {
-          const profile = button.dataset.profile;
+
+      list.querySelectorAll(".btn-open").forEach((btn) =>
+        btn.addEventListener("click", () =>
+          navigate(`perfil.html?profile=${encodeURIComponent(btn.dataset.name)}`)
+        )
+      );
+      list.querySelectorAll(".btn-delete").forEach((btn) =>
+        btn.addEventListener("click", async () => {
+          if (!confirm(`Excluir o perfil "${btn.dataset.name}"?`)) return;
           try {
-            await requestJson(`/perfil/${encodeURIComponent(profile)}`, { method: "DELETE" });
-            showFeedback("Perfil excluído com sucesso.", "info", "dashboard-feedback");
+            await api(`/perfil/${encodeURIComponent(btn.dataset.name)}`, { method: "DELETE" });
+            showToast("Perfil excluído.");
             loadProfiles();
-          } catch (error) {
-            showFeedback(error.message, "error", "dashboard-feedback");
+          } catch (err) {
+            setFeedback("dashboard-feedback", err.message, "error");
           }
-        });
-      });
-    } catch (error) {
-      showFeedback(error.message, "error", "dashboard-feedback");
+        })
+      );
+    } catch (err) {
+      list.innerHTML = "";
+      setFeedback("dashboard-feedback", err.message, "error");
     }
   }
-
-  if (!getToken()) {
-    return navigateTo("index.html");
-  }
-
-  document.getElementById("logout-button").addEventListener("click", () => {
-    clearToken();
-    navigateTo("index.html");
-  });
-
-  document.getElementById("create-profile-button").addEventListener("click", async () => {
-    const payload = {
-      nome: document.getElementById("profile-name").value.trim(),
-      idade: Number(document.getElementById("profile-age").value),
-      sexo: document.getElementById("profile-gender").value,
-      peso: Number(document.getElementById("profile-weight").value),
-      altura: Number(document.getElementById("profile-height").value),
-      alergias: document.getElementById("profile-allergies").value.trim() || "Nenhuma",
-      objetivo: document.getElementById("profile-goal").value,
-      nivel: document.getElementById("profile-activity").value,
-    };
-    if (!payload.nome) {
-      return showFeedback("Nome do perfil é obrigatório.", "error", "dashboard-feedback");
-    }
-    try {
-      await requestJson("/perfis", { method: "POST", body: JSON.stringify(payload) });
-      showFeedback("Perfil criado com sucesso! Redirecionando...", "info", "dashboard-feedback");
-      setTimeout(() => navigateTo(`perfil.html?profile=${encodeURIComponent(payload.nome)}`), 900);
-    } catch (error) {
-      showFeedback(error.message, "error", "dashboard-feedback");
-    }
-  });
 
   loadProfiles();
+
+  /* --- logout --- */
+  document.getElementById("logout-button").addEventListener("click", () => {
+    clearToken();
+    navigate("index.html");
+  });
+
+  /* --- create profile --- */
+  document.getElementById("create-profile-button").addEventListener("click", async () => {
+    const nome = document.getElementById("profile-name").value.trim();
+    if (!nome) return setFeedback("dashboard-feedback", "O nome do perfil é obrigatório.", "error");
+
+    const payload = {
+      nome,
+      idade:    Number(document.getElementById("profile-age").value),
+      sexo:     document.getElementById("profile-gender").value,
+      peso:     Number(document.getElementById("profile-weight").value),
+      altura:   Number(document.getElementById("profile-height").value),
+      alergias: document.getElementById("profile-allergies").value.trim() || "Nenhuma",
+      objetivo: document.getElementById("profile-goal").value,
+      nivel:    document.getElementById("profile-activity").value,
+    };
+
+    setFeedback("dashboard-feedback", "");
+    showLoading("A gerar o seu planejamento com IA... pode demorar até 30 segundos.");
+
+    try {
+      await api("/perfis", { method: "POST", body: JSON.stringify(payload) });
+      hideLoading();
+      navigate(`perfil.html?profile=${encodeURIComponent(nome)}`);
+    } catch (err) {
+      hideLoading();
+      setFeedback("dashboard-feedback", err.message, "error");
+    }
+  });
 }
 
-// Perfil page
-if (document.body.contains(document.querySelector("#send-chat-button"))) {
+/* ══════════════════════════════════════════════════════════════
+   PERFIL PAGE  (perfil.html)
+══════════════════════════════════════════════════════════════ */
+if (document.getElementById("send-chat-button")) {
+
+  if (!getToken()) navigate("index.html");
+
+  const profileName = parseQuery().get("profile");
+  if (!profileName) navigate("dashboard.html");
+
   let macroChart = null;
 
-  function parseQuery() {
-    return new URLSearchParams(window.location.search);
+  /* ── Helpers: parse ─────────────────────────────────────── */
+  function extractJson(text) {
+    const m = /```json\s*([\s\S]*?)\s*```/.exec(text);
+    if (!m) return null;
+    try { return JSON.parse(m[1]); } catch (_) { return null; }
   }
 
-  function renderTable(containerId, title, tabela) {
-    const container = document.getElementById(containerId);
-    if (!container) return;
-    if (!tabela || tabela.length === 0) {
-      container.innerHTML = `<p>Dados indisponíveis.</p>`;
+  function extractTables(text) {
+    const lines = text.split("\n");
+    const tables = [];
+    let buf = [], title = "";
+
+    lines.forEach((line) => {
+      const s = line.trim();
+      if (/^#+\s/.test(s)) title = s.replace(/^#+\s*/, "").replace(/\*\*/g, "").trim();
+      if (s.startsWith("|") && s.split("|").length >= 3) {
+        buf.push(s);
+      } else if (buf.length) {
+        const rows = buf
+          .map((r) => r.trim().split("|").slice(1, -1).map((c) => c.trim()))
+          .filter((r) => !r.every((c) => /^[-:]+$/.test(c)));   // drop separator rows
+        if (rows.length > 1) tables.push({ title, rows });
+        buf = [];
+      }
+    });
+    if (buf.length) {
+      const rows = buf
+        .map((r) => r.trim().split("|").slice(1, -1).map((c) => c.trim()))
+        .filter((r) => !r.every((c) => /^[-:]+$/.test(c)));
+      if (rows.length > 1) tables.push({ title, rows });
+    }
+    return tables;
+  }
+
+  function findTable(tables, ...keywords) {
+    return tables.find((t) =>
+      keywords.some(
+        (kw) =>
+          t.title.toLowerCase().includes(kw) ||
+          (t.rows[0] || []).some((c) => c.toLowerCase().includes(kw))
+      )
+    );
+  }
+
+  /* ── Render table ──────────────────────────────────────── */
+  function renderTable(containerId, table) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    if (!table || table.rows.length < 2) {
+      el.innerHTML = `<p style="color:var(--gray-500);font-size:.85rem">Não disponível.</p>`;
       return;
     }
-    const headers = tabela[0];
-    const rows = tabela.slice(1);
-    let html = `<table><thead><tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr></thead><tbody>`;
-    rows.forEach((row) => {
-      html += `<tr>${row.map((cell) => `<td>${cell}</td>`).join("")}</tr>`;
-    });
-    html += `</tbody></table>`;
-    container.innerHTML = html;
+    const [head, ...body] = table.rows;
+    const ths = head.map((h) => `<th>${h}</th>`).join("");
+    const trs = body.map(
+      (row) => `<tr>${row.map((c) => `<td>${c}</td>`).join("")}</tr>`
+    ).join("");
+    el.innerHTML = `<div style="overflow-x:auto"><table class="data-table"><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table></div>`;
   }
 
-  function renderChat(messages) {
-    const history = document.getElementById("chat-history");
-    history.innerHTML = "";
-    messages.forEach((message) => {
-      const row = document.createElement("div");
-      row.className = `chat-message-row ${message.role}`;
-      const bubble = document.createElement("div");
-      bubble.className = "chat-bubble";
-      bubble.innerText = message.content;
-      row.appendChild(bubble);
-      history.appendChild(row);
-    });
-    history.scrollTop = history.scrollHeight;
-  }
-
-  function formatTableData(df) {
-    if (!df || !Array.isArray(df) || df.length === 0) return null;
-    return df;
-  }
-
-  async function loadPerfil() {
-    const query = parseQuery();
-    const profileName = query.get("profile");
-    if (!profileName) return showFeedback("Perfil não especificado.", "error", "chat-feedback");
-    try {
-      const data = await requestJson(`/perfil/${encodeURIComponent(profileName)}`, { method: "GET" });
-      const dados = data.dados || {};
-      const mensagens = data.mensagens || [];
-      document.getElementById("profile-title").textContent = `Perfil: ${profileName}`;
-      document.getElementById("profile-subtitle").textContent = `Objetivo: ${dados.objetivo || "-"}`;
-      document.getElementById("stat-goal").textContent = dados.objetivo || "-";
-      const plano = mensagens.slice().reverse().find((msg) => msg.role === "assistant" && msg.content.includes("## 🧬"));
-      const content = plano ? plano.content : mensagens[0]?.content || "";
-      const jsonData = extractJsonBlock(content);
-      const tables = extractMarkdownTables(content);
-      if (jsonData) {
-        document.getElementById("stat-calories").textContent = `${jsonData.calorias || 0} kcal`;
-        document.getElementById("stat-water").textContent = `${jsonData.agua_ml || 0} ml`;
-        document.getElementById("stat-steps").textContent = `${jsonData.passos || 0} /dia`;
-        renderMacroChart(jsonData);
-      }
-      const mealTable = tables.find((table) => table[0].toLowerCase().includes("plano alimentar") || table[1][0].some((cell) => /refeição|alimento/i.test(cell)));
-      const supplementTable = tables.find((table) => table[0].toLowerCase().includes("suplementação") || table[1][0].some((cell) => /suplemento/i.test(cell)));
-      const trainingTable = tables.find((table) => table[0].toLowerCase().includes("planilha") || table[1][0].some((cell) => /exercício|séries/i.test(cell)));
-      renderTable("meal-plan", "Plano Alimentar", mealTable?.[1] || []);
-      renderTable("supplement-plan", "Suplementação", supplementTable?.[1] || []);
-      renderTable("training-plan", "Treino", trainingTable?.[1] || []);
-      renderChat(mensagens.filter((msg) => msg.role && msg.content));
-    } catch (error) {
-      showFeedback(error.message, "error", "chat-feedback");
-    }
-  }
-
-  function renderMacroChart(data) {
-    const ctx = document.getElementById("macro-chart").getContext("2d");
-    const values = [Number(data.proteinas_g || 0), Number(data.carboidratos_g || 0), Number(data.gorduras_g || 0)];
+  /* ── Render chart ──────────────────────────────────────── */
+  function renderMacroChart(json) {
+    const ctx = document.getElementById("macro-chart");
+    if (!ctx) return;
+    const vals = [
+      Number(json.proteinas_g    || 0),
+      Number(json.carboidratos_g || 0),
+      Number(json.gorduras_g     || 0),
+    ];
     if (macroChart) macroChart.destroy();
     macroChart = new Chart(ctx, {
       type: "doughnut",
       data: {
         labels: ["Proteína", "Carboidratos", "Gorduras"],
-        datasets: [{ data: values, backgroundColor: ["#60a5fa", "#38bdf8", "#a78bfa"], borderWidth: 0 }],
+        datasets: [{
+          data: vals,
+          backgroundColor: ["#e8e8e8", "#888888", "#444444"],
+          borderWidth: 0,
+          hoverOffset: 6,
+        }],
       },
-      options: { responsive: true, plugins: { legend: { position: "bottom", labels: { color: "#cbd5e1" } } } },
+      options: {
+        responsive: true,
+        cutout: "62%",
+        plugins: {
+          legend: {
+            position: "bottom",
+            labels: { color: "#aaa", padding: 14, font: { size: 12 } },
+          },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => ` ${ctx.label}: ${ctx.parsed}g`,
+            },
+          },
+        },
+      },
     });
   }
 
-  function extractJsonBlock(text) {
-    const match = /```json\s*([\s\S]*?)\s*```/.exec(text);
-    if (!match) return null;
-    try { return JSON.parse(match[1]); } catch (error) { return null; }
+  /* ── Render IMC ────────────────────────────────────────── */
+  function renderIMC(dados) {
+    if (!dados?.peso || !dados?.altura) return;
+    const imc = dados.peso / ((dados.altura / 100) ** 2);
+    const el = document.getElementById("imc-value");
+    const lb = document.getElementById("imc-label");
+    const mk = document.getElementById("imc-marker");
+    if (el) el.textContent = imc.toFixed(1);
+
+    let label, pct;
+    if      (imc < 18.5) { label = "Baixo Peso"; pct = 8;  }
+    else if (imc < 25)   { label = "Saudável";   pct = 32; }
+    else if (imc < 30)   { label = "Sobrepeso";  pct = 62; }
+    else                 { label = "Obesidade";  pct = 88; }
+
+    if (lb) { lb.textContent = label; }
+    if (mk) mk.style.left = pct + "%";
   }
 
-  function extractMarkdownTables(text) {
-    const lines = text.split("\n");
-    const tables = [];
-    let buffer = [];
-    let title = "";
-    lines.forEach((line) => {
-      const stripped = line.trim();
-      if (/^#+\s*/.test(stripped)) { title = stripped.replace(/^#+\s*/, ""); }
-      if (stripped.startsWith("|") && stripped.split("|").length >= 3) {
-        buffer.push(stripped);
-      } else if (buffer.length) {
-        tables.push([title, buffer.map((row) => row.trim().split("|").slice(1, -1).map((cell) => cell.trim()))]);
-        buffer = [];
-      }
+  /* ── Render chat ───────────────────────────────────────── */
+  function renderChat(msgs) {
+    const hist = document.getElementById("chat-history");
+    if (!hist) return;
+
+    // Only show user ↔ assistant turns, skip raw plan (large assistant msg with tables)
+    const display = msgs.filter((m) => {
+      if (m.role === "user") return true;
+      // assistant: only show if it's a short reply (no plan structure)
+      return m.role === "assistant" && !m.content.includes("## 🧬");
     });
-    if (buffer.length) {
-      tables.push([title, buffer.map((row) => row.trim().split("|").slice(1, -1).map((cell) => cell.trim()))]);
+
+    if (display.length === 0) {
+      hist.innerHTML = `<div class="chat-empty">Sem mensagens ainda. Peça uma alteração ou tire uma dúvida.</div>`;
+      return;
     }
-    return tables;
+
+    hist.innerHTML = display.map((m) => `
+      <div class="chat-row ${m.role}">
+        <div class="chat-bubble">${escapeHtml(m.content)}</div>
+      </div>`).join("");
+    hist.scrollTop = hist.scrollHeight;
   }
 
-  document.querySelectorAll(".tab-button").forEach((button) => {
-    button.addEventListener("click", () => {
-      document.querySelectorAll(".tab-button").forEach((tab) => tab.classList.remove("active"));
-      document.querySelectorAll(".panel").forEach((panel) => panel.classList.remove("active"));
-      button.classList.add("active");
-      document.getElementById(button.dataset.target).classList.add("active");
-    });
-  });
+  function escapeHtml(str) {
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
 
-  document.getElementById("back-button").addEventListener("click", () => navigateTo("dashboard.html"));
-  document.getElementById("logout-button-2").addEventListener("click", () => { clearToken(); navigateTo("index.html"); });
-
-  document.getElementById("download-pdf-button").addEventListener("click", async () => {
-    const profile = parseQuery().get("profile");
-    if (!profile) return showFeedback("Perfil não especificado.", "error", "chat-feedback");
+  /* ── Load profile data ─────────────────────────────────── */
+  async function loadPerfil() {
     try {
-      const response = await fetch(`${API_BASE}/download-pdf/${encodeURIComponent(profile)}`, {
-        method: "GET",
-        headers: authHeaders(),
-      });
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(text || response.statusText);
-      }
-      const blob = await response.blob();
-      downloadBlob(blob, `Relatorio_${profile.replace(/\s+/g, "_")}.pdf`);
-    } catch (error) {
-      showFeedback(error.message, "error", "chat-feedback");
-    }
-  });
+      const data = await api(`/perfil/${encodeURIComponent(profileName)}`);
+      const dados = data.dados || {};
+      const msgs  = data.mensagens || [];
 
-  document.getElementById("send-chat-button").addEventListener("click", async () => {
-    const profile = parseQuery().get("profile");
-    const message = document.getElementById("chat-message").value.trim();
-    if (!message) return showFeedback("Escreva uma mensagem.", "error", "chat-feedback");
-    try {
-      document.getElementById("chat-message").value = "";
-      const data = await requestJson(`/chat/${encodeURIComponent(profile)}`, { method: "POST", body: JSON.stringify({ mensagem: message }) });
-      renderChat(data.mensagens);
-      loadPerfil();
-    } catch (error) {
-      showFeedback(error.message, "error", "chat-feedback");
+      // Header
+      document.getElementById("profile-title").textContent = profileName;
+      document.getElementById("profile-subtitle").textContent =
+        dados.objetivo ? dados.objetivo.split("(")[0].trim() : "";
+
+      // Find plan content
+      const plan = msgs.slice().reverse().find(
+        (m) => m.role === "assistant" && m.content.includes("## 🧬")
+      ) || msgs[0];
+      const content = plan?.content || "";
+
+      const json   = extractJson(content);
+      const tables = extractTables(content);
+
+      // Stats
+      if (json) {
+        document.getElementById("stat-calories").textContent = `${json.calorias || 0} kcal`;
+        document.getElementById("stat-water").textContent   = `${json.agua_ml  || 0} ml`;
+        document.getElementById("stat-steps").textContent   = `${json.passos   || 0}`;
+        renderMacroChart(json);
+      }
+
+      const goal = (dados.objetivo || "").split("(")[0].trim();
+      document.getElementById("stat-goal").textContent = goal || "—";
+
+      // Tables
+      renderTable("meal-plan",       findTable(tables, "plano alimentar", "alimento", "refeição"));
+      renderTable("supplement-plan", findTable(tables, "suplementação", "suplemento"));
+      renderTable("training-plan",   findTable(tables, "treinamento", "treino", "exercício", "séries"));
+
+      // IMC
+      renderIMC(dados);
+
+      // Chat
+      renderChat(msgs);
+
+    } catch (err) {
+      setFeedback("chat-feedback", err.message, "error");
     }
-  });
+  }
 
   loadPerfil();
+
+  /* ── Tabs ──────────────────────────────────────────────── */
+  document.querySelectorAll(".tab-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".tab-btn").forEach((b) => b.classList.remove("active"));
+      document.querySelectorAll(".panel").forEach((p) => p.classList.remove("active"));
+      btn.classList.add("active");
+      document.getElementById(btn.dataset.target).classList.add("active");
+    });
+  });
+
+  /* ── Back / Logout ─────────────────────────────────────── */
+  document.getElementById("back-button").addEventListener("click", () => navigate("dashboard.html"));
+  document.getElementById("logout-button-2").addEventListener("click", () => {
+    clearToken(); navigate("index.html");
+  });
+
+  /* ── PDF download ──────────────────────────────────────── */
+  document.getElementById("download-pdf-button").addEventListener("click", async () => {
+    const btn = document.getElementById("download-pdf-button");
+    btn.disabled = true;
+    btn.textContent = "A gerar...";
+    try {
+      const res = await fetch(`${API_BASE}/download-pdf/${encodeURIComponent(profileName)}`, {
+        headers: authHeaders(),
+      });
+      if (!res.ok) throw new Error((await res.json()).detail || res.statusText);
+      const blob = await res.blob();
+      downloadBlob(blob, `Halter_AI_${profileName.replace(/\s+/g, "_")}.pdf`);
+      showToast("PDF descarregado com sucesso!");
+    } catch (err) {
+      setFeedback("chat-feedback", err.message, "error");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Baixar PDF";
+    }
+  });
+
+  /* ── Quick action chips ────────────────────────────────── */
+  document.querySelectorAll(".quick-chip").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      const ta = document.getElementById("chat-message");
+      if (ta) { ta.value = chip.dataset.msg; ta.focus(); }
+    });
+  });
+
+  /* ── Send chat ─────────────────────────────────────────── */
+  document.getElementById("send-chat-button").addEventListener("click", sendChat);
+  document.getElementById("chat-message").addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChat(); }
+  });
+
+  async function sendChat() {
+    const ta  = document.getElementById("chat-message");
+    const msg = ta.value.trim();
+    if (!msg) return setFeedback("chat-feedback", "Escreva uma mensagem.", "error");
+
+    const btn = document.getElementById("send-chat-button");
+    btn.disabled = true;
+    ta.value = "";
+    setFeedback("chat-feedback", "");
+    showLoading("A IA está a processar o seu pedido...");
+
+    try {
+      const data = await api(`/chat/${encodeURIComponent(profileName)}`, {
+        method: "POST",
+        body: JSON.stringify({ mensagem: msg }),
+      });
+      hideLoading();
+      renderChat(data.mensagens || []);
+
+      // If the reply contains a new plan, refresh dashboard data too
+      const lastMsg = (data.mensagens || []).slice().reverse().find(
+        (m) => m.role === "assistant"
+      );
+      if (lastMsg?.content.includes("## 🧬")) {
+        await loadPerfil();
+        showToast("Plano atualizado! Veja o Dashboard.");
+      }
+    } catch (err) {
+      hideLoading();
+      setFeedback("chat-feedback", err.message, "error");
+    } finally {
+      btn.disabled = false;
+    }
+  }
 }

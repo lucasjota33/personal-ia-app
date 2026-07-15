@@ -1,71 +1,71 @@
-:root {
-  color-scheme: dark;
-  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #090b12;
-  color: #f3f4f7;
-  font-size: 16px;
-  line-height: 1.5;
-}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Halter AI — Personal Trainer IA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="auth-shell">
+    <div class="auth-card surface">
+      <!-- Brand -->
+      <div class="brand">
+        <img src="/static/logo.png" alt="Halter AI" class="brand-logo" />
+        <h1>Halter AI</h1>
+        <p>O seu Personal Trainer inteligente. Treino, dieta e suplementação gerados por IA.</p>
+      </div>
 
-* { box-sizing: border-box; }
-body { margin: 0; background: radial-gradient(circle at top, #151a2d 0%, #090b12 55%); }
-img { max-width: 100%; display: block; }
-button, input, select, textarea { font: inherit; }
+      <!-- Tabs -->
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-target="login-form">Entrar</button>
+        <button class="auth-tab" data-target="register-form">Criar Conta</button>
+      </div>
 
-.app-shell { max-width: 1180px; margin: 0 auto; padding: 24px; }
-.card { background: rgba(16, 19, 34, 0.95); border: 1px solid rgba(255,255,255,0.05); border-radius: 24px; padding: 28px; box-shadow: 0 20px 60px rgba(0,0,0,0.25); }
-.auth-card { max-width: 520px; margin: 72px auto; }
-.brand { text-align: center; margin-bottom: 24px; }
-.brand-logo { width: 72px; height: 72px; margin-bottom: 18px; }
-.brand h1 { margin: 0; font-size: 2rem; letter-spacing: -0.04em; }
-.brand p { margin: 10px auto 0; color: #a6adc8; max-width: 340px; }
+      <!-- Login -->
+      <form id="login-form" class="auth-form active" novalidate>
+        <div class="field">
+          <label for="login-username">Utilizador ou E-mail</label>
+          <input type="text" id="login-username" autocomplete="username" placeholder="o seu nome de utilizador" />
+        </div>
+        <div class="field">
+          <label for="login-password">Palavra-passe</label>
+          <input type="password" id="login-password" autocomplete="current-password" placeholder="••••••••" />
+        </div>
+        <button type="button" id="login-button" class="btn btn-primary btn-full">Acessar a Plataforma</button>
+      </form>
 
-.tabs { display: flex; gap: 12px; justify-content: center; margin-bottom: 24px; }
-.tab-button { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 999px; padding: 12px 20px; color: #eef2ff; cursor: pointer; transition: all 0.22s ease; }
-.tab-button.active { background: #4f46e5; border-color: #6366f1; color: #fff; }
+      <!-- Register -->
+      <form id="register-form" class="auth-form" novalidate>
+        <div class="field">
+          <label for="register-username">Nome de Utilizador</label>
+          <input type="text" id="register-username" autocomplete="username" placeholder="ex: joao_silva" />
+        </div>
+        <div class="field">
+          <label for="register-email">E-mail</label>
+          <input type="email" id="register-email" autocomplete="email" placeholder="email@exemplo.com" />
+        </div>
+        <div class="field">
+          <label for="register-password">Palavra-passe</label>
+          <input type="password" id="register-password" autocomplete="new-password" placeholder="mínimo 8 caracteres" />
+        </div>
+        <div class="field">
+          <label for="register-password-confirm">Confirmar Palavra-passe</label>
+          <input type="password" id="register-password-confirm" autocomplete="new-password" placeholder="repita a palavra-passe" />
+        </div>
+        <button type="button" id="register-button" class="btn btn-primary btn-full">Criar Conta</button>
+      </form>
 
-.auth-panel { display: none; flex-direction: column; gap: 16px; }
-.auth-panel.active { display: flex; }
-label { display: flex; flex-direction: column; gap: 8px; color: #c7d2fe; font-size: 0.95rem; }
-input, select, textarea { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; color: #fff; padding: 14px 16px; outline: none; transition: border-color 0.2s ease; }
-input:focus, select:focus, textarea:focus { border-color: #6366f1; }
-textarea { min-height: 120px; resize: vertical; }
-.primary-button, .secondary-button { border: none; border-radius: 14px; padding: 14px 20px; cursor: pointer; transition: transform 0.18s ease, background 0.18s ease; }
-.primary-button { background: linear-gradient(135deg,#6366f1,#4338ca); color: #fff; }
-.secondary-button { background: rgba(255,255,255,0.08); color: #fff; }
-.primary-button:hover, .secondary-button:hover { transform: translateY(-1px); }
-.feedback { min-height: 1.5em; margin-top: 18px; color: #fef3c7; }
+      <div id="auth-feedback" class="feedback" role="alert"></div>
+    </div>
+  </div>
 
-.page-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 18px; margin-bottom: 28px; }
-.page-header h1 { margin: 0; font-size: 2rem; }
-.page-header p { margin: 6px 0 0; color: #c7d2fe; }
-.header-actions { display: flex; flex-wrap: wrap; gap: 12px; }
-.profile-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; margin-bottom: 28px; }
-.profile-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; padding: 22px; display: flex; flex-direction: column; gap: 16px; }
-.profile-card strong { display: block; margin-top: 8px; color: #fff; }
-.profile-card small { color: #94a3b8; }
-.card.form-card { margin-bottom: 36px; }
-.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; }
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
 
-.panel { display: none; }
-.panel.active { display: block; }
-.panel-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 18px; margin-bottom: 24px; }
-.stat-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 22px; padding: 20px; }
-.stat-card span { display: block; color: #94a3b8; margin-bottom: 8px; }
-.stat-card strong { font-size: 1.45rem; color: #fff; }
-.chart-card, .table-card, .chat-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; padding: 24px; margin-bottom: 24px; }
-.chart-card h2, .table-card h3 { margin: 0 0 18px; }
-.tables-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 18px; }
-.full-width { grid-column: 1 / -1; }
-.chat-card { display: flex; flex-direction: column; gap: 18px; }
-.chat-history { min-height: 320px; max-height: 520px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
-.chat-message-row { display: flex; }
-.chat-message-row.user { justify-content: flex-end; }
-.chat-bubble { max-width: 100%; padding: 16px 18px; border-radius: 20px; line-height: 1.6; background: rgba(255,255,255,0.08); color: #eff2ff; }
-.chat-message-row.user .chat-bubble { background: #4f46e5; }
-.chat-actions { display: grid; gap: 16px; }
-.chat-actions textarea { min-height: 120px; }
-@media (max-width: 860px) {
-  .grid-2 { grid-template-columns: 1fr; }
-  .tables-grid { grid-template-columns: 1fr; }
-}
+  <script src="/static/script.js"></script>
+</body>
+</html>

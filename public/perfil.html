@@ -3,82 +3,136 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Halter AI - Perfil</title>
+  <title>Halter AI — Perfil</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/static/style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
   <div class="app-shell">
+
+    <!-- Header -->
     <header class="page-header">
       <div>
-        <h1 id="profile-title">Painel do Perfil</h1>
-        <p id="profile-subtitle">Visualize métricas, chat e o relatório completo.</p>
+        <h1 id="profile-title">Carregando perfil...</h1>
+        <p id="profile-subtitle"></p>
       </div>
       <div class="header-actions">
-        <button class="secondary-button" id="back-button">Voltar</button>
-        <button class="secondary-button" id="download-pdf-button">Baixar PDF</button>
-        <button class="secondary-button" id="logout-button-2">Sair</button>
+        <button class="btn btn-ghost btn-sm" id="back-button">← Voltar</button>
+        <button class="btn btn-secondary btn-sm" id="download-pdf-button">Baixar PDF</button>
+        <button class="btn btn-ghost btn-sm" id="logout-button-2">Sair</button>
       </div>
     </header>
 
-    <section class="tabs">
-      <button class="tab-button active" data-target="dashboard-view">Dashboard</button>
-      <button class="tab-button" data-target="chat-view">Chat</button>
-    </section>
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" data-target="dashboard-panel">Dashboard</button>
+      <button class="tab-btn" data-target="chat-panel">Chat com a IA</button>
+    </div>
 
-    <section id="dashboard-view" class="panel active">
-      <div class="panel-grid">
-        <div class="stat-card">
-          <span>Objetivo</span>
-          <strong id="stat-goal">-</strong>
+    <!-- ── Dashboard Panel ── -->
+    <div id="dashboard-panel" class="panel active">
+
+      <!-- Stats -->
+      <div class="stats-row">
+        <div class="stat-card surface">
+          <div class="stat-label">Objetivo</div>
+          <div class="stat-value" id="stat-goal">—</div>
         </div>
-        <div class="stat-card">
-          <span>Calorias</span>
-          <strong id="stat-calories">- kcal</strong>
+        <div class="stat-card surface">
+          <div class="stat-label">Meta Calórica</div>
+          <div class="stat-value" id="stat-calories">— kcal</div>
+          <div class="stat-sub">por dia</div>
         </div>
-        <div class="stat-card">
-          <span>Hidratação</span>
-          <strong id="stat-water">- ml</strong>
+        <div class="stat-card surface">
+          <div class="stat-label">Hidratação</div>
+          <div class="stat-value" id="stat-water">— ml</div>
+          <div class="stat-sub">por dia</div>
         </div>
-        <div class="stat-card">
-          <span>Passos</span>
-          <strong id="stat-steps">- /dia</strong>
+        <div class="stat-card surface">
+          <div class="stat-label">Passos</div>
+          <div class="stat-value" id="stat-steps">—</div>
+          <div class="stat-sub">por dia</div>
         </div>
       </div>
 
-      <div class="chart-card">
-        <h2>Distribuição de Macros</h2>
-        <canvas id="macro-chart"></canvas>
+      <!-- Chart + IMC -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+        <div class="surface chart-wrap">
+          <h2>Distribuição de Macros</h2>
+          <div class="chart-inner">
+            <canvas id="macro-chart"></canvas>
+          </div>
+        </div>
+        <div class="surface chart-wrap" id="imc-card">
+          <h2>IMC</h2>
+          <div class="stat-value" id="imc-value" style="font-size:2.5rem;margin-bottom:6px">—</div>
+          <div class="badge" id="imc-label">—</div>
+          <div class="imc-bar" style="margin-top:20px">
+            <div class="imc-marker" id="imc-marker" style="left:40%"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:0.72rem;color:var(--gray-500)">
+            <span>Baixo</span><span>Normal</span><span>Sobre</span><span>Obeso</span>
+          </div>
+        </div>
       </div>
 
-      <div class="tables-grid">
-        <div class="table-card">
+      <!-- Tables -->
+      <div class="tables-2col">
+        <div class="surface table-wrap">
           <h3>Plano Alimentar</h3>
-          <div id="meal-plan"></div>
+          <div id="meal-plan"><p style="color:var(--gray-500);font-size:.85rem">Carregando...</p></div>
         </div>
-        <div class="table-card">
+        <div class="surface table-wrap">
           <h3>Suplementação</h3>
-          <div id="supplement-plan"></div>
+          <div id="supplement-plan"><p style="color:var(--gray-500);font-size:.85rem">Carregando...</p></div>
         </div>
       </div>
 
-      <div class="table-card full-width">
+      <div class="surface table-wrap full">
         <h3>Planilha de Treinamento</h3>
-        <div id="training-plan"></div>
+        <div id="training-plan"><p style="color:var(--gray-500);font-size:.85rem">Carregando...</p></div>
       </div>
-    </section>
 
-    <section id="chat-view" class="panel">
-      <div class="chat-card">
-        <div class="chat-history" id="chat-history"></div>
-        <div class="chat-actions">
-          <textarea id="chat-message" placeholder="Envie uma pergunta ou peça uma alteração..."></textarea>
-          <button id="send-chat-button" class="primary-button">Enviar</button>
+    </div>
+
+    <!-- ── Chat Panel ── -->
+    <div id="chat-panel" class="panel">
+      <div class="surface chat-wrap">
+
+        <!-- Quick actions -->
+        <div class="quick-actions">
+          <button class="quick-chip" data-msg="Quero uma dieta vegana com o mesmo aporte proteico.">🌱 Dieta Vegana</button>
+          <button class="quick-chip" data-msg="Varia as opções de almoço e jantar por completo.">🔄 Variar Refeições</button>
+          <button class="quick-chip" data-msg="Ajusta o treino para durar no máximo 45 minutos.">⏱ Treino Curto</button>
+          <button class="quick-chip" data-msg="Explica o raciocínio por trás do meu plano calórico.">💡 Explicar Plano</button>
         </div>
+
+        <div class="chat-history" id="chat-history">
+          <div class="chat-empty">Sem mensagens ainda. Peça uma alteração ou tire uma dúvida.</div>
+        </div>
+
+        <div class="chat-input-row">
+          <textarea id="chat-message" placeholder="Ex: Troca o jantar por uma opção low-carb..."></textarea>
+          <button id="send-chat-button" class="btn btn-primary">Enviar</button>
+        </div>
+
+        <div id="chat-feedback" class="feedback" role="alert"></div>
       </div>
-      <div id="chat-feedback" class="feedback"></div>
-    </section>
+    </div>
+
   </div>
+
+  <!-- Loading overlay -->
+  <div class="loading-overlay" id="loading-overlay">
+    <div class="spinner"></div>
+    <p id="loading-text">A consultar a IA...</p>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
 
   <script src="/static/script.js"></script>
 </body>

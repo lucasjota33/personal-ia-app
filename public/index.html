@@ -3,59 +3,68 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Halter AI - Login</title>
+  <title>Halter AI — Personal Trainer IA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/static/style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-  <div class="app-shell">
-    <main class="card auth-card">
+  <div class="auth-shell">
+    <div class="auth-card surface">
+      <!-- Brand -->
       <div class="brand">
         <img src="/static/logo.png" alt="Halter AI" class="brand-logo" />
         <h1>Halter AI</h1>
-        <p>Login rápido e seguro para o seu Personal Trainer IA.</p>
+        <p>O seu Personal Trainer inteligente. Treino, dieta e suplementação gerados por IA.</p>
       </div>
 
-      <section class="tabs">
-        <button class="tab-button active" data-target="login-panel">Entrar</button>
-        <button class="tab-button" data-target="register-panel">Criar Conta</button>
-      </section>
+      <!-- Tabs -->
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-target="login-form">Entrar</button>
+        <button class="auth-tab" data-target="register-form">Criar Conta</button>
+      </div>
 
-      <form id="login-panel" class="auth-panel active">
-        <label>
-          Utilizador ou E-mail
-          <input type="text" id="login-username" autocomplete="username" />
-        </label>
-        <label>
-          Palavra-passe
-          <input type="password" id="login-password" autocomplete="current-password" />
-        </label>
-        <button type="button" id="login-button" class="primary-button">Acessar a Plataforma</button>
+      <!-- Login -->
+      <form id="login-form" class="auth-form active" novalidate>
+        <div class="field">
+          <label for="login-username">Utilizador ou E-mail</label>
+          <input type="text" id="login-username" autocomplete="username" placeholder="o seu nome de utilizador" />
+        </div>
+        <div class="field">
+          <label for="login-password">Palavra-passe</label>
+          <input type="password" id="login-password" autocomplete="current-password" placeholder="••••••••" />
+        </div>
+        <button type="button" id="login-button" class="btn btn-primary btn-full">Acessar a Plataforma</button>
       </form>
 
-      <form id="register-panel" class="auth-panel">
-        <label>
-          Nome de Utilizador
-          <input type="text" id="register-username" autocomplete="username" />
-        </label>
-        <label>
-          E-mail
-          <input type="email" id="register-email" autocomplete="email" />
-        </label>
-        <label>
-          Palavra-passe
-          <input type="password" id="register-password" autocomplete="new-password" />
-        </label>
-        <label>
-          Confirmar Palavra-passe
-          <input type="password" id="register-password-confirm" autocomplete="new-password" />
-        </label>
-        <button type="button" id="register-button" class="primary-button">Criar Conta</button>
+      <!-- Register -->
+      <form id="register-form" class="auth-form" novalidate>
+        <div class="field">
+          <label for="register-username">Nome de Utilizador</label>
+          <input type="text" id="register-username" autocomplete="username" placeholder="ex: joao_silva" />
+        </div>
+        <div class="field">
+          <label for="register-email">E-mail</label>
+          <input type="email" id="register-email" autocomplete="email" placeholder="email@exemplo.com" />
+        </div>
+        <div class="field">
+          <label for="register-password">Palavra-passe</label>
+          <input type="password" id="register-password" autocomplete="new-password" placeholder="mínimo 8 caracteres" />
+        </div>
+        <div class="field">
+          <label for="register-password-confirm">Confirmar Palavra-passe</label>
+          <input type="password" id="register-password-confirm" autocomplete="new-password" placeholder="repita a palavra-passe" />
+        </div>
+        <button type="button" id="register-button" class="btn btn-primary btn-full">Criar Conta</button>
       </form>
 
-      <div id="auth-feedback" class="feedback"></div>
-    </main>
+      <div id="auth-feedback" class="feedback" role="alert"></div>
+    </div>
   </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
 
   <script src="/static/script.js"></script>
 </body>
