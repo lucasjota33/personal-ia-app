@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Halter AI - Login</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <main class="card auth-card">
+      <div class="brand">
+        <img src="logo.png" alt="Halter AI" class="brand-logo" />
+        <h1>Halter AI</h1>
+        <p>Login rápido e seguro para o seu Personal Trainer IA.</p>
+      </div>
+
+      <section class="tabs">
+        <button class="tab-button active" data-target="login-panel">Entrar</button>
+        <button class="tab-button" data-target="register-panel">Criar Conta</button>
+      </section>
+
+      <form id="login-panel" class="auth-panel active">
+        <label>
+          Utilizador ou E-mail
+          <input type="text" id="login-username" autocomplete="username" />
+        </label>
+        <label>
+          Palavra-passe
+          <input type="password" id="login-password" autocomplete="current-password" />
+        </label>
+        <button type="button" id="login-button" class="primary-button">Acessar a Plataforma</button>
+      </form>
+
+      <form id="register-panel" class="auth-panel">
+        <label>
+          Nome de Utilizador
+          <input type="text" id="register-username" autocomplete="username" />
+        </label>
+        <label>
+          E-mail
+          <input type="email" id="register-email" autocomplete="email" />
+        </label>
+        <label>
+          Palavra-passe
+          <input type="password" id="register-password" autocomplete="new-password" />
+        </label>
+        <label>
+          Confirmar Palavra-passe
+          <input type="password" id="register-password-confirm" autocomplete="new-password" />
+        </label>
+        <button type="button" id="register-button" class="primary-button">Criar Conta</button>
+      </form>
+
+      <div id="auth-feedback" class="feedback"></div>
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

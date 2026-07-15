@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Halter AI - Perfil</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="page-header">
+      <div>
+        <h1 id="profile-title">Painel do Perfil</h1>
+        <p id="profile-subtitle">Visualize métricas, chat e o relatório completo.</p>
+      </div>
+      <div class="header-actions">
+        <button class="secondary-button" id="back-button">Voltar</button>
+        <button class="secondary-button" id="download-pdf-button">Baixar PDF</button>
+        <button class="secondary-button" id="logout-button-2">Sair</button>
+      </div>
+    </header>
+
+    <section class="tabs">
+      <button class="tab-button active" data-target="dashboard-view">Dashboard</button>
+      <button class="tab-button" data-target="chat-view">Chat</button>
+    </section>
+
+    <section id="dashboard-view" class="panel active">
+      <div class="panel-grid">
+        <div class="stat-card">
+          <span>Objetivo</span>
+          <strong id="stat-goal">-</strong>
+        </div>
+        <div class="stat-card">
+          <span>Calorias</span>
+          <strong id="stat-calories">- kcal</strong>
+        </div>
+        <div class="stat-card">
+          <span>Hidratação</span>
+          <strong id="stat-water">- ml</strong>
+        </div>
+        <div class="stat-card">
+          <span>Passos</span>
+          <strong id="stat-steps">- /dia</strong>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <h2>Distribuição de Macros</h2>
+        <canvas id="macro-chart"></canvas>
+      </div>
+
+      <div class="tables-grid">
+        <div class="table-card">
+          <h3>Plano Alimentar</h3>
+          <div id="meal-plan"></div>
+        </div>
+        <div class="table-card">
+          <h3>Suplementação</h3>
+          <div id="supplement-plan"></div>
+        </div>
+      </div>
+
+      <div class="table-card full-width">
+        <h3>Planilha de Treinamento</h3>
+        <div id="training-plan"></div>
+      </div>
+    </section>
+
+    <section id="chat-view" class="panel">
+      <div class="chat-card">
+        <div class="chat-history" id="chat-history"></div>
+        <div class="chat-actions">
+          <textarea id="chat-message" placeholder="Envie uma pergunta ou peça uma alteração..."></textarea>
+          <button id="send-chat-button" class="primary-button">Enviar</button>
+        </div>
+      </div>
+      <div id="chat-feedback" class="feedback"></div>
+    </section>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
