@@ -7,11 +7,11 @@ services:
     startCommand: "uvicorn api.main:app --host 0.0.0.0 --port $PORT"
     envVars:
       - key: FIREBASE_PROJECT_ID
-        value: "${FIREBASE_PROJECT_ID}"
+        value: "${treinadordigital-b8fe2}"
       - key: FIREBASE_API_KEY
-        value: "${FIREBASE_API_KEY}"
+        value: "${AIzaSyAfJMq7guuYtwU8i8YpbARuF4J8bVbXTf8}"
       - key: GEMINI_API_KEY
-        value: "${GEMINI_API_KEY}"
+        value: "${AIzaSyA2_0T_aJC3IINZ-SwCHOZpmAS3CbRXL_U}"
   - type: static_site
     name: halterai-frontend
     env: static
