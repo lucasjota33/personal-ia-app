@@ -35,21 +35,38 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Diretório público — resolve independente do CWD
+PUBLIC_DIR = Path(__file__).resolve().parent.parent / "public"
 
+
+def _html(filename: str) -> FileResponse:
+    path = PUBLIC_DIR / filename
+    if not path.exists():
+        raise HTTPException(status_code=404, detail=f"{filename} não encontrado")
+    return FileResponse(str(path), media_type="text/html")
+
+
+# ── Rotas das páginas HTML ────────────────────────────────────────────────────
 @app.get("/", include_in_schema=False)
 def root():
-    # serve the SPA index so the root doesn't return 404
-    public_dir = Path(__file__).resolve().parent.parent / "public"
-    index_file = public_dir / "index.html"
-    if index_file.exists():
-        return FileResponse(str(index_file))
-    return {"status": "ok", "message": "Halter AI API está rodando", "docs": "/docs"}
+    return _html("index.html")
 
+@app.get("/index.html", include_in_schema=False)
+def index():
+    return _html("index.html")
 
-# Mount static assets (CSS/JS/images) so the SPA can load resources
-public_dir = Path(__file__).resolve().parent.parent / "public"
-if public_dir.exists():
-    app.mount("/static", StaticFiles(directory=str(public_dir)), name="static")
+@app.get("/dashboard.html", include_in_schema=False)
+def dashboard():
+    return _html("dashboard.html")
+
+@app.get("/perfil.html", include_in_schema=False)
+def perfil_page():
+    return _html("perfil.html")
+
+# ── Assets estáticos em /static (CSS, JS, imagens) ───────────────────────────
+# Os HTMLs referenciam: /static/style.css  /static/script.js  /static/logo.png
+if PUBLIC_DIR.exists():
+    app.mount("/static", StaticFiles(directory=str(PUBLIC_DIR)), name="static")
 
 
 def get_current_user(authorization: Optional[str] = Header(None)):
@@ -125,6 +142,7 @@ Crie um planejamento irretocável e personalizado para o(a) {request.nome}.
 Idade: {request.idade} anos | Sexo: {request.sexo}
 Peso: {request.peso}kg | Altura: {request.altura}cm | Nível: {request.nivel} | Objetivo: {request.objetivo}
 Alergias/Restrições: {request.alergias or 'Nenhuma'}
+IDIOMA OBRIGATÓRIO: responda INTEIRAMENTE em Português do Brasil.
 
 # PLANEJAMENTO: {request.nome.upper()}
 
@@ -133,7 +151,7 @@ Crie uma tabela em Markdown seguindo EXATAMENTE as colunas abaixo:
 | Taxa Metabólica Basal (Mifflin-St Jeor)| Gasto Energético Total | Meta Calórica Alvo |
 
 ## 🥗 2. PLANO ALIMENTAR
-Crie uma tabela em Markdown seguindo EXATAMENTE as colunas abaixo (Seja variado na criação do plano, não monte algo genérico e respeite as restrições alimentares mencionadas):
+Crie uma tabela em Markdown seguindo EXATAMENTE as colunas abaixo:
 | Refeição(Almoço, janta, etc) | Alimento Principal | Macronutrientes | Substituição |
 
 ## ⚡ 3. PLANILHA DE TREINAMENTO
@@ -145,9 +163,9 @@ Para CADA DIA de treino, crie uma tabela em Markdown seguindo EXATAMENTE as colu
 | Suplemento | Dosagem Diária | Horário |
 
 INSTRUÇÃO OBRIGATÓRIA PARA DASHBOARD:
-No final absoluto da sua resposta, insira APENAS UM bloco de código json contendo as metas numéricas diárias, seguindo estritamente esta estrutura:
+No final absoluto da sua resposta, insira APENAS UM bloco de código json:
 ```json
-{
+{{
     "calorias": 0,
     "proteinas_g": 0,
     "carboidratos_g": 0,
@@ -156,9 +174,9 @@ No final absoluto da sua resposta, insira APENAS UM bloco de código json conten
     "gasto_total": 0,
     "agua_ml": 0,
     "passos": 0
-}
+}}
 ```
-Substitua os zeros pelos valores calculados em números inteiros (apenas números). Estime a água e passos diários.
+Substitua os zeros pelos valores calculados em números inteiros.
 """
 
     response_data = call_gemini(prompt)
@@ -203,16 +221,16 @@ def chat_with_perfil(perfil: str, request: ChatRequest, current_user=Depends(get
         plano_atual = mensagens[0].get("content", "")
 
     mensagens.append({"role": "user", "content": request.mensagem})
-    prompt = f"""
-Plano Atual do Perfil:
+    prompt = f"""Plano Atual do Perfil:
 {plano_atual}
 
 Mensagem do Usuário: {request.mensagem}
 
 REGRA DE ATUALIZAÇÃO DO DASHBOARD:
-Se o usuário pedir alteração na dieta, treino ou suplementos, REESCREVA o plano completo aplicando as mudanças. Mantenha a mesma estrutura de marcação e inclua o bloco ```json``` com os dados numéricos atualizados.
+Se o usuário pedir alteração na dieta, treino ou suplementos, REESCREVA o plano completo aplicando as mudanças.
+Mantenha a mesma estrutura de marcação e inclua o bloco ```json``` com os dados numéricos atualizados.
 Se for apenas uma dúvida, responda de forma curta, sem reescrever o plano.
-"""
+IDIOMA OBRIGATÓRIO: Português do Brasil."""
 
     response_data = call_gemini(prompt, timeout=45)
     resposta = extract_ai_text(response_data)
@@ -248,7 +266,11 @@ def download_pdf(perfil: str, current_user=Depends(get_current_user)):
         raise HTTPException(status_code=400, detail="Plano não disponível")
 
     pdf_bytes = gerar_pdf(plano_atual, perfil)
-    return StreamingResponse(io.BytesIO(pdf_bytes), media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename=Relatorio_{perfil.replace(' ', '_')}.pdf"})
+    return StreamingResponse(
+        io.BytesIO(pdf_bytes),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename=Relatorio_{perfil.replace(' ', '_')}.pdf"},
+    )
 
 
 @app.delete("/perfil/{nome}")
