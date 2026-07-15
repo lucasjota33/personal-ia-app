@@ -1,5 +1,8 @@
 import io
 from fastapi import FastAPI, Depends, HTTPException, Header
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+from pathlib import Path
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from typing import Optional
@@ -35,7 +38,18 @@ app.add_middleware(
 
 @app.get("/", include_in_schema=False)
 def root():
+    # serve the SPA index so the root doesn't return 404
+    public_dir = Path(__file__).resolve().parent.parent / "public"
+    index_file = public_dir / "index.html"
+    if index_file.exists():
+        return FileResponse(str(index_file))
     return {"status": "ok", "message": "Halter AI API está rodando", "docs": "/docs"}
+
+
+# Mount static assets (CSS/JS/images) so the SPA can load resources
+public_dir = Path(__file__).resolve().parent.parent / "public"
+if public_dir.exists():
+    app.mount("/static", StaticFiles(directory=str(public_dir)), name="static")
 
 
 def get_current_user(authorization: Optional[str] = Header(None)):
