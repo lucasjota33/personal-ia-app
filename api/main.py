@@ -33,6 +33,11 @@ app.add_middleware(
 )
 
 
+@app.get("/", include_in_schema=False)
+def root():
+    return {"status": "ok", "message": "Halter AI API está rodando", "docs": "/docs"}
+
+
 def get_current_user(authorization: Optional[str] = Header(None)):
     if not authorization:
         raise HTTPException(status_code=401, detail="Authorization header missing")
